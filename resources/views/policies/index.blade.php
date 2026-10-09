@@ -8,6 +8,20 @@
     </div>
 
     <div class="container" style="max-width:820px;padding-bottom:64px;">
+        <section class="checkout-card" aria-labelledby="shipping-policy-heading" style="margin-bottom:24px;">
+            <span class="eyebrow" style="display:block;color:var(--rose);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Shipping &amp; Delivery</span>
+            <h2 id="shipping-policy-heading">Karachi-Exclusive Delivery Policy</h2>
+            <p style="font-size:1.05rem;font-weight:600;color:var(--espresso);">
+                Alishe Nails currently operates and delivers exclusively within the city of Karachi.
+            </p>
+            <ul style="line-height:1.8;padding-left:20px;color:var(--espresso);margin-top:12px;">
+                <li><strong>Delivery Timeline:</strong> Orders are hand-prepared and dispatched for doorstep delivery within 24 to 48 hours across Karachi.</li>
+                <li><strong>Delivery Rates:</strong> Flat delivery charges range between PKR 150 to PKR 250 depending on your Karachi area/zone.</li>
+                <li><strong>Free Shipping:</strong> Enjoy <em>Free Delivery</em> on all orders over PKR 5,000.</li>
+                <li><strong>Payment Options:</strong> 100% Secure Mobile Wallet transfers via <strong>JazzCash</strong> and <strong>EasyPaisa</strong>.</li>
+            </ul>
+        </section>
+
         <section class="checkout-card" aria-labelledby="returns-policy-heading">
             <span class="eyebrow" style="display:block;color:var(--rose);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Returns &amp; Refunds</span>
             <h2 id="returns-policy-heading">No Returns or Exchanges</h2>
@@ -37,7 +51,7 @@
             <p>We collect the information you provide when you order or create an account, including your name, email address, phone number, shipping address, and order history. We use it to fulfil orders, provide account access, respond to customer support requests, and send marketing emails only when you subscribe to our newsletter.</p>
 
             <h3>Payments</h3>
-            <p>We accept Cash on Delivery, Bank Transfer, JazzCash, and EasyPaisa. This site does not collect or store card numbers or other card payment data.</p>
+            <p>We accept mobile wallet transfers via JazzCash and EasyPaisa. Orders are confirmed and dispatched upon verifying your Transaction ID (TID). This site does not collect or store debit/credit card details.</p>
 
             <h3>Cookies and sessions</h3>
             <p>The site uses browser sessions to keep your cart contents and login session available while you browse and check out. These sessions support normal site functionality; this policy does not claim tracking or advertising cookies that the site does not use.</p>

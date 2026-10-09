@@ -20,9 +20,20 @@ class SellerSubscription extends Model
         'reviewed_at' => 'datetime',
     ];
 
-    public function seller(): BelongsTo { return $this->belongsTo(Seller::class); }
-    public function plan(): BelongsTo { return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id'); }
-    public function reviewer(): BelongsTo { return $this->belongsTo(Admin::class, 'reviewed_by'); }
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(Seller::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'reviewed_by');
+    }
 
     public function isActive(): bool
     {

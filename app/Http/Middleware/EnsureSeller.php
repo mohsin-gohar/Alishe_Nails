@@ -17,6 +17,7 @@ class EnsureSeller
 
         if (Auth::guard('seller')->user()->status !== 'approved') {
             Auth::guard('seller')->logout();
+
             return redirect()->route('seller.login')->with('error', 'Your seller application is still awaiting approval.');
         }
 

@@ -5,7 +5,7 @@
                 <span class="navbar__logo" role="img" aria-label="Alishe Nails logo"></span>
                 Alishe
             </a>
-            <p>Exquisite handmade press-on nails crafted for elegance and ease.</p>
+            <p>Exquisite handmade press-on nails crafted for elegance and ease. Delivering exclusively across Karachi.</p>
             <div class="footer-social">
                 <a href="https://instagram.com/{{ config('services.instagram.handle', 'alishe_nails') }}" target="_blank" rel="noopener">
                     <i class="fa-brands fa-instagram"></i>
@@ -30,7 +30,6 @@
                 <li><a href="{{ route('contact.index') }}">FAQs</a></li>
                 <li><a href="{{ route('policies.index') }}">Shipping &amp; Returns</a></li>
                 <li><a href="{{ route('how-to-apply.index') }}">Sizing Guide</a></li>
-                <li><a href="{{ route('work-with-us.index') }}">Work with Us</a></li>
                 <li><a href="{{ route('contact.index') }}">Order Help</a></li>
             </ul>
         </div>
@@ -49,6 +48,6 @@
     </div>
 
     <div class="footer-bottom">
-        &copy; {{ date('Y') }} Alishe Nails. Handcrafted with love.
+        &copy; {{ date('Y') }} Alishe Nails &middot; Karachi, Pakistan. Handcrafted with love.
     </div>
 </footer>

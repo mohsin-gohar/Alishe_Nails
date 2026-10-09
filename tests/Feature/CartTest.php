@@ -76,21 +76,21 @@ class CartTest extends TestCase
         $this->assertEquals(1, $cart[$rowId]['qty'], 'Quantity must never exceed live stock, even if requested higher.');
     }
 
-        public function test_shop_add_to_cart_can_return_json_without_redirecting(): void
-        {
-            $product = Product::create([
-                'name' => 'AJAX Nail Set',
-                'sku' => 'ALN-AJX-1',
-                'price' => 2500,
-                'stock' => 10,
-                'is_active' => true,
-                'slug' => 'ajax-nail-set',
-            ]);
+    public function test_shop_add_to_cart_can_return_json_without_redirecting(): void
+    {
+        $product = Product::create([
+            'name' => 'AJAX Nail Set',
+            'sku' => 'ALN-AJX-1',
+            'price' => 2500,
+            'stock' => 10,
+            'is_active' => true,
+            'slug' => 'ajax-nail-set',
+        ]);
 
-            $response = $this->postJson(route('cart.add', $product), ['qty' => 1]);
+        $response = $this->postJson(route('cart.add', $product), ['qty' => 1]);
 
-            $response->assertOk()
-                ->assertJsonPath('cart_count', 1)
-                ->assertJsonStructure(['message', 'cart_count']);
-        }
+        $response->assertOk()
+            ->assertJsonPath('cart_count', 1)
+            ->assertJsonStructure(['message', 'cart_count']);
+    }
 }

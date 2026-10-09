@@ -69,10 +69,12 @@
                     <h3 style="margin-bottom:20px;">Order Summary</h3>
                     <div class="summary-row"><span>Subtotal</span><span>PKR {{ number_format($subtotal, 0) }}</span></div>
                     <div class="summary-row">
-                        <span>Shipping</span>
-                        <span style="font-size:.85rem;text-align:right;">At checkout</span>
+                        <span>Shipping (Karachi)</span>
+                        <span style="font-size:.85rem;text-align:right;">{{ $subtotal >= 5000 ? 'Free' : 'Calculated at checkout' }}</span>
                     </div>
-                    <p style="font-size:.8rem;color:rgba(43,29,29,.65);margin:12px 0 0;">Delivery is calculated in PKR after you enter your Pakistan city and optional area.</p>
+                    <p style="font-size:.8rem;color:rgba(43,29,29,.65);margin:12px 0 0;">
+                        <i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi. Free delivery on orders over PKR 5,000!
+                    </p>
 
                     <a href="{{ route('checkout.index') }}" class="btn btn-primary btn-block" style="margin-top:20px;">Proceed to Checkout</a>
                 </div>

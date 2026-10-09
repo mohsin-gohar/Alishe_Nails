@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCartRequest;
+use App\Http\Requests\UpdateCartRequest;
 use App\Models\Product;
 use App\Support\Cart;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 
 class CartController extends Controller
 {
@@ -18,35 +21,28 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(Request $request, Product $product)
+    public function add(StoreCartRequest $request, Product $product): RedirectResponse|JsonResponse
     {
         if ($product->seller && ! $product->seller->hasActiveSubscription()) {
             return back()->with('error', 'This seller subscription has expired and the product is currently unavailable.');
         }
 
-        $validated = $request->validate([
-            'qty' => ['nullable', 'integer', 'min:1', 'max:20'],
-            'shape' => ['nullable', 'string', 'max:50'],
-            'size' => ['nullable', 'string', 'max:20'],
-        ]);
+        $qty = $request->validated()['qty'] ?? 1;
+        $shape = $request->input('shape');
+        $size = $request->input('size');
 
-        $rowId = Cart::add(
-            $product,
-            $validated['qty'] ?? 1,
-            $validated['shape'] ?? null,
-            $validated['size'] ?? null
-        );
+        if ($product->stock <= 0) {
+            return back()->with('error', $product->name.' is currently out of stock.');
+        }
+
+        if ($qty > $product->stock) {
+            return back()->with('error', 'Only '.$product->stock.' of '.$product->name.' are available.');
+        }
+
+        $rowId = Cart::add($product, $qty, $shape, $size);
 
         if ($rowId === null) {
-            $message = $product->stock <= 0
-                ? $product->name.' is currently out of stock.'
-                : 'Only '.$product->stock.' of '.$product->name.' are available.';
-
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $message], 422);
-            }
-
-            return back()->with('error', $message);
+            return back()->with('error', 'The requested quantity exceeds available stock.');
         }
 
         if ($request->expectsJson() && ! $request->has('buy_now') && $request->input('redirect') !== 'checkout') {
@@ -63,20 +59,62 @@ class CartController extends Controller
         return back()->with('success', $product->name.' added to your cart.');
     }
 
-    public function update(Request $request, string $rowId)
+    public function update(UpdateCartRequest $request, string $rowId): RedirectResponse
     {
-        $validated = $request->validate([
-            'qty' => ['required', 'integer', 'min:0', 'max:20'],
-        ]);
+        $validated = $request->validated();
 
-        Cart::update($rowId, $validated['qty']);
+        $cart = Cart::content();
+
+        if (! isset($cart[$rowId])) {
+            return back()->with('error', 'Cart item not found.');
+        }
+
+        $product = Product::find($cart[$rowId]['product_id']);
+
+        if (! $product || ! $product->is_active) {
+            unset($cart[$rowId]);
+            Cart::restore($cart);
+
+            return back()->with('error', 'This product is no longer available.');
+        }
+
+        $qty = $validated['qty'] ?? $cart[$rowId]['qty'];
+
+        if ($qty <= 0) {
+            unset($cart[$rowId]);
+            Cart::restore($cart);
+
+            return back()->with('success', 'Item removed from cart.');
+        }
+
+        // Cap the quantity at the currently available stock. We never allow
+        // more than what is actually in stock, but we also never reject the
+        // update outright — the customer simply gets the maximum available.
+        $qty = min($qty, max(0, $product->stock));
+
+        if ($qty <= 0) {
+            unset($cart[$rowId]);
+            Cart::restore($cart);
+
+            return back()->with('error', 'This item is now out of stock and was removed from your cart.');
+        }
+
+        $cart[$rowId]['qty'] = $qty;
+        Cart::restore($cart);
 
         return back()->with('success', 'Cart updated.');
     }
 
-    public function remove(string $rowId)
+    public function remove(string $rowId): RedirectResponse
     {
-        Cart::remove($rowId);
+        $cart = Cart::content();
+
+        if (! isset($cart[$rowId])) {
+            return back()->with('error', 'Cart item not found.');
+        }
+
+        unset($cart[$rowId]);
+        Cart::restore($cart);
 
         return back()->with('success', 'Item removed from cart.');
     }

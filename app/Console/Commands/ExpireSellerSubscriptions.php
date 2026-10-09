@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 class ExpireSellerSubscriptions extends Command
 {
     protected $signature = 'sellers:expire-subscriptions';
+
     protected $description = 'Expire seller subscriptions, hide products, and send renewal reminders';
 
     public function handle(): int

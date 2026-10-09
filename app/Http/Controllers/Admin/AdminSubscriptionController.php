@@ -14,6 +14,7 @@ class AdminSubscriptionController extends Controller
     {
         $plans = SubscriptionPlan::withCount('sellerSubscriptions')->orderBy('duration_days')->get();
         $subscriptions = SellerSubscription::with(['seller', 'plan'])->latest()->paginate(20);
+
         return view('admin.subscriptions.index', compact('plans', 'subscriptions'));
     }
 
@@ -25,6 +26,7 @@ class AdminSubscriptionController extends Controller
             'price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]));
+
         return back()->with('success', 'Subscription plan created.');
     }
 
@@ -39,6 +41,7 @@ class AdminSubscriptionController extends Controller
         ]);
         $data['is_active'] = $request->boolean('is_active');
         $plan->update($data);
+
         return back()->with('success', 'Subscription plan updated.');
     }
 
@@ -64,6 +67,7 @@ class AdminSubscriptionController extends Controller
     public function reject(Request $request, SellerSubscription $subscription)
     {
         $subscription->update(['status' => 'rejected', 'reviewed_at' => now(), 'reviewed_by' => $request->user('admin')->id]);
+
         return back()->with('success', 'Subscription payment rejected.');
     }
 }

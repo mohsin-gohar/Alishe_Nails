@@ -177,12 +177,13 @@
                 </details>
 
                 <details class="accordion-item">
-                    <summary>Shipping &amp; Returns <i class="fa-solid fa-chevron-down chevron"></i></summary>
+                    <summary>Karachi Delivery &amp; Policies <i class="fa-solid fa-chevron-down chevron"></i></summary>
                     <ul>
-                        <li><i class="fa-solid fa-check"></i> Free delivery on orders over PKR 5,000.</li>
-                        <li><i class="fa-solid fa-check"></i> Dispatched within 1–3 business days.</li>
-                        <li><i class="fa-solid fa-check"></i> Orders are not returnable, exchangeable, or refundable once placed.</li>
-                        <li><a href="{{ route('policies.index') }}" style="text-decoration:underline;">Read our full Returns &amp; Privacy Policy</a></li>
+                        <li><i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (24&ndash;48 hrs doorstep delivery).</li>
+                        <li><i class="fa-solid fa-check"></i> Flat delivery rate PKR 150&ndash;250; Free on orders over PKR 5,000.</li>
+                        <li><i class="fa-solid fa-wallet"></i> Instant Mobile Wallet payments via <strong>JazzCash</strong> &amp; <strong>EasyPaisa</strong>.</li>
+                        <li><i class="fa-solid fa-ban"></i> Orders are non-returnable due to custom handcrafted hygiene standards.</li>
+                        <li><a href="{{ route('policies.index') }}" style="text-decoration:underline;">Read our Karachi Shipping &amp; Privacy Policy</a></li>
                     </ul>
                 </details>
             </div>

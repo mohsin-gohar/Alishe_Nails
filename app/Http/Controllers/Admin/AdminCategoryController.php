@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CategoryRequest;
 use App\Models\Category;
+use Illuminate\Support\Str;
 
 class AdminCategoryController extends Controller
 {
@@ -24,7 +25,7 @@ class AdminCategoryController extends Controller
     {
         Category::create([
             'name' => $request->validated()['name'],
-            'slug' => \Illuminate\Support\Str::slug($request->validated()['name']),
+            'slug' => Str::slug($request->validated()['name']),
         ]);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category added.');
@@ -39,7 +40,7 @@ class AdminCategoryController extends Controller
     {
         $category->update([
             'name' => $request->validated()['name'],
-            'slug' => \Illuminate\Support\Str::slug($request->validated()['name']),
+            'slug' => Str::slug($request->validated()['name']),
         ]);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category updated.');

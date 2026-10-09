@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -40,7 +41,7 @@ class ExampleTest extends TestCase
 
     public function test_product_page_contains_open_graph_metadata(): void
     {
-        $product = \App\Models\Product::create([
+        $product = Product::create([
             'name' => 'SEO Test Set',
             'slug' => 'seo-test-set',
             'sku' => 'SEO-TEST-1',

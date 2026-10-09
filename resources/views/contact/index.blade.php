@@ -75,7 +75,8 @@
                     <h5>Contact Information</h5>
                     <p style="margin:8px 0 4px;"><i class="fa-solid fa-envelope"></i> hello@alishenails.com</p>
                     <p style="margin:0 0 4px;"><i class="fa-solid fa-phone"></i> {{ config('services.whatsapp.number') }}</p>
-                    <p style="margin:0;"><i class="fa-solid fa-location-dot"></i> Karachi, Pakistan</p>
+                    <p style="margin:0 0 4px;"><i class="fa-solid fa-location-dot"></i> Karachi, Pakistan</p>
+                    <p style="margin:4px 0 0;font-size:0.85rem;color:#7A6E68;"><i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi (24-48 hrs)</p>
                 </div>
             </div>
         </div>

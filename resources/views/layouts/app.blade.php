@@ -23,18 +23,21 @@
     @stack('styles')
 </head>
 @php
-    $headerImageFiles = collect(glob(public_path('images/products/*')) ?: [])
-        ->filter(fn ($file) => in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp']))
-        ->values()
-        ->all();
+    $headerImages = \Illuminate\Support\Facades\Cache::remember('site_header_images_urls', 3600, function () {
+        $files = collect(glob(public_path('images/products/*')) ?: [])
+            ->filter(fn ($file) => in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp']))
+            ->values()
+            ->all();
 
-    shuffle($headerImageFiles);
-    $headerImageFiles = array_pad(array_slice($headerImageFiles, 0, 3), 3, public_path('logo.jpeg'));
-    $headerImages = collect($headerImageFiles)
-        ->map(fn ($file) => str_starts_with($file, public_path('images'))
-            ? asset(str_replace('\\', '/', str_replace(public_path().'\\', '', $file)))
-            : asset('images/logo.jpeg'))
-        ->values();
+        $files = array_pad(array_slice($files, 0, 3), 3, public_path('images/logo.jpeg'));
+
+        return collect($files)
+            ->map(fn ($file) => str_starts_with($file, public_path('images'))
+                ? asset(str_replace('\\', '/', str_replace(public_path().'\\', '', $file)))
+                : asset('images/logo.jpeg'))
+            ->values()
+            ->all();
+    });
 @endphp
 <body style="--header-image-navbar: url('{{ $headerImages[0] }}'); --header-image-hero: url('{{ $headerImages[1] }}'); --header-image-page: url('{{ $headerImages[2] }}');">
     <x-alert />
@@ -47,9 +50,9 @@
 
     <x-footer />
 
-    <a href="https://wa.me/{{ str_replace(['+', ' '], '', config('services.whatsapp.number')) }}?text={{ rawurlencode('Hi Alishe Nails, I have a question about your press-on nails.') }}"
-       class="floating-whatsapp" target="_blank" rel="noopener" aria-label="Chat with Alishe Nails on WhatsApp" title="Chat on WhatsApp">
-        <i class="fa-brands fa-whatsapp"></i>
+    <a href="https://instagram.com/{{ config('services.instagram.handle') }}"
+       class="floating-instagram" target="_blank" rel="noopener" aria-label="Follow Alishe Nails on Instagram" title="Follow on Instagram">
+        <i class="fa-brands fa-instagram"></i>
     </a>
 
     <script src="{{ asset('js/app.js') }}"></script>

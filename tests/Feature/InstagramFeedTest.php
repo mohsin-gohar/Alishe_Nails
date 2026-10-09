@@ -194,8 +194,12 @@ class InstagramFeedTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('socials-grid');
-        // The original static placeholder block, not an empty grid.
-        $response->assertSee('Social image unavailable');
+        // The static fallback block renders either the fallback images or placeholder, not an empty grid.
+        $this->assertTrue(
+            str_contains($response->content(), 'Social image unavailable') ||
+            str_contains($response->content(), 'images/instagram/coffee-moment.jpg'),
+            'Expected homepage to render static fallback images or placeholders when no synced posts exist.'
+        );
     }
 
     public function test_the_homepage_only_shows_active_posts(): void

@@ -17,12 +17,14 @@ class AdminMarketplaceController extends Controller
     public function approve(Seller $seller)
     {
         $seller->update(['status' => 'approved', 'approved_at' => now()]);
+
         return back()->with('success', $seller->name.' is now an approved seller.');
     }
 
     public function reject(Seller $seller)
     {
         $seller->update(['status' => 'rejected']);
+
         return back()->with('success', $seller->name.' application was rejected.');
     }
 
@@ -36,6 +38,7 @@ class AdminMarketplaceController extends Controller
         DB::transaction(function () use ($seller) {
             $seller->orderItems()->where('payout_status', 'pending')->update(['payout_status' => 'paid']);
         });
+
         return back()->with('success', 'Pending payout marked as paid for '.$seller->name.'.');
     }
 }

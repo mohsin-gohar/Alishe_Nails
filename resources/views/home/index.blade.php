@@ -10,7 +10,7 @@
     <div class="container hero__grid">
         <div>
             <h1>Timeless Nails,<br><span class="italic-accent">Made for You</span></h1>
-            <p class="lead">Luxury Press-On Nails For Every Occasion</p>
+            <p class="lead">Luxury Handmade Press-On Nails &middot; Delivered Exclusively Across Karachi</p>
             <a href="{{ route('shop.index') }}" class="btn btn-primary">Shop Now</a>
         </div>
         <div class="hero__image">
@@ -29,10 +29,10 @@
     {{-- ---------- Value props ---------- --}}
     <div class="container">
         <div class="value-props">
-            <div class="value-prop"><i class="fa-regular fa-heart"></i> Handmade with love</div>
-            <div class="value-prop"><i class="fa-solid fa-gem"></i> Premium quality</div>
-            <div class="value-prop"><i class="fa-solid fa-recycle"></i> Reusable &amp; durable</div>
-            <div class="value-prop"><i class="fa-solid fa-lock"></i> Secure payment</div>
+            <div class="value-prop"><i class="fa-solid fa-truck-fast"></i> Karachi Express (24-48h)</div>
+            <div class="value-prop"><i class="fa-solid fa-wallet"></i> JazzCash &amp; EasyPaisa</div>
+            <div class="value-prop"><i class="fa-regular fa-heart"></i> Handmade in Karachi</div>
+            <div class="value-prop"><i class="fa-solid fa-gem"></i> Salon Quality &amp; Reusable</div>
         </div>
     </div>
 
@@ -47,20 +47,17 @@
             @if(isset($collections) && $collections->count() > 0)
                 @foreach ($collections as $collection)
                     <div class="collection-card">
-                        <div class="collection-card__image">
+                        <a href="{{ route('shop.index', ['category' => [$collection->slug]]) }}" class="collection-card__image" style="display:block;">
                             @php
                                 $slug = preg_replace('/[^A-Za-z0-9-]+/', '-', $collection->name);
                                 $slug = strtolower(trim($slug, '-'));
                                 $file = 'images/collections/' . $slug . '.jpg';
+                                $imgSrc = file_exists(public_path($file)) ? asset($file) : asset('images/collections/everyday-elegance.jpg');
                             @endphp
-                            @if (file_exists(public_path($file)))
-                                <img src="{{ asset($file) }}" alt="{{ $collection->name }}">
-                            @else
-                                <div class="img-placeholder">Alishe Nails<br>Collection image unavailable</div>
-                            @endif
-                        </div>
+                            <img src="{{ $imgSrc }}" alt="{{ $collection->name }}" loading="lazy">
+                        </a>
                         <h4>{{ $collection->name }}</h4>
-                        <a href="{{ route('shop.index') }}" class="btn btn-outline btn-sm">Shop Now</a>
+                        <a href="{{ route('shop.index', ['category' => [$collection->slug]]) }}" class="btn btn-outline btn-sm">Shop Now</a>
                     </div>
                 @endforeach
             @else
@@ -74,7 +71,7 @@
         <div class="container best-sellers__grid">
             <div class="best-sellers__intro">
                 <h2>Our Best<br><span class="italic-accent">Sellers</span></h2>
-                <p>Discover the styles our customers can't get enough of. Hand-painted perfection delivered to your door.</p>
+                <p>Discover the styles our customers can't get enough of. Hand-painted perfection delivered right to your doorstep in Karachi.</p>
                 <a href="{{ route('shop.index') }}" style="text-decoration:underline;font-weight:600;">View All Best Sellers &rarr;</a>
             </div>
 
@@ -130,16 +127,6 @@
                     </div>
                 @endforeach
             @endforelse
-        </div>
-    </section>
-
-    {{-- ---------- Work With Us campaign banner ---------- --}}
-    <section class="campaign-banner">
-        <div class="container">
-            <span class="campaign-banner__eyebrow">For Creators &amp; Influencers</span>
-            <h2>Got an Audience? Let's Grow Together.</h2>
-            <p>Alishe Nails is opening up premium campaign space for creators and influencers. Get your content, promo, or collab featured directly to our audience — real estate that converts.</p>
-            <a href="{{ route('work-with-us.index') }}" class="btn btn-primary">Work With Us &rarr;</a>
         </div>
     </section>
 

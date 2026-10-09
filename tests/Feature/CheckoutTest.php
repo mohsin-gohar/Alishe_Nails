@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingRate;
+use App\Support\Cart;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -52,6 +53,7 @@ class CheckoutTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('orders', ['email' => 'sana@example.com', 'status' => 'pending']);
         $this->assertEquals(3, $product->fresh()->stock, 'Stock must decrease by the ordered quantity.');
+        $this->assertEmpty(Cart::content(), 'Cart must be cleared after successful checkout.');
     }
 
     public function test_checkout_is_blocked_when_stock_is_insufficient(): void
@@ -149,11 +151,102 @@ class CheckoutTest extends TestCase
 
         $order = Order::where('email', 'sana@example.com')->first();
 
-        // Guessing the sequential ID without the signature must fail.
-        $this->get(route('checkout.success', $order))->assertForbidden();
+        // Guessing the order number without the signature must fail.
+        $this->get(route('checkout.success', $order->order_number))->assertForbidden();
 
         // The correct access token succeeds.
-        $this->get(route('checkout.success', ['order' => $order, 'signature' => $order->access_token]))
+        $this->get(route('checkout.success', ['order' => $order->order_number, 'signature' => $order->access_token]))
             ->assertOk();
+    }
+
+    public function test_checkout_shipping_fee_endpoint_calculates_karachi_area_rates(): void
+    {
+        ShippingRate::create([
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+            'delivery_fee' => 200,
+            'free_shipping_threshold' => 5000,
+            'is_active' => true,
+        ]);
+
+        $product = $this->makeProduct(['price' => 2500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $response = $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+        ]));
+
+        $response->assertOk()
+            ->assertJson([
+                'subtotal' => 2500,
+                'shipping' => 200,
+                'is_free' => false,
+                'total' => 2700,
+            ]);
+    }
+
+    public function test_checkout_shipping_fee_is_free_over_threshold_for_karachi(): void
+    {
+        ShippingRate::create([
+            'city' => 'Karachi',
+            'area' => 'Gulshan-e-Iqbal',
+            'delivery_fee' => 180,
+            'free_shipping_threshold' => 5000,
+            'is_active' => true,
+        ]);
+
+        $product = $this->makeProduct(['price' => 3000]);
+        $this->post(route('cart.add', $product), ['qty' => 2]); // total 6000 >= 5000
+
+        $response = $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'Gulshan-e-Iqbal',
+        ]));
+
+        $response->assertOk()
+            ->assertJson([
+                'subtotal' => 6000,
+                'shipping' => 0,
+                'is_free' => true,
+                'total' => 6000,
+            ]);
+    }
+
+    public function test_checkout_with_jazzcash_requires_transaction_reference(): void
+    {
+        $product = $this->makeProduct(['price' => 1500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $payload = array_merge($this->checkoutPayload(), [
+            'payment_method' => 'jazzcash',
+            'transaction_reference' => null,
+        ]);
+
+        $response = $this->post(route('checkout.store'), $payload);
+
+        $response->assertSessionHasErrors('transaction_reference');
+    }
+
+    public function test_checkout_with_easypaisa_creates_order_with_reference_and_sender_info(): void
+    {
+        $product = $this->makeProduct(['price' => 1500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $payload = array_merge($this->checkoutPayload(), [
+            'payment_method' => 'easypaisa',
+            'transaction_reference' => 'EP-TID-998877',
+            'sender_number' => '03412126680',
+            'payment_notes' => 'Sent from EasyPaisa app',
+        ]);
+
+        $response = $this->post(route('checkout.store'), $payload);
+
+        $response->assertRedirect();
+        $order = Order::where('email', 'sana@example.com')->first();
+        $this->assertNotNull($order);
+        $this->assertSame('easypaisa', $order->payment_method);
+        $this->assertStringContainsString('EP-TID-998877', $order->transaction_reference);
+        $this->assertStringContainsString('Sender: 03412126680', $order->transaction_reference);
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Product extends Model
 {
@@ -47,6 +48,19 @@ class Product extends Model
     ];
 
     public const LOW_STOCK_THRESHOLD = 5;
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+
+        static::deleted(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+    }
 
     public function category(): BelongsTo
     {

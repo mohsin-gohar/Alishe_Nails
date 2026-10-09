@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             ReviewSeeder::class,
             OrderSeeder::class,
+            InstagramPostSeeder::class,
+            SubscriptionPlanSeeder::class,
+            CouponSeeder::class,
         ]);
     }
 }

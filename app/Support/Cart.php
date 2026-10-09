@@ -111,6 +111,11 @@ class Cart
     {
         $cart = self::content();
         unset($cart[$rowId]);
+        self::restore($cart);
+    }
+
+    public static function restore(array $cart): void
+    {
         Session::put(self::CART_KEY, $cart);
     }
 
@@ -121,12 +126,37 @@ class Cart
 
     public static function count(): int
     {
-        return collect(self::content())->sum('qty');
+        return (int) collect(self::content())->sum('qty');
     }
 
+    /**
+     * Calculate the cart subtotal using the CURRENT database price of each
+     * product — never the price stored in the session when the item was added.
+     * This prevents a customer manipulating the session (or a stale price)
+     * from being charged an incorrect amount. Products that no longer exist
+     * or became inactive are skipped.
+     */
     public static function subtotal(): float
     {
-        return collect(self::content())->sum(fn ($row) => $row['price'] * $row['qty']);
-    }
+        $rows = collect(self::content());
 
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        $prices = Product::whereIn('id', $rows->pluck('product_id')->unique())
+            ->where('is_active', true)
+            ->pluck('price', 'id');
+
+        return (float) $rows->sum(function ($row) use ($prices) {
+            $price = $prices->get($row['product_id']);
+
+            // Skip rows whose product disappeared or became inactive.
+            if ($price === null) {
+                return 0.0;
+            }
+
+            return (float) $price * (int) $row['qty'];
+        });
+    }
 }

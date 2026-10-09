@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
@@ -14,12 +15,11 @@ class CategorySeeder extends Seeder
             'Soft Glam',
             'Bold & Chic',
             'Luxury Edition',
-            'Bridal Collection',
         ];
 
         foreach ($categories as $name) {
             Category::firstOrCreate(
-                ['slug' => \Illuminate\Support\Str::slug($name)],
+                ['slug' => Str::slug($name)],
                 ['name' => $name]
             );
         }

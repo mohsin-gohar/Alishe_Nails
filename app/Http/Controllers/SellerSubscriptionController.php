@@ -12,6 +12,7 @@ class SellerSubscriptionController extends Controller
     public function create()
     {
         $plans = SubscriptionPlan::where('is_active', true)->orderBy('duration_days')->get();
+
         return view('seller.subscription', compact('plans'));
     }
 

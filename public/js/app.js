@@ -280,15 +280,39 @@ document.addEventListener('DOMContentLoaded', function () {
   var shippingAmount = document.querySelector('#checkout-shipping-amount');
   var totalAmount = document.querySelector('#checkout-total-amount');
 
-  function updateTransactionReferenceField() {
-    var referenceContainer = document.querySelector('[data-transaction-reference]');
-    var referenceInput = document.querySelector('#transaction_reference');
+  function updateCheckoutPaymentMethods() {
     var selectedPayment = document.querySelector('input[name="payment_method"]:checked');
-    var needsReference = selectedPayment && selectedPayment.value !== 'cod';
+    if (!selectedPayment) return;
 
-    if (!referenceContainer || !referenceInput) return;
-    referenceContainer.style.display = needsReference ? 'block' : 'none';
-    referenceInput.disabled = !needsReference;
+    var val = selectedPayment.value;
+
+    // Highlight selected payment card
+    document.querySelectorAll('.payment-option').forEach(function (opt) {
+      var radio = opt.querySelector('input[type="radio"]');
+      if (radio && radio.checked) {
+        opt.classList.add('is-selected');
+        opt.style.borderColor = 'var(--rose)';
+      } else {
+        opt.classList.remove('is-selected');
+        opt.style.borderColor = '#eee';
+      }
+    });
+
+    // Toggle wallet detail boxes
+    var jazzBox = document.querySelector('[data-wallet-box="jazzcash"]');
+    var easyBox = document.querySelector('[data-wallet-box="easypaisa"]');
+    var refInput = document.querySelector('#transaction_reference');
+
+    if (jazzBox) jazzBox.style.display = (val === 'jazzcash' || val === 'jazzcash_easypaisa') ? 'block' : 'none';
+    if (easyBox) easyBox.style.display = (val === 'easypaisa') ? 'block' : 'none';
+
+    if (refInput) {
+      if (val === 'jazzcash') {
+        refInput.placeholder = 'e.g. 10492840284 (From 8558 SMS)';
+      } else if (val === 'easypaisa') {
+        refInput.placeholder = 'e.g. 10492840284 (From 3737 SMS)';
+      }
+    }
   }
 
   function updateCheckoutShipping() {
@@ -316,7 +340,41 @@ document.addEventListener('DOMContentLoaded', function () {
     checkoutCity.addEventListener('change', updateCheckoutShipping);
     checkoutArea.addEventListener('change', updateCheckoutShipping);
   }
-  updateTransactionReferenceField();
+
+  var paymentRadios = document.querySelectorAll('input[name="payment_method"]');
+  paymentRadios.forEach(function (radio) {
+    radio.addEventListener('change', updateCheckoutPaymentMethods);
+  });
+  updateCheckoutPaymentMethods();
+
+  // Copy number button handler
+  document.querySelectorAll('.btn-copy-number').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var num = this.getAttribute('data-copy-target');
+      if (!num) return;
+
+      var self = this;
+      var origHtml = self.innerHTML;
+
+      var onCopied = function () {
+        self.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(function () { self.innerHTML = origHtml; }, 2000);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num).then(onCopied).catch(function () {});
+      } else {
+        var tempInput = document.createElement('input');
+        tempInput.value = num;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        onCopied();
+      }
+    });
+  });
 
   // ---------- Accordion chevrons on product page ----------
   document.querySelectorAll('.accordion-item').forEach(function (item) {

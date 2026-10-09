@@ -1,12 +1,11 @@
-{{-- Reusable navbar — included once via <x-navbar /> in layouts/app.blade.php --}}
-<!-- <div class="announcement-bar">
-    Free delivery on orders over PKR 5,000 &middot; Handcrafted with love
-</div> -->
+<div class="announcement-bar">
+    <i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi &middot; Express Doorstep Delivery (24&ndash;48 hrs) &middot; Free on orders over PKR 5,000
+</div>
 
 <header class="navbar" data-navbar>
     <div class="container navbar__inner">
         <a href="{{ route('home') }}" class="navbar__brand">
-           <img src="{{ asset('images/logo.jpeg') }}" alt="Alishe Nails Logo" style="height:40px;object-fit:contain;">
+           <img src="{{ asset('images/logo.jpeg') }}" alt="Alishe Nails Logo" style="height:30px;object-fit:contain;">
             Alishe Nails
         </a>
 
@@ -18,7 +17,6 @@
                 <li><a href="{{ route('how-to-apply.index') }}" class="{{ request()->routeIs('how-to-apply.*') ? 'is-active' : '' }}">How to Apply</a></li>
                 <li><a href="{{ route('policies.index') }}" class="{{ request()->routeIs('policies.*') ? 'is-active' : '' }}">Policies</a></li>
                 <li><a href="{{ route('contact.index') }}" class="{{ request()->routeIs('contact.*') ? 'is-active' : '' }}">Contact</a></li>
-                <li><a href="{{ route('work-with-us.index') }}" class="{{ request()->routeIs('work-with-us.*') ? 'is-active' : '' }}">Work with Us</a></li>
             </ul>
         </nav>
 
@@ -39,9 +37,10 @@
                             {{ strtoupper(substr(auth('web')->user()->name, 0, 1)) }}
                         </span>
                     </button>
-                    <div class="navbar__account-menu" data-account-menu style="display:none;position:absolute;right:0;top:38px;background:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:170px;padding:8px;z-index:60;">
+                    <div class="navbar__account-menu" data-account-menu style="display:none;position:absolute;right:0;top:32px;background:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:170px;padding:8px;z-index:60;">
                         <a href="{{ route('account.profile') }}" style="display:block;padding:8px 10px;font-size:.85rem;border-radius:6px;">My Account</a>
                         <a href="{{ route('account.orders') }}" style="display:block;padding:8px 10px;font-size:.85rem;border-radius:6px;">My Orders</a>
+                        <a href="{{ route('account.wishlist') }}" style="display:block;padding:8px 10px;font-size:.85rem;border-radius:6px;">My Wishlist</a>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit" style="display:block;width:100%;text-align:left;padding:8px 10px;font-size:.85rem;border-radius:6px;background:none;border:none;cursor:pointer;font-family:inherit;color:#B3261E;">Logout</button>
@@ -80,10 +79,10 @@
             <li><a href="{{ route('how-to-apply.index') }}">How to Apply</a></li>
             <li><a href="{{ route('policies.index') }}">Policies</a></li>
             <li><a href="{{ route('contact.index') }}">Contact</a></li>
-            <li><a href="{{ route('work-with-us.index') }}">Work with Us</a></li>
             @auth('web')
                 <li><a href="{{ route('account.profile') }}">My Account</a></li>
                 <li><a href="{{ route('account.orders') }}">My Orders</a></li>
+                <li><a href="{{ route('account.wishlist') }}">My Wishlist</a></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf

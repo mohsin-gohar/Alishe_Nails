@@ -14,9 +14,9 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSellerController;
-use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminShippingController;
+use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -40,7 +40,6 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TrackOrderController;
 use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\WorkWithUsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -72,7 +71,7 @@ Route::get('/checkout/shipping-fee', [CheckoutController::class, 'calculateShipp
 Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:5,1')->name('checkout.coupon.apply');
 Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:5,1')->name('checkout.store');
-Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::get('/checkout/success/{order:order_number}', [CheckoutController::class, 'success'])->name('checkout.success');
 
 Route::get('/track-order', [TrackOrderController::class, 'index'])->name('track-order.index');
 Route::post('/track-order', [TrackOrderController::class, 'search'])->middleware('throttle:5,1')->name('track-order.search');
@@ -80,9 +79,6 @@ Route::post('/track-order', [TrackOrderController::class, 'search'])->middleware
 Route::get('/about', [AboutController::class, 'index'])->name('about.index');
 Route::get('/how-to-apply', [HowToApplyController::class, 'index'])->name('how-to-apply.index');
 Route::get('/policies', [PolicyController::class, 'index'])->name('policies.index');
-
-Route::get('/work-with-us', [WorkWithUsController::class, 'index'])->name('work-with-us.index');
-Route::post('/work-with-us', [WorkWithUsController::class, 'store'])->middleware('throttle:5,1')->name('work-with-us.store');
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
@@ -150,7 +146,7 @@ Route::middleware('auth:web')->prefix('account')->name('account.')->group(functi
 
 /*
 |--------------------------------------------------------------------------
-| Admin ('admin' guard — completely separate from customer auth)
+| Admin ('admin' guard â€” completely separate from customer auth)
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('admin.')->group(function () {

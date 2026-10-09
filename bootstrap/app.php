@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveSubscription;
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureSeller;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,11 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(SecurityHeaders::class);
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
-            'seller' => \App\Http\Middleware\EnsureSeller::class,
-            'seller.subscription' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'admin' => EnsureAdmin::class,
+            'seller' => EnsureSeller::class,
+            'seller.subscription' => EnsureActiveSubscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

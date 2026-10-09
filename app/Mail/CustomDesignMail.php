@@ -13,9 +13,7 @@ class CustomDesignMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public array $data, public ?string $imagePath = null)
-    {
-    }
+    public function __construct(public array $data, public ?string $imagePath = null) {}
 
     public function envelope(): Envelope
     {

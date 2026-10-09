@@ -6,7 +6,6 @@ use App\Http\Requests\SellerProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SubscriptionPlan;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -38,12 +37,14 @@ class SellerDashboardController extends Controller
         $data['slug'] = $this->uniqueSlug($data['name']);
         $data['sku'] = 'SEL-'.strtoupper(Str::random(7));
         Product::create($data);
+
         return redirect()->route('seller.dashboard')->with('success', 'Product submitted and is now live in your shop.');
     }
 
     public function editProduct(Product $product)
     {
         $this->ensureOwner($product);
+
         return view('seller.product-form', ['product' => $product, 'categories' => Category::all()]);
     }
 
@@ -51,6 +52,7 @@ class SellerDashboardController extends Controller
     {
         $this->ensureOwner($product);
         $product->update($this->productData($request));
+
         return redirect()->route('seller.dashboard')->with('success', 'Product updated.');
     }
 
@@ -58,6 +60,7 @@ class SellerDashboardController extends Controller
     {
         $this->ensureOwner($product);
         $product->update(['is_active' => false]);
+
         return back()->with('success', 'Product hidden from the shop.');
     }
 
@@ -70,11 +73,14 @@ class SellerDashboardController extends Controller
     {
         $data = $request->validated();
         $data['is_active'] = true;
-        if ($request->hasFile('image')) $data['image'] = $this->storeImage($request->file('image'));
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->storeImage($request->file('image'));
+        }
         unset($data['gallery']);
         if ($request->hasFile('gallery')) {
             $data['gallery'] = collect($request->file('gallery'))->map(fn ($file) => $this->storeImage($file))->all();
         }
+
         return $data;
     }
 
@@ -96,7 +102,10 @@ class SellerDashboardController extends Controller
         $base = Str::slug($name) ?: 'seller-product';
         $slug = $base;
         $suffix = 2;
-        while (Product::where('slug', $slug)->exists()) $slug = $base.'-'.($suffix++);
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.($suffix++);
+        }
+
         return $slug;
     }
 }

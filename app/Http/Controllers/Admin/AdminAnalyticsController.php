@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AdminAnalyticsController extends Controller
 {
@@ -51,7 +53,7 @@ class AdminAnalyticsController extends Controller
 
         if ($token && $businessId) {
             try {
-                $response = \Illuminate\Support\Facades\Http::timeout(10)->get("https://graph.facebook.com/v19.0/{$businessId}", [
+                $response = Http::timeout(10)->get("https://graph.facebook.com/v19.0/{$businessId}", [
                     'fields' => 'name,username,profile_picture_url,followers_count,follows_count,media_count,media{id,caption,media_type,media_url,permalink,like_count,comments_count,timestamp}',
                     'access_token' => $token,
                 ]);
@@ -60,7 +62,7 @@ class AdminAnalyticsController extends Controller
                     $instagramConnected = true;
                 }
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Instagram API fetch error: '.$e->getMessage());
+                Log::warning('Instagram API fetch error: '.$e->getMessage());
             }
         }
 

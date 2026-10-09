@@ -11,7 +11,10 @@ use Illuminate\Support\Facades\Hash;
 
 class SellerAuthController extends Controller
 {
-    public function apply() { return view('seller.apply'); }
+    public function apply()
+    {
+        return view('seller.apply');
+    }
 
     public function storeApplication(SellerApplicationRequest $request)
     {
@@ -24,7 +27,10 @@ class SellerAuthController extends Controller
         return redirect()->route('seller.login')->with('success', 'Application submitted. We will email you after review.');
     }
 
-    public function login() { return view('seller.login'); }
+    public function login()
+    {
+        return view('seller.login');
+    }
 
     public function authenticate(SellerLoginRequest $request)
     {
@@ -50,6 +56,7 @@ class SellerAuthController extends Controller
         Auth::guard('seller')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('seller.login');
     }
 }

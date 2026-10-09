@@ -22,8 +22,20 @@ class StoreCheckoutRequest extends FormRequest
             'city' => ['required', 'string', 'max:100'],
             'area' => ['nullable', 'string', 'max:150'],
             'postal_code' => ['nullable', 'string', 'max:20'],
-            'payment_method' => ['required', 'in:cod,bank_transfer,jazzcash_easypaisa'],
+            'payment_method' => ['required', 'in:jazzcash,easypaisa,jazzcash_easypaisa,cod,bank_transfer'],
             'transaction_reference' => ['nullable', 'required_unless:payment_method,cod', 'string', 'max:100'],
+            'sender_number' => ['nullable', 'string', 'max:50'],
+            'payment_notes' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'payment_method.required' => 'Please select your payment method (JazzCash or EasyPaisa).',
+            'payment_method.in' => 'Please select either JazzCash or EasyPaisa.',
+            'transaction_reference.required' => 'Please enter the Transaction ID (TID) from the confirmation SMS.',
+            'transaction_reference.required_unless' => 'Please enter the Transaction ID (TID) from your JazzCash / EasyPaisa confirmation SMS.',
         ];
     }
 }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ShopController extends Controller
 {
@@ -49,12 +51,15 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
-        $categories = \App\Models\Category::withCount(['products' => fn ($q) => $q->where('is_active', true)])->get();
-
-        // Facet counts for the filter sidebar, computed once from all active products.
-        $shapeCounts = Product::active()->selectRaw('shape, count(*) as total')->groupBy('shape')->pluck('total', 'shape');
-        $lengthCounts = Product::active()->selectRaw('length, count(*) as total')->groupBy('length')->pluck('total', 'length');
-        $finishCounts = Product::active()->selectRaw('finish, count(*) as total')->groupBy('finish')->pluck('total', 'finish');
+        // Facet counts for the filter sidebar, cached for 5 minutes to avoid redundant aggregate queries.
+        [$categories, $shapeCounts, $lengthCounts, $finishCounts] = Cache::remember('shop_sidebar_facets', 300, function () {
+            return [
+                Category::withCount(['products' => fn ($q) => $q->where('is_active', true)])->get(),
+                Product::active()->selectRaw('shape, count(*) as total')->groupBy('shape')->pluck('total', 'shape'),
+                Product::active()->selectRaw('length, count(*) as total')->groupBy('length')->pluck('total', 'length'),
+                Product::active()->selectRaw('finish, count(*) as total')->groupBy('finish')->pluck('total', 'finish'),
+            ];
+        });
 
         return view('shop.index', compact('products', 'categories', 'shapeCounts', 'lengthCounts', 'finishCounts'));
     }

@@ -3,22 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCheckoutRequest;
-use App\Mail\AdminNewOrderMail;
-use App\Mail\OrderConfirmationMail;
+use App\Jobs\SendOrderEmails;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ShippingRate;
 use App\Support\Cart;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Platform commission rate applied to marketplace products when the
+     * seller does NOT have an active subscription. Sellers with a valid
+     * subscription pay no per-sale commission (subscription model).
+     */
+    private const COMMISSION_RATE = 15.00;
+
     public function index(Request $request)
     {
         if (empty(Cart::content())) {
@@ -26,22 +33,14 @@ class CheckoutController extends Controller
         }
 
         $subtotal = Cart::subtotal();
+
         $shipping = ShippingRate::calculateFee(
             old('city', 'Karachi'),
             old('area'),
             $subtotal
         )['fee'];
 
-        $couponCode = data_get($request->session()->get('applied_coupon'), 'code');
-        $coupon = $couponCode ? Coupon::where('code', strtoupper($couponCode))->first() : null;
-        $discount = 0;
-
-        if ($coupon && $coupon->isValid()) {
-            $discount = min($coupon->getDiscountFor($subtotal), $subtotal);
-        } else {
-            $request->session()->forget('applied_coupon');
-            $coupon = null;
-        }
+        [$coupon, $discount] = $this->resolveCoupon($request, $subtotal);
 
         $total = max(0, $subtotal + $shipping - $discount);
 
@@ -56,7 +55,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function calculateShippingFee(Request $request)
+    public function calculateShippingFee(Request $request): JsonResponse
     {
         $city = $request->string('city')->trim()->toString() ?: 'Karachi';
         $area = $request->string('area')->trim()->toString() ?: null;
@@ -66,17 +65,105 @@ class CheckoutController extends Controller
         $total = $subtotal + $res['fee'];
 
         return response()->json([
-            'subtotal' => $subtotal,
-            'shipping' => $res['fee'],
-            'standard_fee' => $res['standard_fee'],
-            'threshold' => $res['threshold'],
+            'subtotal' => round($subtotal, 2),
+            'shipping' => round($res['fee'], 2),
+            'standard_fee' => round($res['standard_fee'], 2),
+            'threshold' => round($res['threshold'], 2),
             'is_free' => $res['is_free'],
-            'total' => $total,
+            'total' => round($total, 2),
             'zone_label' => $res['zone_label'],
         ]);
     }
 
-    public function applyCoupon(Request $request)
+    public function store(StoreCheckoutRequest $request): RedirectResponse
+    {
+        $cartContent = Cart::content();
+
+        if (empty($cartContent)) {
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        try {
+            [$order, $lineItems] = DB::transaction(function () use ($request, $cartContent) {
+                $subtotal = Cart::subtotal();
+
+                $shippingRes = ShippingRate::calculateFee(
+                    $request->validated('city'),
+                    $request->validated('area'),
+                    $subtotal
+                );
+                $shipping = $shippingRes['fee'];
+
+                [$coupon, $discount] = $this->resolveCoupon($request, $subtotal);
+                $total = max(0, $subtotal + $shipping - $discount);
+
+                $ref = $request->validated('transaction_reference');
+                $sender = $request->input('sender_number');
+                $notes = $request->input('payment_notes');
+                $extra = [];
+                if ($sender) {
+                    $extra[] = "Sender: {$sender}";
+                }
+                if ($notes) {
+                    $extra[] = "Note: {$notes}";
+                }
+                $finalRef = $ref ? ($ref.(! empty($extra) ? ' ('.implode(' | ', $extra).')' : '')) : null;
+
+                $order = Order::create([
+                    'user_id' => $request->user()?->id,
+                    'first_name' => $request->validated('first_name'),
+                    'last_name' => $request->validated('last_name'),
+                    'email' => $request->validated('email'),
+                    'phone' => $request->validated('phone'),
+                    'address' => $request->validated('address'),
+                    'city' => $request->validated('city'),
+                    'area' => $request->validated('area'),
+                    'postal_code' => $request->validated('postal_code'),
+                    'payment_method' => $request->validated('payment_method'),
+                    'transaction_reference' => $finalRef,
+                    'subtotal' => $subtotal,
+                    'shipping' => $shipping,
+                    'discount_amount' => $discount,
+                    'coupon_code' => $coupon?->code,
+                    'total' => $total,
+                ]);
+
+                return [$order, $this->createOrderItems($order, $cartContent, $coupon, $request)];
+            });
+
+            SendOrderEmails::dispatch($order, $lineItems);
+
+            Cart::clear();
+
+            return redirect()
+                ->route('checkout.success', ['order' => $order->order_number, 'signature' => $order->access_token])
+                ->with('success', 'Order placed successfully!');
+        } catch (\Throwable $e) {
+            Log::error('Checkout order creation failed: '.$e->getMessage());
+
+            return redirect()->route('cart.index')
+                ->with('error', 'We could not complete your order. Please review your cart and try again.');
+        }
+    }
+
+    public function success(Request $request, string $order)
+    {
+        $orderModel = Order::where('order_number', $order)->firstOrFail();
+
+        $token = $request->query('signature');
+        $validSignature = is_string($token) && hash_equals($orderModel->access_token, $token);
+        $isOwner = $request->user() && $request->user()->id === $orderModel->user_id;
+
+        if (! $validSignature && ! $isOwner) {
+            abort(403, 'You are not authorized to view this order.');
+        }
+
+        $orderModel->load('items');
+
+        return view('checkout.success', ['order' => $orderModel]);
+    }
+
+    public function applyCoupon(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50'],
@@ -93,180 +180,97 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.index')->with('success', 'Coupon applied successfully.');
     }
 
-    public function removeCoupon(Request $request)
+    public function removeCoupon(Request $request): RedirectResponse
     {
         $request->session()->forget('applied_coupon');
 
         return redirect()->route('checkout.index')->with('success', 'Promo code removed.');
     }
 
-    public function store(StoreCheckoutRequest $request)
+    /**
+     * Create order items with server-side stock locking, price snapshots and
+     * frozen commission values. Throws if any product is unavailable so the
+     * surrounding transaction rolls back cleanly.
+     *
+     * @return array<int, OrderItem>
+     */
+    private function createOrderItems(Order $order, array $cartContent, ?Coupon $coupon, Request $request): array
     {
-        $cartContent = Cart::content();
+        $productIds = collect($cartContent)->pluck('product_id')->unique();
+        $products = Product::with('seller')->whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
 
-        if (empty($cartContent)) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
-        }
+        $lineItems = [];
 
-        $validated = $request->validated();
+        foreach ($cartContent as $row) {
+            $product = $products->get($row['product_id']);
 
-        // Prevent double-submit (double-click / form resubmission)
-        $cartSignature = md5(json_encode($cartContent).$request->user()?->id);
-        $lastSignature = $request->session()->get('last_order_signature');
-        $lastSignatureAt = $request->session()->get('last_order_signature_at');
+            if (! $product || ! $product->is_active || $product->stock < $row['qty']) {
+                throw new RuntimeException('A product in your cart is no longer available.');
+            }
 
-        if ($lastSignature === $cartSignature && $lastSignatureAt && now()->diffInSeconds($lastSignatureAt) < 30) {
-            $existingOrder = Order::where('order_number', $request->session()->get('last_order_number'))->first();
+            $lineTotal = round((float) $product->price * $row['qty'], 2);
 
-            if ($existingOrder) {
-                return redirect()->route('checkout.success', [
-                    'order' => $existingOrder,
-                    'signature' => $existingOrder->access_token,
+            $orderItem = $order->items()->create([
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'shape' => $row['shape'],
+                'size' => $row['size'],
+                'quantity' => $row['qty'],
+                'price' => $product->price,
+                'line_total' => $lineTotal,
+                'seller_id' => $product->seller_id,
+                'commission_rate' => 0.00,
+                'commission_amount' => 0.00,
+                'seller_earning' => 0.00,
+            ]);
+
+            if ($product->seller_id) {
+                $commissionRate = $product->seller && $product->seller->hasActiveSubscription()
+                    ? 0.00
+                    : self::COMMISSION_RATE;
+
+                $commissionAmount = round($lineTotal * ($commissionRate / 100), 2);
+
+                $orderItem->update([
+                    'commission_rate' => $commissionRate,
+                    'commission_amount' => $commissionAmount,
+                    'seller_earning' => round($lineTotal - $commissionAmount, 2),
+                    'payout_status' => 'pending',
                 ]);
             }
+
+            $lineItems[] = $orderItem;
+
+            $product->decrement('stock', $row['qty']);
         }
 
-        try {
-            $order = DB::transaction(function () use ($validated, $cartContent, $request) {
-                $subtotal = 0;
-                $lineItems = [];
-
-                foreach ($cartContent as $row) {
-                    $product = Product::where('id', $row['product_id'])->lockForUpdate()->first();
-
-                    if (! $product || ! $product->is_active) {
-                        throw ValidationException::withMessages([
-                            'cart' => "\"{$row['name']}\" is no longer available. Please remove it from your cart.",
-                        ]);
-                    }
-
-                    $product->load('seller');
-                    if ($product->seller && ! $product->seller->hasActiveSubscription()) {
-                        throw ValidationException::withMessages([
-                            'cart' => "\"{$row['name']}\" is no longer available because the seller subscription has expired.",
-                        ]);
-                    }
-
-                    if ($product->stock < $row['qty']) {
-                        throw ValidationException::withMessages([
-                            'cart' => "Only {$product->stock} left of \"{$product->name}\" — please update the quantity in your cart.",
-                        ]);
-                    }
-
-                    $currentPrice = (float) $product->price;
-                    $lineTotal = $currentPrice * $row['qty'];
-                    $subtotal += $lineTotal;
-
-                    $lineItems[] = [
-                        'product' => $product,
-                        'name' => $product->name,
-                        'shape' => $row['shape'],
-                        'size' => $row['size'],
-                        'qty' => $row['qty'],
-                        'price' => $currentPrice,
-                        'line_total' => $lineTotal,
-                        'seller_id' => $product->seller_id,
-                        'commission_rate' => 0,
-                        'commission_amount' => 0,
-                        'seller_earning' => $lineTotal,
-                    ];
-
-                    $product->decrement('stock', $row['qty']);
-                }
-
-                $shippingRes = ShippingRate::calculateFee(
-                    $validated['city'],
-                    $validated['area'] ?? null,
-                    $subtotal
-                );
-                $shipping = $shippingRes['fee'];
-
-                $couponCode = data_get($request->session()->get('applied_coupon'), 'code');
-                $coupon = $couponCode ? Coupon::where('code', strtoupper($couponCode))->first() : null;
-                $discountAmount = 0;
-
-                if ($coupon && $coupon->isValid()) {
-                    $discountAmount = min($coupon->getDiscountFor($subtotal), $subtotal);
-                }
-
-                $order = Order::create([
-                    ...$validated,
-                    'user_id' => $request->user()?->id,
-                    'subtotal' => $subtotal,
-                    'shipping' => $shipping,
-                    'discount_amount' => $discountAmount,
-                    'coupon_code' => $coupon?->code,
-                    'total' => max(0, $subtotal + $shipping - $discountAmount),
-                ]);
-
-                if ($coupon) {
-                    $coupon->increment('used_count');
-                }
-
-                foreach ($lineItems as $item) {
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $item['product']->id,
-                        'product_name' => $item['name'],
-                        'shape' => $item['shape'],
-                        'size' => $item['size'],
-                        'quantity' => $item['qty'],
-                        'price' => $item['price'],
-                        'line_total' => $item['line_total'],
-                        'seller_id' => $item['seller_id'],
-                        'commission_rate' => $item['commission_rate'],
-                        'commission_amount' => $item['commission_amount'],
-                        'seller_earning' => $item['seller_earning'],
-                    ]);
-                }
-
-                return $order;
-            });
-        } catch (ValidationException $e) {
-            return redirect()->route('cart.index')->withErrors($e->errors());
+        if ($coupon) {
+            $coupon->increment('used_count');
         }
 
-        Cart::clear();
         $request->session()->forget('applied_coupon');
 
-        $request->session()->put('last_order_signature', $cartSignature);
-        $request->session()->put('last_order_signature_at', now());
-        $request->session()->put('last_order_number', $order->order_number);
-
-        // Order confirmation email — failure here must never break checkout,
-        // so it's caught and logged instead of bubbling up to the customer.
-        try {
-            if ($order->email) {
-                Mail::to($order->email)->send(new OrderConfirmationMail($order));
-            }
-            Mail::to(config('services.admin.notification_email'))->send(new AdminNewOrderMail($order));
-        } catch (\Throwable $e) {
-            Log::warning('Order notification email failed: '.$e->getMessage());
-        }
-
-        return redirect()->route('checkout.success', [
-            'order' => $order,
-            'signature' => $order->access_token,
-        ])->with('success', 'Order placed successfully!');
+        return $lineItems;
     }
 
-    /**
-     * Guests view their confirmation via the unguessable access_token
-     * (?signature=...) generated at order creation. Logged-in customers can
-     * also view it if the order belongs to them (OrderPolicy). Sequential
-     * IDs alone (e.g. /checkout/success/2) are never sufficient.
-     */
-    public function success(Request $request, Order $order)
+    private function resolveCoupon(Request $request, float $subtotal): array
     {
-        $validToken = hash_equals($order->access_token, (string) $request->query('signature'));
-        $isOwner = $request->user() && $order->user_id === $request->user()->id;
+        $couponCode = data_get($request->session()->get('applied_coupon'), 'code');
 
-        if (! $validToken && ! $isOwner) {
-            abort(403, 'You are not authorized to view this order.');
+        if (! $couponCode) {
+            return [null, 0.0];
         }
 
-        $order->load('items');
+        $coupon = Coupon::where('code', strtoupper($couponCode))->first();
 
-        return view('checkout.success', compact('order'));
+        if (! $coupon || ! $coupon->isValid()) {
+            $request->session()->forget('applied_coupon');
+
+            return [null, 0.0];
+        }
+
+        $discount = min($coupon->getDiscountFor($subtotal), $subtotal);
+
+        return [$coupon, $discount];
     }
 }

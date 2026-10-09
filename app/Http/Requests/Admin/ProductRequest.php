@@ -64,6 +64,7 @@ class ProductRequest extends FormRequest
 
                 if (! in_array($type, ['image', 'video'], true)) {
                     $validator->errors()->add('media_files.'.$index, 'Each uploaded file needs a media type.');
+
                     continue;
                 }
 

@@ -14,7 +14,7 @@
     </div>
 @endif
 
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
     <div class="container">
         <div class="alert alert-error" style="margin-top:16px;">
             <i class="fa-solid fa-circle-exclamation"></i>

@@ -18,6 +18,7 @@ class AdminSellerController extends Controller
                 $q->where('status', $status);
             })
             ->latest()->paginate(20)->withQueryString();
+
         return view('admin.marketplace.sellers', compact('sellers'));
     }
 
@@ -25,6 +26,7 @@ class AdminSellerController extends Controller
     {
         $seller->load('products');
         $items = $seller->orderItems()->with('order')->latest()->paginate(20);
+
         return view('admin.marketplace.seller-show', compact('seller', 'items'));
     }
 }
