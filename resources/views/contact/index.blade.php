@@ -54,15 +54,6 @@
             {{-- ---------- Contact info ---------- --}}
             <div>
                 <div class="contact-info-card">
-                    <h5>WhatsApp</h5>
-                    <p style="margin:8px 0 12px;">Chat with us directly for quick questions or sizing help.</p>
-                    <a href="https://wa.me/{{ str_replace(['+', ' '], '', config('services.whatsapp.number')) }}"
-                       class="btn btn-primary btn-sm" target="_blank" rel="noopener">
-                        <i class="fa-brands fa-whatsapp"></i> Message Us
-                    </a>
-                </div>
-
-                <div class="contact-info-card">
                     <h5>Instagram</h5>
                     <p style="margin:8px 0 12px;">Follow along for new drops and behind-the-scenes.</p>
                     <a href="https://instagram.com/{{ config('services.instagram.handle') }}"
@@ -72,11 +63,19 @@
                 </div>
 
                 <div class="contact-info-card">
+                    <h5>WhatsApp</h5>
+                    <p style="margin:8px 0 12px;">Chat with us directly for instant support and sizing guidance.</p>
+                    <a href="https://wa.me/923113925166"
+                       class="btn btn-outline btn-sm" target="_blank" rel="noopener" style="color:#25D366;border-color:#25D366;">
+                        <i class="fa-brands fa-whatsapp"></i> +92 311 3925166
+                    </a>
+                </div>
+
+                <div class="contact-info-card">
                     <h5>Contact Information</h5>
                     <p style="margin:8px 0 4px;"><i class="fa-solid fa-envelope"></i> hello@alishenails.com</p>
-                    <p style="margin:0 0 4px;"><i class="fa-solid fa-phone"></i> {{ config('services.whatsapp.number') }}</p>
                     <p style="margin:0 0 4px;"><i class="fa-solid fa-location-dot"></i> Karachi, Pakistan</p>
-                    <p style="margin:4px 0 0;font-size:0.85rem;color:#7A6E68;"><i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi (24-48 hrs)</p>
+                    <p style="margin:4px 0 0;font-size:0.85rem;color:#7A6E68;"><i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi (48-96 hrs)</p>
                 </div>
             </div>
         </div>

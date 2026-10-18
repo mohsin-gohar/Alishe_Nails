@@ -238,6 +238,7 @@ document.addEventListener('DOMContentLoaded', function () {
         pills.forEach(function (p) { p.classList.remove('is-selected'); });
         pill.classList.add('is-selected');
         if (hiddenInput) hiddenInput.value = pill.dataset.value;
+        updateProductWhatsAppAndSubtotal();
       });
     });
   });
@@ -254,23 +255,66 @@ document.addEventListener('DOMContentLoaded', function () {
         value = btn.dataset.action === 'increase' ? value + 1 : value - 1;
         value = Math.max(min, Math.min(max, value));
         input.value = value;
+        updateProductWhatsAppAndSubtotal();
 
         if (selector.dataset.autoSubmit === 'true') {
           selector.closest('form').requestSubmit();
         }
       });
     });
+
+    input.addEventListener('input', function () {
+      updateProductWhatsAppAndSubtotal();
+    });
   });
+
+  // ---------- Live Product Subtotal & Dynamic WhatsApp URL (thekunuz style) ----------
+  function updateProductWhatsAppAndSubtotal() {
+    var qtyInput = document.querySelector('#product-qty-input');
+    var subtotalEl = document.querySelector('#product-live-subtotal');
+    var waBtn = document.querySelector('#btn-product-whatsapp');
+    if (!qtyInput || !subtotalEl || !waBtn) return;
+
+    var qty = parseInt(qtyInput.value || '1', 10);
+    var unitPrice = parseFloat(subtotalEl.dataset.unitPrice || '0');
+    var total = qty * unitPrice;
+
+    subtotalEl.textContent = 'PKR ' + total.toLocaleString();
+
+    var productName = waBtn.dataset.productName || 'Nail Set';
+    var waBase = waBtn.dataset.waBase || 'https://wa.me/923113925166';
+    var productUrl = waBtn.dataset.productUrl || window.location.href;
+
+    var shapeInput = document.querySelector('input[name="shape"]');
+    var sizeInput = document.querySelector('input[name="size"]');
+    var shapeVal = shapeInput ? shapeInput.value : '';
+    var sizeVal = sizeInput ? sizeInput.value : '';
+
+    var lines = [
+      'Assalam-o-Alaikum! Mujhe Alishe Nails se ye product order karna hai:',
+      '',
+      '*Product:* ' + productName,
+    ];
+    if (shapeVal) lines.push('*Shape & Length:* ' + shapeVal);
+    if (sizeVal) lines.push('*Size:* ' + sizeVal);
+    lines.push('*Quantity:* ' + qty);
+    lines.push('*Total Price:* PKR ' + total.toLocaleString());
+    lines.push('*Link:* ' + productUrl);
+    lines.push('');
+    lines.push('Baraye meharbani availability confirm karein. Shukriya!');
+
+    waBtn.href = waBase + '?text=' + encodeURIComponent(lines.join('\n'));
+  }
+  updateProductWhatsAppAndSubtotal();
 
   // ---------- Payment method selection ----------
   document.querySelectorAll('.payment-option').forEach(function (option) {
     option.addEventListener('click', function () {
-      document.querySelectorAll('.payment-option').forEach(function (o) {
-        o.classList.remove('is-selected');
-      });
-      option.classList.add('is-selected');
-      option.querySelector('input[type=radio]').checked = true;
-      updateTransactionReferenceField();
+      var radio = option.querySelector('input[type="radio"]');
+      if (radio && !radio.checked) {
+        radio.checked = true;
+        updateCheckoutPaymentMethods();
+      }
     });
   });
 
@@ -279,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var checkoutArea = document.querySelector('#area');
   var shippingAmount = document.querySelector('#checkout-shipping-amount');
   var totalAmount = document.querySelector('#checkout-total-amount');
+  var submitBtnTotal = document.querySelector('#checkout-btn-total');
 
   function updateCheckoutPaymentMethods() {
     var selectedPayment = document.querySelector('input[name="payment_method"]:checked');
@@ -291,26 +336,25 @@ document.addEventListener('DOMContentLoaded', function () {
       var radio = opt.querySelector('input[type="radio"]');
       if (radio && radio.checked) {
         opt.classList.add('is-selected');
-        opt.style.borderColor = 'var(--rose)';
       } else {
         opt.classList.remove('is-selected');
-        opt.style.borderColor = '#eee';
       }
     });
 
     // Toggle wallet detail boxes
     var jazzBox = document.querySelector('[data-wallet-box="jazzcash"]');
-    var easyBox = document.querySelector('[data-wallet-box="easypaisa"]');
+    var sadaBox = document.querySelector('[data-wallet-box="sadapay"]') || document.querySelector('[data-wallet-box="easypaisa"]');
     var refInput = document.querySelector('#transaction_reference');
 
-    if (jazzBox) jazzBox.style.display = (val === 'jazzcash' || val === 'jazzcash_easypaisa') ? 'block' : 'none';
-    if (easyBox) easyBox.style.display = (val === 'easypaisa') ? 'block' : 'none';
+    if (jazzBox) jazzBox.style.display = (val === 'jazzcash' || val === 'jazzcash_easypaisa' || val === 'jazzcash_sadapay') ? 'block' : 'none';
+    if (sadaBox) sadaBox.style.display = (val === 'sadapay' || val === 'easypaisa') ? 'block' : 'none';
 
     if (refInput) {
+      refInput.required = true;
       if (val === 'jazzcash') {
-        refInput.placeholder = 'e.g. 10492840284 (From 8558 SMS)';
-      } else if (val === 'easypaisa') {
-        refInput.placeholder = 'e.g. 10492840284 (From 3737 SMS)';
+        refInput.placeholder = 'e.g. 10492840284 (From 8558 SMS / JazzCash App)';
+      } else if (val === 'sadapay' || val === 'easypaisa') {
+        refInput.placeholder = 'e.g. TID / Reference from SadaPay receipt';
       }
     }
   }
@@ -328,8 +372,12 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(function (response) { return response.json(); })
       .then(function (data) {
-        shippingAmount.textContent = data.shipping == 0 ? 'Free' : 'PKR ' + Number(data.shipping).toLocaleString();
+        var fee = Number(data.shipping);
+        shippingAmount.textContent = fee <= 0 ? 'Free Delivery' : 'PKR ' + fee.toLocaleString();
         totalAmount.textContent = 'PKR ' + Number(data.total).toLocaleString();
+        if (submitBtnTotal) {
+          submitBtnTotal.textContent = 'PKR ' + Number(data.total).toLocaleString();
+        }
       })
       .catch(function () {
         // Keep the server-rendered amounts if the live estimate is unavailable.
@@ -346,6 +394,16 @@ document.addEventListener('DOMContentLoaded', function () {
     radio.addEventListener('change', updateCheckoutPaymentMethods);
   });
   updateCheckoutPaymentMethods();
+
+  // Prevent double submission on checkout form
+  var checkoutForm = document.querySelector('#checkout-form');
+  var checkoutSubmitBtn = document.querySelector('#btn-place-order');
+  if (checkoutForm && checkoutSubmitBtn) {
+    checkoutForm.addEventListener('submit', function () {
+      checkoutSubmitBtn.disabled = true;
+      checkoutSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing Order...';
+    });
+  }
 
   // Copy number button handler
   document.querySelectorAll('.btn-copy-number').forEach(function (btn) {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SellerSubscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AdminSubscriptionController extends Controller
@@ -61,12 +62,18 @@ class AdminSubscriptionController extends Controller
             $subscription->seller->products()->update(['is_active' => true]);
         });
 
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
+
         return back()->with('success', 'Subscription activated and seller products made visible.');
     }
 
     public function reject(Request $request, SellerSubscription $subscription)
     {
         $subscription->update(['status' => 'rejected', 'reviewed_at' => now(), 'reviewed_by' => $request->user('admin')->id]);
+
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
 
         return back()->with('success', 'Subscription payment rejected.');
     }

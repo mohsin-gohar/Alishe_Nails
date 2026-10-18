@@ -39,7 +39,7 @@ return [
     ],
 
     'whatsapp' => [
-        'number' => env('WHATSAPP_NUMBER', '+92 3412126680'),
+        'number' => env('WHATSAPP_NUMBER', '+92 3113925166'),
     ],
 
     'payment' => [
@@ -47,10 +47,14 @@ return [
         'bank_account_title' => env('BANK_ACCOUNT_TITLE', 'Alishe Nails'),
         'bank_account_number' => env('BANK_ACCOUNT_NUMBER', '01020304050607'),
         'bank_iban' => env('BANK_IBAN', 'PK36MEZN0001020304050607'),
-        'jazzcash_account_title' => env('JAZZCASH_ACCOUNT_TITLE', 'Alishe Nails'),
+        'jazzcash_account_title' => env('JAZZCASH_ACCOUNT_TITLE', 'Alishba Naz'),
         'jazzcash_number' => env('JAZZCASH_NUMBER', '03412126680'),
-        'easypaisa_account_title' => env('EASYPAISA_ACCOUNT_TITLE', 'Alishe Nails'),
-        'easypaisa_number' => env('EASYPAISA_NUMBER', '03412126680'),
+        'jazzcash_iban' => env('JAZZCASH_IBAN', 'PK76JCMA1908923412126680'),
+        'sadapay_account_title' => env('SADAPAY_ACCOUNT_TITLE', 'Alishba Naz'),
+        'sadapay_number' => env('SADAPAY_NUMBER', '03113925166'),
+        'sadapay_iban' => env('SADAPAY_IBAN', 'PK46SADA0000003113925166'),
+        'easypaisa_account_title' => env('EASYPAISA_ACCOUNT_TITLE', 'Alishba Naz'),
+        'easypaisa_number' => env('EASYPAISA_NUMBER', '03113925166'),
     ],
 
     // NOTE: admin authentication now uses real hashed-password Admin

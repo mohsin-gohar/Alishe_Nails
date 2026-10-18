@@ -4,9 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 
 class SellerSubscription extends Model
 {
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+
+        static::deleted(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+    }
     protected $fillable = [
         'seller_id', 'subscription_plan_id', 'price', 'duration_days', 'status',
         'payment_method', 'transaction_reference', 'payment_notes', 'starts_at',

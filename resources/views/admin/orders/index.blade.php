@@ -22,37 +22,39 @@
             <button type="submit" class="btn btn-outline btn-sm">Filter</button>
         </form>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Date</th>
-                    <th>Payment</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($orders as $order)
+        <div class="table-responsive" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td><a href="{{ route('admin.orders.show', $order) }}">#{{ $order->order_number }}</a></td>
-                        <td>
-                            <span class="table-avatar">{{ strtoupper(substr($order->first_name, 0, 1).substr($order->last_name, 0, 1)) }}</span>
-                            {{ $order->first_name }} {{ $order->last_name }}
-                        </td>
-                        <td>{{ $order->created_at->format('M j, Y') }}</td>
-                        <td style="text-transform:capitalize;">{{ str_replace('_', ' ', $order->payment_method) }}</td>
-                        <td>PKR {{ number_format($order->total, 0) }}</td>
-                        <td><span class="status-pill status-{{ $order->status }}">{{ ucwords(str_replace('_', ' ', $order->status)) }}</span></td>
-                        <td><a href="{{ route('admin.orders.show', $order) }}" class="btn btn-outline btn-sm">View</a></td>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th></th>
                     </tr>
-                @empty
-                    <tr><td colspan="7" style="text-align:center;padding:30px;">No orders match your filters.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($orders as $order)
+                        <tr>
+                            <td><a href="{{ route('admin.orders.show', $order) }}">#{{ $order->order_number }}</a></td>
+                            <td>
+                                <span class="table-avatar">{{ strtoupper(substr($order->first_name, 0, 1).substr($order->last_name, 0, 1)) }}</span>
+                                {{ $order->first_name }} {{ $order->last_name }}
+                            </td>
+                            <td>{{ $order->created_at->format('M j, Y') }}</td>
+                            <td style="text-transform:capitalize;">{{ str_replace('_', ' ', $order->payment_method) }}</td>
+                            <td>PKR {{ number_format($order->total, 0) }}</td>
+                            <td><span class="status-pill status-{{ $order->status }}">{{ ucwords(str_replace('_', ' ', $order->status)) }}</span></td>
+                            <td><a href="{{ route('admin.orders.show', $order) }}" class="btn btn-outline btn-sm">View</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" style="text-align:center;padding:30px;">No orders match your filters.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         <div class="pagination" style="justify-content:flex-start;margin-top:20px;">
             {{ $orders->links() }}

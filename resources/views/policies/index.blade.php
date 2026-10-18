@@ -15,10 +15,9 @@
                 Alishe Nails currently operates and delivers exclusively within the city of Karachi.
             </p>
             <ul style="line-height:1.8;padding-left:20px;color:var(--espresso);margin-top:12px;">
-                <li><strong>Delivery Timeline:</strong> Orders are hand-prepared and dispatched for doorstep delivery within 24 to 48 hours across Karachi.</li>
-                <li><strong>Delivery Rates:</strong> Flat delivery charges range between PKR 150 to PKR 250 depending on your Karachi area/zone.</li>
-                <li><strong>Free Shipping:</strong> Enjoy <em>Free Delivery</em> on all orders over PKR 5,000.</li>
-                <li><strong>Payment Options:</strong> 100% Secure Mobile Wallet transfers via <strong>JazzCash</strong> and <strong>EasyPaisa</strong>.</li>
+                <li><strong>Delivery Timeline:</strong> Orders are hand-prepared and dispatched for doorstep delivery within 48 to 96 hours across Karachi.</li>
+                <li><strong>Delivery Rates:</strong> Delivery charges are coordinated and confirmed directly with you upon order confirmation.</li>
+                <li><strong>Payment Options:</strong> 100% Advance online payment via <strong>JazzCash</strong> and <strong>SadaPay</strong>. Cash on Delivery (COD) is not accepted as each set is custom handcrafted to individual measurements.</li>
             </ul>
         </section>
 
@@ -51,7 +50,7 @@
             <p>We collect the information you provide when you order or create an account, including your name, email address, phone number, shipping address, and order history. We use it to fulfil orders, provide account access, respond to customer support requests, and send marketing emails only when you subscribe to our newsletter.</p>
 
             <h3>Payments</h3>
-            <p>We accept mobile wallet transfers via JazzCash and EasyPaisa. Orders are confirmed and dispatched upon verifying your Transaction ID (TID). This site does not collect or store debit/credit card details.</p>
+            <p>We accept 100% advance online payments via <strong>JazzCash</strong> and <strong>SadaPay</strong>. Orders enter custom production and are dispatched upon verifying your Transaction ID (TID) and Instagram DM confirmation on <strong>@alishe_nails</strong>. Cash on Delivery (COD) is not accepted. This site does not collect or store debit/credit card details.</p>
 
             <h3>Cookies and sessions</h3>
             <p>The site uses browser sessions to keep your cart contents and login session available while you browse and check out. These sessions support normal site functionality; this policy does not claim tracking or advertising cookies that the site does not use.</p>

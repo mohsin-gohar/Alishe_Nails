@@ -62,7 +62,8 @@ class CheckoutController extends Controller
         $subtotal = Cart::subtotal();
 
         $res = ShippingRate::calculateFee($city, $area, $subtotal);
-        $total = $subtotal + $res['fee'];
+        [$coupon, $discount] = $this->resolveCoupon($request, $subtotal);
+        $total = max(0, $subtotal + $res['fee'] - $discount);
 
         return response()->json([
             'subtotal' => round($subtotal, 2),
@@ -70,6 +71,7 @@ class CheckoutController extends Controller
             'standard_fee' => round($res['standard_fee'], 2),
             'threshold' => round($res['threshold'], 2),
             'is_free' => $res['is_free'],
+            'discount' => round($discount, 2),
             'total' => round($total, 2),
             'zone_label' => $res['zone_label'],
         ]);
@@ -97,17 +99,22 @@ class CheckoutController extends Controller
                 [$coupon, $discount] = $this->resolveCoupon($request, $subtotal);
                 $total = max(0, $subtotal + $shipping - $discount);
 
-                $ref = $request->validated('transaction_reference');
+                $method = $request->input('payment_method') ?: 'online_payment';
+                $ref = $request->input('transaction_reference') ?: 'Online Payment (Pending Contact)';
+                $insta = $request->input('instagram_username');
                 $sender = $request->input('sender_number');
                 $notes = $request->input('payment_notes');
                 $extra = [];
+                if ($insta) {
+                    $extra[] = "Insta: {$insta}";
+                }
                 if ($sender) {
                     $extra[] = "Sender: {$sender}";
                 }
                 if ($notes) {
                     $extra[] = "Note: {$notes}";
                 }
-                $finalRef = $ref ? ($ref.(! empty($extra) ? ' ('.implode(' | ', $extra).')' : '')) : null;
+                $finalRef = $ref.(! empty($extra) ? ' ('.implode(' | ', $extra).')' : '');
 
                 $order = Order::create([
                     'user_id' => $request->user()?->id,
@@ -119,7 +126,7 @@ class CheckoutController extends Controller
                     'city' => $request->validated('city'),
                     'area' => $request->validated('area'),
                     'postal_code' => $request->validated('postal_code'),
-                    'payment_method' => $request->validated('payment_method'),
+                    'payment_method' => $method,
                     'transaction_reference' => $finalRef,
                     'subtotal' => $subtotal,
                     'shipping' => $shipping,

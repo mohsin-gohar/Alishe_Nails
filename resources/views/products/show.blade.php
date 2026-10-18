@@ -136,7 +136,7 @@
                     <div class="add-to-cart-row">
                         <div class="qty-selector" data-qty-selector>
                             <button type="button" data-action="decrease" aria-label="Decrease quantity">&minus;</button>
-                            <input type="number" name="qty" value="1" min="1" max="{{ $product->stock }}" aria-label="Quantity">
+                            <input type="number" id="product-qty-input" name="qty" value="1" min="1" max="{{ $product->stock }}" aria-label="Quantity">
                             <button type="button" data-action="increase" aria-label="Increase quantity">&plus;</button>
                         </div>
 
@@ -145,10 +145,73 @@
                         </button>
                     </div>
 
+                    <div class="product-live-subtotal-box">
+                        <span class="subtotal-label"><i class="fa-solid fa-calculator" style="color:var(--rose);margin-right:6px;"></i> Live subtotal:</span>
+                        <span class="subtotal-amount" id="product-live-subtotal" data-unit-price="{{ $product->price }}">
+                            PKR {{ number_format($product->price, 0) }}
+                        </span>
+                    </div>
+
                     <div style="margin-top:10px;">
                         <button type="submit" name="buy_now" value="1" class="btn btn-primary btn-block">
                             <i class="fa-solid fa-bolt"></i> Buy Now
                         </button>
+                    </div>
+
+                    @php
+                        $waRaw = config('services.whatsapp.number', '923113925166');
+                        $waDigits = preg_replace('/[^0-9]/', '', $waRaw);
+                        if (str_starts_with($waDigits, '0')) {
+                            $waDigits = '92'.substr($waDigits, 1);
+                        }
+                        $initialWaMsg = "Assalam-o-Alaikum! Mujhe Alishe Nails se ye product order karna hai:\n\n*Product:* {$product->name}\n*Price:* PKR ".number_format($product->price, 0)."\n*Quantity:* 1\n*Link:* ".url()->current()."\n\nBaraye meharbani availability confirm karein. Shukriya!";
+                    @endphp
+
+                    <a href="https://ig.me/m/alishe_nails" target="_blank" rel="noopener" class="btn-instagram-product">
+                        <i class="fa-brands fa-instagram"></i>
+                        <span>Order / Inquire on Instagram (@alishe_nails)</span>
+                    </a>
+
+                    <a href="https://wa.me/{{ $waDigits }}?text={{ urlencode($initialWaMsg) }}"
+                       target="_blank" rel="noopener" id="btn-product-whatsapp"
+                       class="btn-whatsapp-product"
+                       data-product-name="{{ $product->name }}"
+                       data-unit-price="{{ $product->price }}"
+                       data-product-url="{{ url()->current() }}"
+                       data-wa-base="https://wa.me/{{ $waDigits }}">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span>Order on WhatsApp</span>
+                    </a>
+
+                    <div class="product-trust-grid">
+                        <div class="product-trust-item">
+                            <i class="fa-solid fa-truck-fast"></i>
+                            <div>
+                                <strong>Karachi Delivery</strong>
+                                <small>48–96 hrs doorstep</small>
+                            </div>
+                        </div>
+                        <div class="product-trust-item">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <div>
+                                <strong>Secure Payment</strong>
+                                <small>SadaPay &amp; JazzCash</small>
+                            </div>
+                        </div>
+                        <div class="product-trust-item">
+                            <i class="fa-solid fa-hand-sparkles"></i>
+                            <div>
+                                <strong>100% Handcrafted</strong>
+                                <small>Salon gel finish quality</small>
+                            </div>
+                        </div>
+                        <div class="product-trust-item">
+                            <i class="fa-brands fa-instagram" style="color:#C13584;"></i>
+                            <div>
+                                <strong>Instagram Support</strong>
+                                <small>DM @alishe_nails for sizing</small>
+                            </div>
+                        </div>
                     </div>
                 </form>
                 @endif
@@ -179,9 +242,9 @@
                 <details class="accordion-item">
                     <summary>Karachi Delivery &amp; Policies <i class="fa-solid fa-chevron-down chevron"></i></summary>
                     <ul>
-                        <li><i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (24&ndash;48 hrs doorstep delivery).</li>
-                        <li><i class="fa-solid fa-check"></i> Flat delivery rate PKR 150&ndash;250; Free on orders over PKR 5,000.</li>
-                        <li><i class="fa-solid fa-wallet"></i> Instant Mobile Wallet payments via <strong>JazzCash</strong> &amp; <strong>EasyPaisa</strong>.</li>
+                        <li><i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (48&ndash;96 hrs doorstep delivery).</li>
+                        <li><i class="fa-solid fa-check"></i> Delivery charges are coordinated directly upon order confirmation.</li>
+                        <li><i class="fa-solid fa-wallet"></i> 100% Advance Payment via <strong>JazzCash</strong> &amp; <strong>SadaPay</strong> (No COD).</li>
                         <li><i class="fa-solid fa-ban"></i> Orders are non-returnable due to custom handcrafted hygiene standards.</li>
                         <li><a href="{{ route('policies.index') }}" style="text-decoration:underline;">Read our Karachi Shipping &amp; Privacy Policy</a></li>
                     </ul>
@@ -276,5 +339,38 @@
             <div class="size-guide-note"><i class="fa-solid fa-ruler"></i> No ruler? Place clear tape over the nail, mark both edges, then measure the tape against a ruler.</div>
         </div>
     </div>
+
+    @php
+        $schemaData = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'Product',
+            'name' => $product->name,
+            'image' => collect($product->media_urls)->pluck('url')->all(),
+            'description' => $product->short_description ?: $product->name,
+            'sku' => $product->sku,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => 'Alishe Nails',
+            ],
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => route('products.show', $product),
+                'priceCurrency' => 'PKR',
+                'price' => (string) $product->price,
+                'availability' => $product->isInStock() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'itemCondition' => 'https://schema.org/NewCondition',
+            ],
+        ];
+        if ($product->reviews_count > 0) {
+            $schemaData['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) $product->average_rating,
+                'reviewCount' => (string) $product->reviews_count,
+            ];
+        }
+    @endphp
+    <script type="application/ld+json">
+    {!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    </script>
 
 @endsection

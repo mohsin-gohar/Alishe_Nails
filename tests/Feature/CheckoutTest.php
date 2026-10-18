@@ -39,7 +39,9 @@ class CheckoutTest extends TestCase
             'phone' => '+92 300 1234567',
             'address' => '123 Blossom Lane',
             'city' => 'Karachi',
-            'payment_method' => 'cod',
+            'payment_method' => 'jazzcash',
+            'transaction_reference' => 'TID-TEST-123',
+            'instagram_username' => '@sana_nails',
         ];
     }
 
@@ -111,7 +113,7 @@ class CheckoutTest extends TestCase
 
         $this->assertSame($expected, (float) $order->shipping);
         $this->assertSame('54660', $order->postal_code);
-        $this->assertSame('BANK-REF-123', $order->transaction_reference);
+        $this->assertStringContainsString('BANK-REF-123', $order->transaction_reference);
     }
 
     public function test_unknown_city_uses_the_other_cities_shipping_rate(): void
@@ -130,17 +132,18 @@ class CheckoutTest extends TestCase
         $this->assertSame('Other Cities', $shipping['zone_label']);
     }
 
-    public function test_non_cod_payment_requires_a_transaction_reference(): void
+    public function test_checkout_can_be_completed_without_transaction_reference(): void
     {
         $product = $this->makeProduct();
         $this->post(route('cart.add', $product), ['qty' => 1]);
 
-        $response = $this->post(route('checkout.store'), array_merge($this->checkoutPayload(), [
-            'payment_method' => 'bank_transfer',
-        ]));
+        $payload = $this->checkoutPayload();
+        unset($payload['transaction_reference']);
 
-        $response->assertSessionHasErrors('transaction_reference');
-        $this->assertDatabaseMissing('orders', ['email' => 'sana@example.com']);
+        $response = $this->post(route('checkout.store'), $payload);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('orders', ['email' => 'sana@example.com']);
     }
 
     public function test_guest_order_confirmation_requires_the_correct_access_token(): void
@@ -213,19 +216,23 @@ class CheckoutTest extends TestCase
             ]);
     }
 
-    public function test_checkout_with_jazzcash_requires_transaction_reference(): void
+    public function test_checkout_with_online_payment_defaults_reference_when_omitted(): void
     {
         $product = $this->makeProduct(['price' => 1500]);
         $this->post(route('cart.add', $product), ['qty' => 1]);
 
         $payload = array_merge($this->checkoutPayload(), [
-            'payment_method' => 'jazzcash',
+            'payment_method' => 'online_payment',
             'transaction_reference' => null,
         ]);
 
         $response = $this->post(route('checkout.store'), $payload);
 
-        $response->assertSessionHasErrors('transaction_reference');
+        $response->assertRedirect();
+        $order = Order::where('email', 'sana@example.com')->first();
+        $this->assertNotNull($order);
+        $this->assertSame('online_payment', $order->payment_method);
+        $this->assertStringContainsString('Online Payment', $order->transaction_reference);
     }
 
     public function test_checkout_with_easypaisa_creates_order_with_reference_and_sender_info(): void
@@ -248,5 +255,44 @@ class CheckoutTest extends TestCase
         $this->assertSame('easypaisa', $order->payment_method);
         $this->assertStringContainsString('EP-TID-998877', $order->transaction_reference);
         $this->assertStringContainsString('Sender: 03412126680', $order->transaction_reference);
+    }
+
+    public function test_checkout_with_sadapay_creates_order_with_reference_and_sender_info(): void
+    {
+        $product = $this->makeProduct(['price' => 1500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $payload = array_merge($this->checkoutPayload(), [
+            'payment_method' => 'sadapay',
+            'transaction_reference' => 'SADA-TID-554433',
+            'sender_number' => '03113925166',
+            'payment_notes' => 'Sent via SadaPay',
+        ]);
+
+        $response = $this->post(route('checkout.store'), $payload);
+
+        $response->assertRedirect();
+        $order = Order::where('email', 'sana@example.com')->first();
+        $this->assertNotNull($order);
+        $this->assertSame('sadapay', $order->payment_method);
+        $this->assertStringContainsString('SADA-TID-554433', $order->transaction_reference);
+        $this->assertStringContainsString('Sender: 03113925166', $order->transaction_reference);
+    }
+
+    public function test_checkout_with_cod_is_rejected_because_advance_online_payment_is_required(): void
+    {
+        $product = $this->makeProduct(['price' => 1800]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $payload = array_merge($this->checkoutPayload(), [
+            'payment_method' => 'cod',
+            'transaction_reference' => null,
+            'instagram_username' => '@alishba_fan',
+        ]);
+
+        $response = $this->post(route('checkout.store'), $payload);
+
+        $response->assertSessionHasErrors('payment_method');
+        $this->assertDatabaseMissing('orders', ['email' => 'sana@example.com']);
     }
 }

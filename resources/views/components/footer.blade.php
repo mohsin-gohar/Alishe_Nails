@@ -6,10 +6,14 @@
                 Alishe
             </a>
             <p>Exquisite handmade press-on nails crafted for elegance and ease. Delivering exclusively across Karachi.</p>
-            <div class="footer-social">
+            <div class="footer-social" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
                 <a href="https://instagram.com/{{ config('services.instagram.handle', 'alishe_nails') }}" target="_blank" rel="noopener">
                     <i class="fa-brands fa-instagram"></i>
                     {{ '@'.config('services.instagram.handle', 'alishe_nails') }}
+                </a>
+                <a href="https://wa.me/923113925166" target="_blank" rel="noopener">
+                    <i class="fa-brands fa-whatsapp" style="color:#25D366;"></i>
+                    +92 311 3925166
                 </a>
             </div>
         </div>
@@ -28,7 +32,7 @@
             <h5>Help</h5>
             <ul>
                 <li><a href="{{ route('contact.index') }}">FAQs</a></li>
-                <li><a href="{{ route('policies.index') }}">Shipping &amp; Returns</a></li>
+                <li><a href="{{ route('policies.index') }}">Shipping &amp; Returns (No Returns)</a></li>
                 <li><a href="{{ route('how-to-apply.index') }}">Sizing Guide</a></li>
                 <li><a href="{{ route('contact.index') }}">Order Help</a></li>
             </ul>

@@ -21,6 +21,7 @@
 
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     @stack('styles')
+    @stack('head')
 </head>
 @php
     $headerImages = \Illuminate\Support\Facades\Cache::remember('site_header_images_urls', 3600, function () {
@@ -50,7 +51,22 @@
 
     <x-footer />
 
-    <a href="https://instagram.com/{{ config('services.instagram.handle') }}"
+
+
+    @php
+        $globalWaRaw = config('services.whatsapp.number', '923113925166');
+        $globalWaDigits = preg_replace('/[^0-9]/', '', $globalWaRaw);
+        if (str_starts_with($globalWaDigits, '0')) {
+            $globalWaDigits = '92'.substr($globalWaDigits, 1);
+        }
+    @endphp
+
+    <a href="https://wa.me/{{ $globalWaDigits }}?text={{ urlencode('Assalam-o-Alaikum! Mujhe Alishe Nails se rabta karna hai.') }}"
+       class="floating-whatsapp" target="_blank" rel="noopener" aria-label="Chat on WhatsApp" title="Chat with us on WhatsApp">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <a href="https://instagram.com/{{ config('services.instagram.handle', 'alishe_nails') }}"
        class="floating-instagram" target="_blank" rel="noopener" aria-label="Follow Alishe Nails on Instagram" title="Follow on Instagram">
         <i class="fa-brands fa-instagram"></i>
     </a>

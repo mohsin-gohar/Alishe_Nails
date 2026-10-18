@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendOrderEmails implements ShouldQueue
@@ -31,5 +32,10 @@ class SendOrderEmails implements ShouldQueue
         }
 
         Mail::to(config('services.admin.notification_email'))->send(new AdminNewOrderMail($this->order));
+    }
+
+    public function failed(?\Throwable $exception): void
+    {
+        Log::critical("SendOrderEmails permanently failed for Order #{$this->order->order_number}: ".($exception?->getMessage() ?? 'Unknown error'));
     }
 }

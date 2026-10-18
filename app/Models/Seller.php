@@ -6,10 +6,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 
 class Seller extends Authenticatable
 {
     use Notifiable;
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+
+        static::deleted(function () {
+            Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('shop_sidebar_facets');
+        });
+    }
 
     protected $fillable = [
         'name', 'email', 'instagram_handle', 'phone', 'product_details', 'password', 'status', 'approved_at',

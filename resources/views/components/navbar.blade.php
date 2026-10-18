@@ -1,5 +1,5 @@
 <div class="announcement-bar">
-    <i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi &middot; Express Doorstep Delivery (24&ndash;48 hrs) &middot; Free on orders over PKR 5,000
+    <i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi &middot; Express Doorstep Delivery (48-96 hrs) &middot; Handcrafted with Love
 </div>
 
 <header class="navbar" data-navbar>

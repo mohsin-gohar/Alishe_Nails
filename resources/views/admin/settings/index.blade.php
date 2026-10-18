@@ -34,8 +34,8 @@
                 <input type="text" value="{{ config('services.payment.jazzcash_account_title') }} &middot; {{ config('services.payment.jazzcash_number') }}" disabled>
             </div>
             <div class="form-field">
-                <label>EasyPaisa Account</label>
-                <input type="text" value="{{ config('services.payment.easypaisa_account_title') }} &middot; {{ config('services.payment.easypaisa_number') }}" disabled>
+                <label>SadaPay Account</label>
+                <input type="text" value="{{ config('services.payment.sadapay_account_title') }} &middot; {{ config('services.payment.sadapay_number') }}" disabled>
             </div>
         </div>
 

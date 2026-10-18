@@ -9,7 +9,7 @@ class ProductController extends Controller
 {
     public function show(Request $request, Product $product)
     {
-        if (! $product->is_active || ($product->seller && ! $product->seller->hasActiveSubscription())) {
+        if (! Product::active()->where('id', $product->id)->exists()) {
             abort(404);
         }
 

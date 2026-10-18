@@ -59,9 +59,9 @@ class ShippingRate extends Model
         $standardFee = $rate ? (float) $rate->delivery_fee : 250.00;
         $threshold = ($rate && $rate->free_shipping_threshold !== null)
             ? (float) $rate->free_shipping_threshold
-            : 5000.00;
+            : null;
 
-        $isFree = $subtotal > 0 && $subtotal >= $threshold;
+        $isFree = $threshold !== null && $subtotal > 0 && $subtotal >= $threshold;
         $finalFee = $isFree ? 0.00 : $standardFee;
 
         return [

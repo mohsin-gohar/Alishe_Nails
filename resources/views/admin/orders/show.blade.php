@@ -58,7 +58,10 @@
                     <p style="margin:6px 0 0;font-size:.85rem;"><i class="fa-solid fa-envelope-open-text"></i> Postal Code: {{ $order->postal_code }}</p>
                 @endif
                 @if ($order->transaction_reference)
-                    <p style="margin:6px 0 0;font-size:.85rem;"><i class="fa-solid fa-receipt"></i> Transaction Reference: {{ $order->transaction_reference }}</p>
+                    <div style="margin-top:10px;padding:8px 12px;background:#FAF5F2;border-left:3px solid var(--rose);border-radius:4px;font-size:.85rem;">
+                        <strong><i class="fa-solid fa-receipt" style="color:var(--rose);"></i> Verification &amp; Instagram:</strong>
+                        <div style="margin-top:4px;font-family:monospace;word-break:break-word;font-weight:600;color:var(--espresso);">{{ $order->transaction_reference }}</div>
+                    </div>
                 @endif
             </div>
 

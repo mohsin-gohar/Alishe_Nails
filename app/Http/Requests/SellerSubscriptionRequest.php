@@ -15,7 +15,7 @@ class SellerSubscriptionRequest extends FormRequest
     {
         return [
             'subscription_plan_id' => ['required', 'exists:subscription_plans,id'],
-            'payment_method' => ['required', 'in:bank_transfer,jazzcash_easypaisa'],
+            'payment_method' => ['required', 'in:bank_transfer,jazzcash_sadapay,jazzcash_easypaisa'],
             'transaction_reference' => ['required', 'string', 'max:150'],
             'payment_notes' => ['nullable', 'string', 'max:1000'],
         ];

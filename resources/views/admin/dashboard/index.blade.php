@@ -154,7 +154,9 @@
                 </div>
             @endif
 
-            @php($pendingOrders = \App\Models\Order::where('status', 'pending')->count())
+            @php
+                $pendingOrders = \App\Models\Order::where('status', 'pending')->count();
+            @endphp
             @if ($pendingOrders > 0)
                 <div class="task-item">
                     <div class="task-item__icon"><i class="fa-solid fa-truck"></i></div>

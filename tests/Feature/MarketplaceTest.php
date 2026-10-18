@@ -65,7 +65,7 @@ class MarketplaceTest extends TestCase
         return [
             'first_name' => 'Sana', 'last_name' => 'Malik', 'email' => 'sana@example.com',
             'phone' => '+92 300 1234567', 'address' => '123 Blossom Lane', 'city' => 'Karachi',
-            'payment_method' => 'cod',
+            'payment_method' => 'jazzcash', 'transaction_reference' => 'TID-TEST-123',
         ];
     }
 

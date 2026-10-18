@@ -4,8 +4,10 @@
 @endphp
 <div class="product-card">
     <div class="product-card__image">
-        <a href="{{ route('products.show', $product) }}" class="product-card__image-link" aria-label="View {{ $product->name }}">
-            @php($cover = $product->media_urls[0] ?? null)
+        <a href="{{ route('products.show', $product) }}" aria-label="View {{ $product->name }}">
+            @php
+                $cover = $product->media_urls[0] ?? null;
+            @endphp
             @if ($cover)
                 @if ($cover['type'] === 'video')
                     <video src="{{ $cover['url'] }}" muted loop playsinline controls preload="metadata"></video>
@@ -65,7 +67,7 @@
             @else
                 <form action="{{ route('cart.add', $product) }}" method="POST" style="display:inline;">
                     @csrf
-                    <button type="submit" class="btn btn-primary btn-sm" title="Add to Cart">
+                    <button type="submit" class="btn btn-primary btn-sm" title="Add to Cart" aria-label="Add {{ $product->name }} to Cart">
                         <i class="fa-solid fa-cart-shopping"></i>
                     </button>
                 </form>

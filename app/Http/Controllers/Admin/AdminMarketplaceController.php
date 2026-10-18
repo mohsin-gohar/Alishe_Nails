@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Seller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AdminMarketplaceController extends Controller
@@ -18,12 +19,18 @@ class AdminMarketplaceController extends Controller
     {
         $seller->update(['status' => 'approved', 'approved_at' => now()]);
 
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
+
         return back()->with('success', $seller->name.' is now an approved seller.');
     }
 
     public function reject(Seller $seller)
     {
         $seller->update(['status' => 'rejected']);
+
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
 
         return back()->with('success', $seller->name.' application was rejected.');
     }

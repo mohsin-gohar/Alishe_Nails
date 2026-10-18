@@ -1,0 +1,275 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: 
+    - text: Exclusively Delivering Across Karachi · Express Doorstep Delivery (48-96 hrs) · Handcrafted with Love
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link [ref=e6] [cursor=pointer]:
+        - /url: http://127.0.0.1:8080
+        - img "Alishe Nails Logo" [ref=e7]
+        - text: Alishe Nails
+      - navigation "Primary" [ref=e8]:
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Home" [ref=e11] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080
+          - listitem [ref=e12]:
+            - link "Shop" [ref=e13] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/shop
+          - listitem [ref=e14]:
+            - link "About Us" [ref=e15] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/about
+          - listitem [ref=e16]:
+            - link "How to Apply" [ref=e17] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/how-to-apply
+          - listitem [ref=e18]:
+            - link "Policies" [ref=e19] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/policies
+          - listitem [ref=e20]:
+            - link "Contact" [ref=e21] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/contact
+      - generic [ref=e22]:
+        - button "Search" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 
+        - link "Cart" [ref=e25] [cursor=pointer]:
+          - /url: http://127.0.0.1:8080/cart
+          - generic [ref=e26]: 
+          - generic [ref=e27]: "0"
+        - link "Login" [ref=e28] [cursor=pointer]:
+          - /url: http://127.0.0.1:8080/login
+          - generic [ref=e29]: 
+        - text: 
+    - text:  
+  - main [ref=e30]:
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - heading "Timeless Nails, Made for You" [level=1] [ref=e34]: Timeless Nails,Made for You
+        - paragraph [ref=e35]: Luxury Handmade Press-On Nails · Delivered Exclusively Across Karachi
+        - link "Shop Now" [ref=e36] [cursor=pointer]:
+          - /url: http://127.0.0.1:8080/shop
+      - generic [ref=e37]: Your browser does not support the video tag.
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: 
+        - text: Karachi Express (48-96h)
+      - generic [ref=e43]:
+        - generic [ref=e44]: 
+        - text: JazzCash & SadaPay
+      - generic [ref=e45]:
+        - generic [ref=e46]: 
+        - text: Handmade in Karachi
+      - generic [ref=e47]:
+        - generic [ref=e48]: 
+        - text: Salon Quality & Reusable
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - generic [ref=e51]: Shop Our Collection
+        - paragraph [ref=e52]: Find your perfect set
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - link [ref=e55] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=everyday-elegance
+            - img "Everyday Elegance" [ref=e56]
+          - heading "Everyday Elegance" [level=4] [ref=e57]
+          - link "Shop Now" [ref=e58] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=everyday-elegance
+        - generic [ref=e59]:
+          - link [ref=e60] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=soft-glam
+            - img "Soft Glam" [ref=e61]
+          - heading "Soft Glam" [level=4] [ref=e62]
+          - link "Shop Now" [ref=e63] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=soft-glam
+        - generic [ref=e64]:
+          - link [ref=e65] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=bold-chic
+            - img "Bold & Chic" [ref=e66]
+          - heading "Bold & Chic" [level=4] [ref=e67]
+          - link "Shop Now" [ref=e68] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=bold-chic
+        - generic [ref=e69]:
+          - link [ref=e70] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=luxury-edition
+            - img "Luxury Edition" [ref=e71]
+          - heading "Luxury Edition" [level=4] [ref=e72]
+          - link "Shop Now" [ref=e73] [cursor=pointer]:
+            - /url: http://127.0.0.1:8080/shop?category%5B0%5D=luxury-edition
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - heading "Our Best Sellers" [level=2] [ref=e77]: Our BestSellers
+        - paragraph [ref=e78]: Discover the styles our customers can't get enough of. Hand-painted perfection delivered right to your doorstep in Karachi.
+        - link "View All Best Sellers →" [ref=e79] [cursor=pointer]:
+          - /url: http://127.0.0.1:8080/shop
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img "Rosy Quartz Ombre" [ref=e83]
+            - generic: NEW
+            - link "Add Rosy Quartz Ombre to wishlist" [ref=e84] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/login
+              - generic [ref=e85]: 
+          - generic [ref=e86]:
+            - generic [ref=e87]:
+              - generic [ref=e88]: 
+              - generic [ref=e89]: 
+              - generic [ref=e90]: 
+              - generic [ref=e91]: 
+              - generic [ref=e92]: 
+              - text: (3)
+            - link "Rosy Quartz Ombre" [ref=e93] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/products/rosy-quartz-ombre
+            - generic [ref=e95]: PKR 2,500
+            - generic [ref=e96]:
+              - link "View Details" [ref=e97] [cursor=pointer]:
+                - /url: http://127.0.0.1:8080/products/rosy-quartz-ombre
+              - button "" [ref=e99] [cursor=pointer]
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - img "Classic Pearl Mauve" [ref=e103]
+            - generic: BEST SELLER
+            - link "Add Classic Pearl Mauve to wishlist" [ref=e104] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/login
+              - generic [ref=e105]: 
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: 
+              - generic [ref=e109]: 
+              - generic [ref=e110]: 
+              - generic [ref=e111]: 
+              - generic [ref=e112]: 
+              - text: (3)
+            - link "Classic Pearl Mauve" [ref=e113] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/products/classic-pearl-mauve
+            - generic [ref=e115]: PKR 2,200
+            - generic [ref=e116]:
+              - link "View Details" [ref=e117] [cursor=pointer]:
+                - /url: http://127.0.0.1:8080/products/classic-pearl-mauve
+              - button "" [ref=e119] [cursor=pointer]
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - img "Golden French" [ref=e123]
+            - generic: BEST SELLER
+            - link "Add Golden French to wishlist" [ref=e124] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/login
+              - generic [ref=e125]: 
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - generic [ref=e128]: 
+              - generic [ref=e129]: 
+              - generic [ref=e130]: 
+              - generic [ref=e131]: 
+              - generic [ref=e132]: 
+              - text: (3)
+            - link "Golden French" [ref=e133] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/products/golden-french
+            - generic [ref=e135]: PKR 4,500
+            - generic [ref=e136]:
+              - link "View Details" [ref=e137] [cursor=pointer]:
+                - /url: http://127.0.0.1:8080/products/golden-french
+              - button "" [ref=e139] [cursor=pointer]
+        - generic [ref=e141]:
+          - generic [ref=e142]:
+            - img "Matte Rose" [ref=e143]
+            - link "Add Matte Rose to wishlist" [ref=e144] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/login
+              - generic [ref=e145]: 
+          - generic [ref=e146]:
+            - generic [ref=e147]:
+              - generic [ref=e148]: 
+              - generic [ref=e149]: 
+              - generic [ref=e150]: 
+              - generic [ref=e151]: 
+              - generic [ref=e152]: 
+              - text: (3)
+            - link "Matte Rose" [ref=e153] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/products/matte-rose
+            - generic [ref=e155]: PKR 3,800
+            - generic [ref=e156]:
+              - link "View Details" [ref=e157] [cursor=pointer]:
+                - /url: http://127.0.0.1:8080/products/matte-rose
+              - button "" [ref=e159] [cursor=pointer]
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: Socials
+          - heading "@alishe_nails" [level=3] [ref=e165]
+        - link "Follow Us" [ref=e166] [cursor=pointer]:
+          - /url: https://instagram.com/alishe_nails
+      - generic [ref=e167]:
+        - link "Open this post on Instagram" [ref=e168] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Handcrafted perfection ✨ Rosy Quartz Ombre with genuine gold leaf detailing. Re..." [ref=e169]
+        - link "Open this post on Instagram" [ref=e170] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Moody, elegant, bold. Midnight Espresso with metallic gold rim in sculpted coffi..." [ref=e171]
+        - link "Open this post on Instagram" [ref=e172] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Elevate your everyday manicure with our Golden French collection. High-gloss sal..." [ref=e173]
+        - link "Open this post on Instagram" [ref=e174] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Hand-painted miniature botanical vines over velvety ivory white base. Pure roman..." [ref=e175]
+        - link "Open this post on Instagram" [ref=e176] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Dreamy blush aura gradient with a velvety matte topcoat. Available in Almond & C..." [ref=e177]
+        - link "Open this post on Instagram" [ref=e178] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Rose quartz marble texture with delicate gold foil veins. Handmade with love for..." [ref=e179]
+        - link "Open this post on Instagram" [ref=e180] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "Glitter and chrome that catches the light from every single angle. Sparkle in st..." [ref=e181]
+        - link "Open this post on Instagram" [ref=e182] [cursor=pointer]:
+          - /url: https://www.instagram.com/alishe_nails/
+          - img "A clean modern take on the classic French manicure in soft matte mauve. Chic, ti..." [ref=e183]
+  - contentinfo [ref=e184]:
+    - generic [ref=e185]:
+      - generic [ref=e186]:
+        - link [ref=e187] [cursor=pointer]:
+          - /url: http://127.0.0.1:8080
+          - img "Alishe Nails logo" [ref=e188]
+          - text: Alishe
+        - paragraph [ref=e189]: Exquisite handmade press-on nails crafted for elegance and ease. Delivering exclusively across Karachi.
+        - link " @alishe_nails" [ref=e191] [cursor=pointer]:
+          - /url: https://instagram.com/alishe_nails
+          - generic [ref=e192]: 
+          - text: "@alishe_nails"
+      - generic [ref=e193]:
+        - heading "Quick Links" [level=5] [ref=e194]
+        - list [ref=e195]:
+          - listitem [ref=e196]:
+            - link "New Arrivals" [ref=e197] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/shop
+          - listitem [ref=e198]:
+            - link "Best Sellers" [ref=e199] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/shop
+          - listitem [ref=e200]:
+            - link "Nail Care Sets" [ref=e201] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/shop
+          - listitem [ref=e202]:
+            - link "Gift Ideas" [ref=e203] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/shop
+      - generic [ref=e204]:
+        - heading "Help" [level=5] [ref=e205]
+        - list [ref=e206]:
+          - listitem [ref=e207]:
+            - link "FAQs" [ref=e208] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/contact
+          - listitem [ref=e209]:
+            - link "Shipping & Returns" [ref=e210] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/policies
+          - listitem [ref=e211]:
+            - link "Sizing Guide" [ref=e212] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/how-to-apply
+          - listitem [ref=e213]:
+            - link "Order Help" [ref=e214] [cursor=pointer]:
+              - /url: http://127.0.0.1:8080/contact
+      - generic [ref=e215]:
+        - heading "Stay Inspired" [level=5] [ref=e216]
+        - paragraph [ref=e217]: Join our newsletter for exclusive drops.
+        - generic [ref=e218]:
+          - textbox "Your email" [ref=e219]
+          - button "Subscribe" [ref=e220] [cursor=pointer]:
+            - generic [ref=e221]: 
+    - generic [ref=e222]: © 2026 Alishe Nails · Karachi, Pakistan. Handcrafted with love.
+  - link "Follow Alishe Nails on Instagram" [ref=e223] [cursor=pointer]:
+    - /url: https://instagram.com/alishe_nails
+    - generic [ref=e224]: 

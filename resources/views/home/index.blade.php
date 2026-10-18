@@ -29,8 +29,8 @@
     {{-- ---------- Value props ---------- --}}
     <div class="container">
         <div class="value-props">
-            <div class="value-prop"><i class="fa-solid fa-truck-fast"></i> Karachi Express (24-48h)</div>
-            <div class="value-prop"><i class="fa-solid fa-wallet"></i> JazzCash &amp; EasyPaisa</div>
+            <div class="value-prop"><i class="fa-solid fa-truck-fast"></i> Karachi Express (48-96h)</div>
+            <div class="value-prop"><i class="fa-solid fa-wallet"></i> JazzCash &amp; SadaPay</div>
             <div class="value-prop"><i class="fa-regular fa-heart"></i> Handmade in Karachi</div>
             <div class="value-prop"><i class="fa-solid fa-gem"></i> Salon Quality &amp; Reusable</div>
         </div>

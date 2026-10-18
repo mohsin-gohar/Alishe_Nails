@@ -43,7 +43,7 @@
                             <span>PKR {{ number_format($item->line_total, 0) }}</span>
                         </div>
                     @endforeach
-                    <div class="summary-row"><span>Shipping</span><span>{{ $order->shipping == 0 ? 'Free' : 'PKR '.number_format($order->shipping, 0) }}</span></div>
+                    <div class="summary-row"><span>Delivery</span><span>{{ $order->shipping == 0 ? 'Coordinated directly' : 'PKR '.number_format($order->shipping, 0) }}</span></div>
                     <div class="summary-row total"><span>Total</span><span>PKR {{ number_format($order->total, 0) }}</span></div>
                 </div>
             </div>
