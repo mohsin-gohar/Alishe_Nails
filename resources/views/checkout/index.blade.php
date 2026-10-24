@@ -165,6 +165,17 @@
                         </div>
                     </div>
 
+                    {{-- Advance Payment Notice Card --}}
+                    <div style="background:#FAF5F2;border:1.5px solid rgba(212,175,55,0.4);border-radius:var(--radius-md);padding:18px 20px;margin-top:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                            <i class="fa-solid fa-lock" style="color:var(--gold);font-size:1.1rem;"></i>
+                            <strong style="font-size:0.92rem;color:var(--espresso);">100% Advance Payment Policy</strong>
+                        </div>
+                        <p style="font-size:0.82rem;color:rgba(43,29,29,.78);margin:0;line-height:1.5;">
+                            All sets are custom handcrafted to your selected shape and size. We accept advance payments via <strong>SadaPay</strong> and <strong>JazzCash</strong> (<code>03113925166</code> &middot; Alishba Naz). Your unique Order ID and payment accounts will be provided on the next confirmation screen.
+                        </p>
+                    </div>
+
                     {{-- Bottom Trust Assurances --}}
                     <div class="checkout-trust-grid">
                         <div class="checkout-trust-card">

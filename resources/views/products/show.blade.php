@@ -120,7 +120,7 @@
                         </div>
                     @endif
 
-                    <div class="option-group" data-option-group>
+                    <div class="option-group" data-option-group id="size-option-group">
                         <div class="option-group__head">
                             <h6>Size</h6>
                             <button type="button" class="text-button" data-modal-open="size-guide-modal">Sizing Guide</button>
@@ -130,7 +130,40 @@
                                 <div class="option-pill {{ $size === 'S' ? 'is-selected' : '' }}" data-value="{{ $size }}">{{ $size }}</div>
                             @endforeach
                         </div>
-                        <input type="hidden" name="size" value="S">
+                        <input type="hidden" name="size" id="product-size-input" value="S">
+
+                        {{-- Custom Size Millimeter Inputs --}}
+                        <div class="custom-size-box" id="custom-size-box">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                <strong style="font-size:0.82rem;color:var(--espresso);"><i class="fa-solid fa-ruler-combined" style="color:var(--rose);"></i> Custom Nail Measurements (mm):</strong>
+                                <small style="font-size:0.72rem;color:var(--rose-dark);font-weight:600;">Width across widest point</small>
+                            </div>
+                            <div class="custom-size-grid">
+                                <div class="custom-size-field">
+                                    <label for="custom-thumb">Thumb</label>
+                                    <input type="number" id="custom-thumb" class="custom-mm-input" data-finger="T" value="16" min="8" max="25" step="0.5">
+                                </div>
+                                <div class="custom-size-field">
+                                    <label for="custom-index">Index</label>
+                                    <input type="number" id="custom-index" class="custom-mm-input" data-finger="I" value="12" min="8" max="25" step="0.5">
+                                </div>
+                                <div class="custom-size-field">
+                                    <label for="custom-middle">Middle</label>
+                                    <input type="number" id="custom-middle" class="custom-mm-input" data-finger="M" value="13" min="8" max="25" step="0.5">
+                                </div>
+                                <div class="custom-size-field">
+                                    <label for="custom-ring">Ring</label>
+                                    <input type="number" id="custom-ring" class="custom-mm-input" data-finger="R" value="11" min="8" max="25" step="0.5">
+                                </div>
+                                <div class="custom-size-field">
+                                    <label for="custom-pinky">Pinky</label>
+                                    <input type="number" id="custom-pinky" class="custom-mm-input" data-finger="P" value="9" min="8" max="25" step="0.5">
+                                </div>
+                            </div>
+                            <small style="display:block;margin-top:6px;font-size:0.72rem;color:#7A6E68;">
+                                <i class="fa-solid fa-circle-info"></i> Enter the millimeter width for each natural nail bed.
+                            </small>
+                        </div>
                     </div>
 
                     <div class="add-to-cart-row">
@@ -240,7 +273,7 @@
                 </details>
 
                 <details class="accordion-item">
-                    <summary>Karachi Delivery &amp; Policies <i class="fa-solid fa-chevron-down chevron"></i></summary>
+                    <summary>Shipping &amp; Returns (Karachi Delivery &amp; Policies) <i class="fa-solid fa-chevron-down chevron"></i></summary>
                     <ul>
                         <li><i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (48&ndash;96 hrs doorstep delivery).</li>
                         <li><i class="fa-solid fa-check"></i> Delivery charges are coordinated directly upon order confirmation.</li>
@@ -324,19 +357,77 @@
 
     <div class="modal" id="size-guide-modal" data-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="size-guide-title">
         <div class="modal__backdrop" data-modal-close></div>
-        <div class="modal__panel">
+        <div class="modal__panel" style="max-width:580px;">
             <button type="button" class="modal__close" data-modal-close aria-label="Close size guide"><i class="fa-solid fa-xmark"></i></button>
-            <span class="eyebrow">Find your fit</span>
-            <h2 id="size-guide-title">Press-on Nail Size Guide</h2>
-            <p>Measure across the widest part of each natural nail in millimetres, then choose the closest size below.</p>
-            <div class="size-guide-table" role="table" aria-label="Nail size chart">
-                <div><strong>Size</strong><strong>Width</strong><strong>Best for</strong></div>
-                <div><span>XS</span><span>10-12 mm</span><span>Petite nail beds</span></div>
-                <div><span>S</span><span>12-14 mm</span><span>Small nail beds</span></div>
-                <div><span>M</span><span>14-16 mm</span><span>Most nail beds</span></div>
-                <div><span>L</span><span>16-18 mm</span><span>Wide nail beds</span></div>
+            <span class="eyebrow"><i class="fa-solid fa-crown" style="color:var(--gold);"></i> Atelier Precision Fit</span>
+            <h2 id="size-guide-title" style="margin-bottom:8px;">How to Find Your Exact Size</h2>
+            <p style="font-size:0.88rem;color:rgba(43,29,29,.75);margin-bottom:20px;">
+                Our press-on nails are sculpted with salon gel. For the most comfortable and durable wear, measure each natural nail bed across its widest point in millimeters (mm).
+            </p>
+
+            <div style="background:#FAF5F2;border:1px solid var(--border-soft);border-radius:10px;padding:16px;margin-bottom:20px;">
+                <h4 style="font-size:0.9rem;margin-bottom:12px;color:var(--espresso);"><i class="fa-solid fa-tape" style="color:var(--rose);"></i> The 3-Step Clear Tape Method:</h4>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:0.78rem;color:rgba(43,29,29,.8);">
+                    <div>
+                        <strong style="display:block;color:var(--rose-dark);margin-bottom:2px;">1. Apply Tape</strong>
+                        Press clear Scotch tape firmly across the widest point of your nail.
+                    </div>
+                    <div>
+                        <strong style="display:block;color:var(--rose-dark);margin-bottom:2px;">2. Mark Edges</strong>
+                        Use a fine pen to mark both outer sidewalls of your nail bed.
+                    </div>
+                    <div>
+                        <strong style="display:block;color:var(--rose-dark);margin-bottom:2px;">3. Measure (mm)</strong>
+                        Peel off tape and lay flat against a ruler to count millimeters.
+                    </div>
+                </div>
             </div>
-            <div class="size-guide-note"><i class="fa-solid fa-ruler"></i> No ruler? Place clear tape over the nail, mark both edges, then measure the tape against a ruler.</div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;text-align:center;border:1px solid var(--border-soft);border-radius:8px;">
+                    <thead style="background:var(--blush);font-family:var(--font-serif);color:var(--espresso);">
+                        <tr>
+                            <th style="padding:10px;text-align:left;">Size</th>
+                            <th style="padding:10px;">Thumb</th>
+                            <th style="padding:10px;">Index</th>
+                            <th style="padding:10px;">Middle</th>
+                            <th style="padding:10px;">Ring</th>
+                            <th style="padding:10px;">Pinky</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid var(--border-soft);">
+                            <td style="padding:10px;text-align:left;font-weight:600;">XS (Petite)</td>
+                            <td>14mm</td><td>11mm</td><td>12mm</td><td>10mm</td><td>8mm</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border-soft);background:rgba(255,246,241,0.6);">
+                            <td style="padding:10px;text-align:left;font-weight:600;color:var(--rose-dark);">S (Standard)</td>
+                            <td>15mm</td><td>12mm</td><td>13mm</td><td>11mm</td><td>9mm</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border-soft);">
+                            <td style="padding:10px;text-align:left;font-weight:600;">M (Medium)</td>
+                            <td>16mm</td><td>13mm</td><td>14mm</td><td>12mm</td><td>10mm</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border-soft);background:rgba(255,246,241,0.6);">
+                            <td style="padding:10px;text-align:left;font-weight:600;">L (Wide)</td>
+                            <td>18mm</td><td>14mm</td><td>15mm</td><td>13mm</td><td>11mm</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:10px;text-align:left;font-weight:700;color:var(--gold);">Custom</td>
+                            <td colspan="5" style="padding:10px;font-style:italic;">Select "Custom" on product page and type your exact mm values.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#FFF9FA;border:1px dashed #E1306C;border-radius:8px;padding:12px 16px;">
+                <span style="font-size:0.8rem;color:var(--espresso);">
+                    <i class="fa-brands fa-instagram" style="color:#C13584;"></i> Need personal sizing help? Send a photo of your hands to our concierge.
+                </span>
+                <a href="https://ig.me/m/{{ config('services.instagram.handle', 'alishe_nails') }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#C13584;color:#fff;padding:6px 14px;border-radius:20px;font-size:0.75rem;">
+                    DM @alishe_nails
+                </a>
+            </div>
         </div>
     </div>
 

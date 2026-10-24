@@ -16,9 +16,9 @@
         <div class="admin-shell">
             {{-- ---------- Sidebar ---------- --}}
             <aside class="admin-sidebar">
-                <a href="{{ route('admin.dashboard') }}" class="admin-sidebar__brand">
-                    <span class="navbar__logo" role="img" aria-label="Alishe Nails logo"></span>
-                    Alishe Nails
+                <a href="{{ route('admin.dashboard') }}" class="admin-sidebar__brand" style="display:flex;align-items:center;gap:10px;">
+                    <img src="{{ asset('images/logo.jpeg') }}" alt="Alishe Nails Logo" style="height:32px;width:32px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid rgba(212,175,55,0.4);">
+                    <span>Alishe Nails</span>
                 </a>
 
                 <div class="admin-sidebar__label">Main Menu</div>
@@ -83,7 +83,9 @@
                         <a href="{{ route('home') }}" target="_blank" class="btn btn-outline btn-sm">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> View Store
                         </a>
-                        <span class="navbar__avatar" role="img" aria-label="Admin"></span>
+                        <span class="navbar__avatar" role="img" aria-label="Admin" style="display:inline-flex;align-items:center;justify-content:center;background:var(--blush);color:var(--rose-dark);font-weight:700;font-size:0.75rem;">
+                            <i class="fa-solid fa-crown" style="font-size:0.75rem;color:var(--gold);"></i>
+                        </span>
                     </div>
                 </header>
 

@@ -229,7 +229,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (modal) closeModal(modal);
   });
 
-  // ---------- Option pills (shape / size) ----------
+  // ---------- Option pills (shape / size & custom mm logic) ----------
+  var customSizeBox = document.querySelector('#custom-size-box');
+  var customMmInputs = document.querySelectorAll('.custom-mm-input');
+
+  function getCustomSizeString() {
+    var vals = [];
+    customMmInputs.forEach(function (inp) {
+      vals.push(inp.dataset.finger + ':' + (inp.value || '0') + 'mm');
+    });
+    return 'Custom (' + vals.join(', ') + ')';
+  }
+
   document.querySelectorAll('[data-option-group]').forEach(function (group) {
     var pills = group.querySelectorAll('.option-pill');
     var hiddenInput = group.querySelector('input[type=hidden]');
@@ -237,11 +248,35 @@ document.addEventListener('DOMContentLoaded', function () {
       pill.addEventListener('click', function () {
         pills.forEach(function (p) { p.classList.remove('is-selected'); });
         pill.classList.add('is-selected');
-        if (hiddenInput) hiddenInput.value = pill.dataset.value;
+
+        var val = pill.dataset.value;
+        if (group.id === 'size-option-group' && customSizeBox) {
+          if (val === 'Custom') {
+            customSizeBox.classList.add('is-active');
+            val = getCustomSizeString();
+          } else {
+            customSizeBox.classList.remove('is-active');
+          }
+        }
+
+        if (hiddenInput) hiddenInput.value = val;
         updateProductWhatsAppAndSubtotal();
       });
     });
   });
+
+  if (customMmInputs.length > 0) {
+    customMmInputs.forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        var sizeInput = document.querySelector('#product-size-input');
+        var customPill = document.querySelector('#size-option-group .option-pill[data-value="Custom"].is-selected');
+        if (sizeInput && customPill) {
+          sizeInput.value = getCustomSizeString();
+          updateProductWhatsAppAndSubtotal();
+        }
+      });
+    });
+  }
 
   // ---------- Quantity selector (product page + cart) ----------
   document.querySelectorAll('[data-qty-selector]').forEach(function (selector) {
