@@ -21,9 +21,10 @@ class LoginController extends Controller
     {
         $throttleKey = Str::lower($request->input('email')).'|'.$request->ip();
 
-        // 5 attempts per minute per email+IP — blocks brute-force guessing
-        // without needing an external package.
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+        // 10 attempts per 15 minutes per email+IP — still blocks brute-force
+        // guessing, but far less likely to lock out a legitimate user after a
+        // few rapid sign-in tries.
+        if (RateLimiter::tooManyAttempts($throttleKey, 10)) {
             $seconds = RateLimiter::availableIn($throttleKey);
 
             throw ValidationException::withMessages([
@@ -32,7 +33,7 @@ class LoginController extends Controller
         }
 
         if (! Auth::guard('web')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            RateLimiter::hit($throttleKey, 60);
+            RateLimiter::hit($throttleKey, 900);
 
             throw ValidationException::withMessages([
                 'email' => 'These credentials do not match our records.',

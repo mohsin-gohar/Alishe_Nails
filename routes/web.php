@@ -55,7 +55,7 @@ Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store'])
-    ->middleware(['auth:web', 'throttle:5,1'])
+    ->middleware(['auth:web', 'throttle:30,1'])
     ->name('reviews.store');
 Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])
     ->middleware('auth:web')
@@ -68,32 +68,32 @@ Route::delete('/cart/remove/{rowId}', [CartController::class, 'remove'])->name('
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::get('/checkout/shipping-fee', [CheckoutController::class, 'calculateShippingFee'])->name('checkout.shippingFee');
-Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:5,1')->name('checkout.coupon.apply');
+Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:30,1')->name('checkout.coupon.apply');
 Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
-Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:5,1')->name('checkout.store');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:30,1')->name('checkout.store');
 Route::get('/checkout/success/{order:order_number}', [CheckoutController::class, 'success'])->name('checkout.success');
 
 Route::get('/track-order', [TrackOrderController::class, 'index'])->name('track-order.index');
-Route::post('/track-order', [TrackOrderController::class, 'search'])->middleware('throttle:5,1')->name('track-order.search');
+Route::post('/track-order', [TrackOrderController::class, 'search'])->middleware('throttle:30,1')->name('track-order.search');
 
 Route::get('/about', [AboutController::class, 'index'])->name('about.index');
 Route::get('/how-to-apply', [HowToApplyController::class, 'index'])->name('how-to-apply.index');
 Route::get('/policies', [PolicyController::class, 'index'])->name('policies.index');
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
-Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:30,1')->name('contact.store');
 Route::get('/custom-design', [CustomDesignController::class, 'create'])->name('custom-design.create');
-Route::post('/custom-design', [CustomDesignController::class, 'store'])->middleware('throttle:5,1')->name('custom-design.store');
+Route::post('/custom-design', [CustomDesignController::class, 'store'])->middleware('throttle:30,1')->name('custom-design.store');
 
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'store'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:30,1')
     ->name('newsletter.subscribe');
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
 Route::get('/sell-with-us', [SellerAuthController::class, 'apply'])->name('seller.apply');
-Route::post('/sell-with-us', [SellerAuthController::class, 'storeApplication'])->middleware('throttle:5,1')->name('seller.apply.store');
+Route::post('/sell-with-us', [SellerAuthController::class, 'storeApplication'])->middleware('throttle:30,1')->name('seller.apply.store');
 Route::get('/seller/login', [SellerAuthController::class, 'login'])->name('seller.login');
-Route::post('/seller/login', [SellerAuthController::class, 'authenticate'])->middleware('throttle:5,1')->name('seller.login.attempt');
+Route::post('/seller/login', [SellerAuthController::class, 'authenticate'])->middleware('throttle:30,1')->name('seller.login.attempt');
 Route::post('/seller/logout', [SellerAuthController::class, 'logout'])->middleware('seller')->name('seller.logout');
 
 Route::middleware('seller')->prefix('seller')->name('seller.')->group(function () {
@@ -116,10 +116,10 @@ Route::middleware('seller')->prefix('seller')->name('seller.')->group(function (
 */
 Route::middleware('guest:web')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:5,1');
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:30,1');
 
     Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1');
+    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:30,1');
 
     Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])
@@ -152,7 +152,7 @@ Route::middleware('auth:web')->prefix('account')->name('account.')->group(functi
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1')->name('login.attempt');
+        Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:30,1')->name('login.attempt');
     });
 
     Route::post('/logout', [AdminAuthController::class, 'logout'])->middleware('admin')->name('logout');

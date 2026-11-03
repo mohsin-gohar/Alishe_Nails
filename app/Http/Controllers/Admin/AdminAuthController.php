@@ -29,9 +29,10 @@ class AdminAuthController extends Controller
 
         $throttleKey = 'admin-login|'.Str::lower($request->input('email')).'|'.$request->ip();
 
-        // 5 attempts per minute — brute-force protection on the most
-        // sensitive login in the app.
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+        // 10 attempts per 15 minutes — still blocks brute-force on the most
+        // sensitive login in the app, but far less likely to lock out an
+        // administrator after a few rapid sign-in tries.
+        if (RateLimiter::tooManyAttempts($throttleKey, 10)) {
             $seconds = RateLimiter::availableIn($throttleKey);
 
             throw ValidationException::withMessages([
@@ -40,7 +41,7 @@ class AdminAuthController extends Controller
         }
 
         if (! Auth::guard('admin')->attempt($request->only('email', 'password'))) {
-            RateLimiter::hit($throttleKey, 60);
+            RateLimiter::hit($throttleKey, 900);
 
             return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
         }

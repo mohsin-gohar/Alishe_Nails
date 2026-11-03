@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureActiveSubscription;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\ReloadLimiter;
 use App\Http\Middleware\EnsureSeller;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
