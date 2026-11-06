@@ -12,8 +12,8 @@
 
     <div class="admin-card">
         <form method="GET" action="{{ route('admin.orders.index') }}" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search order #, name, email...">
-            <select class="select-sort" name="status" onchange="this.form.requestSubmit()">
+            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search order #, name, email..." aria-label="Search orders">
+            <select class="select-sort" name="status" onchange="this.form.requestSubmit()" aria-label="Filter by order status">
                 <option value="">All Statuses</option>
                 @foreach (\App\Models\Order::STATUSES as $status)
                     <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>{{ ucwords(str_replace('_', ' ', $status)) }}</option>

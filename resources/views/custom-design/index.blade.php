@@ -22,7 +22,7 @@
 
             <form action="{{ route('custom-design.store') }}" method="POST" enctype="multipart/form-data" class="checkout-card">
                 @csrf
-                <input type="text" name="website" value="" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true">
+                <input type="text" name="website" value="" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
                 <div class="form-grid">
                     <div class="form-field"><label for="custom-name">Name</label><input id="custom-name" name="name" value="{{ old('name') }}" required>@error('name')<div class="error">{{ $message }}</div>@enderror</div>
                     <div class="form-field"><label for="custom-email">Email</label><input id="custom-email" type="email" name="email" value="{{ old('email') }}" required>@error('email')<div class="error">{{ $message }}</div>@enderror</div>

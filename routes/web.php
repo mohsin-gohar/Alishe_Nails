@@ -67,7 +67,9 @@ Route::patch('/cart/update/{rowId}', [CartController::class, 'update'])->name('c
 Route::delete('/cart/remove/{rowId}', [CartController::class, 'remove'])->name('cart.remove');
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::get('/checkout/shipping-fee', [CheckoutController::class, 'calculateShippingFee'])->name('checkout.shippingFee');
+Route::get('/checkout/shipping-fee', [CheckoutController::class, 'calculateShippingFee'])
+    ->middleware('throttle:60,1')
+    ->name('checkout.shippingFee');
 Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:30,1')->name('checkout.coupon.apply');
 Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:30,1')->name('checkout.store');

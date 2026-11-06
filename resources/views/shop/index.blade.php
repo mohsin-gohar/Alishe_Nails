@@ -47,7 +47,7 @@
                             <label class="filter-option">
                                 <input type="checkbox" name="shape[]" value="{{ $shape }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($shape, request('shape', [])) ? 'checked' : '' }}>
+                                    {{ in_array($shape, (array) request('shape', [])) ? 'checked' : '' }}>
                                 {{ $shape }} ({{ $shapeCounts[$shape] ?? 0 }})
                             </label>
                         @endforeach
@@ -59,7 +59,7 @@
                             <label class="filter-option">
                                 <input type="checkbox" name="length[]" value="{{ $length }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($length, request('length', [])) ? 'checked' : '' }}>
+                                    {{ in_array($length, (array) request('length', [])) ? 'checked' : '' }}>>
                                 {{ $length }} ({{ $lengthCounts[$length] ?? 0 }})
                             </label>
                         @endforeach
@@ -71,7 +71,7 @@
                             <label class="filter-option">
                                 <input type="checkbox" name="finish[]" value="{{ $finish }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($finish, request('finish', [])) ? 'checked' : '' }}>
+                                    {{ in_array($finish, (array) request('finish', [])) ? 'checked' : '' }}>>
                                 {{ $finish }} ({{ $finishCounts[$finish] ?? 0 }})
                             </label>
                         @endforeach
@@ -99,7 +99,7 @@
                                 @endforeach
                             @endforeach
                             <input type="hidden" name="sort" value="{{ request('sort') }}">
-                            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search styles...">
+                            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search styles..." aria-label="Search styles">
                         </form>
 
                         <form method="GET" action="{{ route('shop.index') }}" data-shop-form>
@@ -109,7 +109,7 @@
                                 @endforeach
                             @endforeach
                             <input type="hidden" name="q" value="{{ request('q') }}">
-                            <select class="select-sort" name="sort" onchange="this.form.requestSubmit()">
+                            <select class="select-sort" name="sort" aria-label="Sort products" onchange="this.form.requestSubmit()">
                                 <option value="" {{ request('sort') == '' ? 'selected' : '' }}>Sort by: Newest</option>
                                 <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
                                 <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Price: High to Low</option>

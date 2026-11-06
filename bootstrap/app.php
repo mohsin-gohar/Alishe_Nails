@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(SecurityHeaders::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\ReloadLimiter::class);
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'seller' => EnsureSeller::class,

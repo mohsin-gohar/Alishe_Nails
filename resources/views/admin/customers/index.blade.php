@@ -12,7 +12,7 @@
 
     <div class="admin-card">
         <form method="GET" action="{{ route('admin.customers.index') }}" style="margin-bottom:20px;">
-            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search by name or email...">
+            <input class="input-search" type="text" name="q" value="{{ request('q') }}" placeholder="Search by name or email..." aria-label="Search customers">
         </form>
 
         <table class="data-table">

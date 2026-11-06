@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Seller Dashboard — Alishe Nails')
+@section('title', 'Seller Dashboard - Alishe Nails')
+@section('robots', 'noindex,nofollow')
 @section('content')
 <div class="page-header"><h1>Welcome, {{ $seller->name }}</h1><p>Your marketplace workspace.</p></div>
 <div class="container" style="padding-block:36px 80px;">

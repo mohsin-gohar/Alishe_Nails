@@ -37,31 +37,53 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-wishlist-id]').forEach(function (button) {
       if (button.dataset.wishlistBound) return;
       button.dataset.wishlistBound = 'true';
+
+      // Guests get a link to the login page — let it navigate normally.
+      if (button.tagName === 'A') return;
+
       button.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();
 
+        var form = button.closest('form');
         var id = button.dataset.wishlistId;
-        var wishlist = JSON.parse(localStorage.getItem('alishe_wishlist') || '[]');
-        var index = wishlist.indexOf(id);
-        var added = index === -1;
+        if (!form || !id || button.dataset.wishlistLoading === 'true') return;
 
-        if (added) wishlist.push(id);
-        else wishlist.splice(index, 1);
+        button.dataset.wishlistLoading = 'true';
+        button.disabled = true;
 
-        localStorage.setItem('alishe_wishlist', JSON.stringify(wishlist));
-        button.setAttribute('aria-pressed', added ? 'true' : 'false');
-        button.setAttribute('aria-label', (added ? 'Remove ' : 'Add ') + 'item ' + (added ? 'from' : 'to') + ' wishlist');
-        var icon = button.querySelector('i');
-        if (icon) icon.className = added ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-        showToast(added ? 'Added to your wishlist.' : 'Removed from your wishlist.');
+        fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken || '',
+          },
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) throw new Error(data.message || 'Unable to update your wishlist.');
+              return data;
+            });
+          })
+          .then(function (data) {
+            // Keep every card for this product in sync (it can appear in
+            // more than one section on the same page).
+            document.querySelectorAll('[data-wishlist-id="' + id + '"]').forEach(function (twin) {
+              twin.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
+              twin.setAttribute('aria-label', data.saved ? 'Remove item from wishlist' : 'Add item to wishlist');
+              var icon = twin.querySelector('i');
+              if (icon) icon.className = data.saved ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            });
+            showToast(data.message);
+          })
+          .catch(function (error) { showToast(error.message, 'error'); })
+          .finally(function () {
+            button.dataset.wishlistLoading = 'false';
+            button.disabled = false;
+          });
       });
-
-      var saved = JSON.parse(localStorage.getItem('alishe_wishlist') || '[]');
-      var isSaved = saved.indexOf(button.dataset.wishlistId) !== -1;
-      button.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
-      var icon = button.querySelector('i');
-      if (icon && isSaved) icon.className = 'fa-solid fa-heart';
     });
   }
 
@@ -408,7 +430,9 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (response) { return response.json(); })
       .then(function (data) {
         var fee = Number(data.shipping);
-        shippingAmount.textContent = fee <= 0 ? 'Free Delivery' : 'PKR ' + fee.toLocaleString();
+        shippingAmount.textContent = data.is_free
+          ? 'Free Delivery'
+          : (fee <= 0 ? 'Coordinated directly' : 'PKR ' + fee.toLocaleString());
         totalAmount.textContent = 'PKR ' + Number(data.total).toLocaleString();
         if (submitBtnTotal) {
           submitBtnTotal.textContent = 'PKR ' + Number(data.total).toLocaleString();

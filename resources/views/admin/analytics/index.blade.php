@@ -90,7 +90,7 @@
                     INSTAGRAM_ACCESS_TOKEN="your-meta-user-access-token"
                 </div>
                 <p style="font-size:.78rem;color:rgba(43,29,29,.55);margin-top:10px;margin-bottom:0;">
-                    Target Instagram handle: <strong>@{{ $instagramHandle }}</strong> (<a href="https://instagram.com/{{ $instagramHandle }}" target="_blank" rel="noopener" style="text-decoration:underline;">View Profile</a>)
+                    Target Instagram handle: <strong>{{ '@'.$instagramHandle }}</strong> (<a href="https://instagram.com/{{ $instagramHandle }}" target="_blank" rel="noopener" style="text-decoration:underline;">View Profile</a>)
                 </p>
             </div>
         @endif
@@ -121,7 +121,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
         const ctx = document.getElementById('revenueChart');
         new Chart(ctx, {

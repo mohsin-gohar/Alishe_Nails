@@ -67,6 +67,7 @@
             @else
                 <form action="{{ route('cart.add', $product) }}" method="POST" style="display:inline;">
                     @csrf
+                    <input type="hidden" name="qty" value="1">
                     <button type="submit" class="btn btn-primary btn-sm" title="Add to Cart" aria-label="Add {{ $product->name }} to Cart">
                         <i class="fa-solid fa-cart-shopping"></i>
                     </button>

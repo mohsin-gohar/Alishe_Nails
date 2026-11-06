@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Track Your Order — Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
     <div class="container" style="max-width:760px;padding-block:48px 64px;">

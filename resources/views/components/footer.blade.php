@@ -55,7 +55,8 @@
             <p style="font-size:.85rem;color:rgba(43,29,29,.7);margin-bottom:12px;">Receive early access to seasonal capsule drops &amp; bespoke nail inspo.</p>
             <form action="{{ route('newsletter.subscribe') }}" method="POST" class="newsletter-form">
                 @csrf
-                <input type="email" name="email" placeholder="Enter your email" required style="font-size:0.85rem;">
+                <input type="text" name="website" value="" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
+                <input type="email" name="email" placeholder="Enter your email" required aria-label="Email address for newsletter" style="font-size:0.85rem;">
                 <button type="submit" class="btn btn-primary" aria-label="Subscribe to newsletter">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>

@@ -39,7 +39,7 @@
 
             <div style="margin-top:20px;max-width:280px;margin-left:auto;">
                 <div class="summary-row"><span>Subtotal</span><span>PKR {{ number_format($order->subtotal, 0) }}</span></div>
-                <div class="summary-row"><span>Shipping</span><span>{{ $order->shipping == 0 ? 'Free' : 'PKR '.number_format($order->shipping, 0) }}</span></div>
+                <div class="summary-row"><span>Shipping</span><span>{{ $order->shipping > 0 ? 'PKR '.number_format($order->shipping, 0) : 'Coordinated directly' }}</span></div>
                 <div class="summary-row total"><span>Total</span><span>PKR {{ number_format($order->total, 0) }}</span></div>
             </div>
         </div>
@@ -79,7 +79,7 @@
                     @csrf
                     @method('PATCH')
                     <div class="form-field" style="margin-bottom:14px;">
-                        <select name="payment_status" class="select-sort" style="width:100%;">
+                        <select name="payment_status" aria-label="Update payment status" class="select-sort" style="width:100%;">
                             @foreach (\App\Models\Order::PAYMENT_STATUSES as $paymentStatus)
                                 <option value="{{ $paymentStatus }}" {{ $order->payment_status === $paymentStatus ? 'selected' : '' }}>
                                     {{ ucfirst($paymentStatus) }}
@@ -97,7 +97,7 @@
                     @csrf
                     @method('PATCH')
                     <div class="form-field" style="margin-bottom:14px;">
-                        <select name="status" class="select-sort" style="width:100%;">
+                        <select name="status" class="select-sort" aria-label="Update order status" style="width:100%;">
                             @foreach (\App\Models\Order::STATUSES as $status)
                                 <option value="{{ $status }}" {{ $order->status === $status ? 'selected' : '' }}>
                                     {{ ucwords(str_replace('_', ' ', $status)) }}

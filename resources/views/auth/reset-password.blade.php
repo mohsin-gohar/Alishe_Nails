@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Reset Password — Alishe Nails')
+@section('title', 'Reset Password - Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
 <div class="container" style="max-width:420px;padding-block:56px;">

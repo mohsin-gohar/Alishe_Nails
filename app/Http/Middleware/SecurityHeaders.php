@@ -29,15 +29,19 @@ class SecurityHeaders
             "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-            "img-src 'self' data: https://*.fbcdn.net https://*.cdninstagram.com https://lookaside.fbsbx.com",
+            "img-src 'self' data: blob: https://*.fbcdn.net https://*.cdninstagram.com https://lookaside.fbsbx.com",
+            "media-src 'self' blob:",
             "connect-src 'self'",
             "frame-ancestors 'self'",
         ]);
         $response->headers->set('Content-Security-Policy', $csp);
 
         if ($request->secure()) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
+
+        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+        $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
 
         return $response;
     }

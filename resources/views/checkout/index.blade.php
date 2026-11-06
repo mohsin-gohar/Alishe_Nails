@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Checkout — Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
 
@@ -36,8 +37,6 @@
                             </h2>
                             <span style="font-size:0.78rem;color:#7A6E68;font-weight:500;">Step 1 of 2</span>
                         </div>
-
-                        <input type="hidden" name="payment_method" value="online_payment">
 
                         @guest('web')
                             <div class="guest-login-prompt">
@@ -143,12 +142,12 @@
                         </div>
                     </div>
 
-                    {{-- ---------------- STEP 2: Delivery Method ---------------- --}}
+                    {{-- ---------------- STEP 2: Delivery & Payment ---------------- --}}
                     <div class="checkout-card">
                         <div class="checkout-card__header">
                             <h2 class="checkout-card__title">
                                 <span class="step-badge">2</span>
-                                <span>Delivery Method</span>
+                                <span>Delivery &amp; Payment</span>
                             </h2>
                             <span style="font-size:0.78rem;color:#7A6E68;font-weight:500;">Step 2 of 2</span>
                         </div>
@@ -162,6 +161,39 @@
                                 </div>
                             </div>
                             <span class="shipping-method-card__badge">Doorstep</span>
+                        </div>
+
+                        <div style="margin-top:22px;">
+                            <h3 style="font-size:0.88rem;letter-spacing:0.06em;text-transform:uppercase;color:#6B5C56;font-weight:600;margin-bottom:12px;">
+                                Preferred Payment Method
+                            </h3>
+
+                            <label class="payment-option {{ old('payment_method', 'sadapay') === 'sadapay' ? 'is-selected' : '' }}">
+                                <span class="payment-option__left">
+                                    <input type="radio" name="payment_method" value="sadapay" {{ old('payment_method', 'sadapay') === 'sadapay' ? 'checked' : '' }}>
+                                    <span>
+                                        <span class="payment-brand-badge payment-brand-badge--sadapay">SadaPay</span>
+                                        <span style="display:block;font-size:0.8rem;color:#7A6E68;margin-top:4px;">Transfer via SadaPay app or bank transfer</span>
+                                    </span>
+                                </span>
+                                <i class="fa-solid fa-arrow-right" style="color:#C7B8B0;"></i>
+                            </label>
+
+                            <label class="payment-option {{ old('payment_method') === 'jazzcash' ? 'is-selected' : '' }}">
+                                <span class="payment-option__left">
+                                    <input type="radio" name="payment_method" value="jazzcash" {{ old('payment_method') === 'jazzcash' ? 'checked' : '' }}>
+                                    <span>
+                                        <span class="payment-brand-badge payment-brand-badge--jazzcash">JazzCash</span>
+                                        <span style="display:block;font-size:0.8rem;color:#7A6E68;margin-top:4px;">Transfer via JazzCash mobile account</span>
+                                    </span>
+                                </span>
+                                <i class="fa-solid fa-arrow-right" style="color:#C7B8B0;"></i>
+                            </label>
+
+                            <p style="font-size:0.78rem;color:#7A6E68;margin:10px 0 0;line-height:1.5;">
+                                <i class="fa-solid fa-circle-info" style="color:var(--rose);"></i>
+                                Your Order ID and the verified payment account details will be shown on the confirmation screen right after you place the order.
+                            </p>
                         </div>
                     </div>
 
@@ -247,6 +279,28 @@
                                 </div>
                             </div>
                         @endforeach
+                    </div>
+
+                    {{-- Promo Code --}}
+                    <div class="checkout-coupon">
+                        @if ($coupon)
+                            <div class="checkout-coupon__applied">
+                                <span><i class="fa-solid fa-tag"></i> <strong>{{ $coupon->code }}</strong> applied</span>
+                                <form action="{{ route('checkout.coupon.remove') }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="checkout-coupon__remove">Remove</button>
+                                </form>
+                            </div>
+                        @else
+                            <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="checkout-coupon__form">
+                                @csrf
+                                <label for="coupon-code" class="sr-only">Promo code</label>
+                                <input type="text" id="coupon-code" name="code" placeholder="Promo code (e.g. WELCOME10)" autocomplete="off" required>
+                                <button type="submit">Apply</button>
+                            </form>
+                            @error('code') <div class="error" style="color:#B3261E;font-size:0.76rem;margin-top:6px;font-weight:500;">{{ $message }}</div> @enderror
+                        @endif
                     </div>
 
                     {{-- Cost Calculation Breakdown --}}

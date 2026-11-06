@@ -12,7 +12,7 @@
 
     <div class="admin-card">
         <form method="GET" action="{{ route('admin.reviews.index') }}" style="margin-bottom:20px;">
-            <select class="select-sort" name="status" onchange="this.form.requestSubmit()">
+            <select class="select-sort" name="status" onchange="this.form.requestSubmit()" aria-label="Filter reviews by status">
                 <option value="">All Reviews</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending Approval</option>
                 <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>

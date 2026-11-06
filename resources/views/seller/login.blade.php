@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Seller Login — Alishe Nails')
+@section('title', 'Seller Login - Alishe Nails')
+@section('robots', 'noindex,nofollow')
 @section('content')
 <div class="page-header"><h1>Seller Dashboard</h1><p>Manage your designs, orders, and earnings.</p></div>
 <div class="container" style="max-width:480px;padding-block:40px 80px;">

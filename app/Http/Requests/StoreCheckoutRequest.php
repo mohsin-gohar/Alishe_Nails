@@ -22,7 +22,7 @@ class StoreCheckoutRequest extends FormRequest
             'city' => ['required', 'string', 'max:100'],
             'area' => ['nullable', 'string', 'max:150'],
             'postal_code' => ['nullable', 'string', 'max:20'],
-            'payment_method' => ['nullable', 'string', 'in:online_payment,jazzcash,sadapay,easypaisa,bank_transfer'],
+            'payment_method' => ['required', 'string', 'in:online_payment,jazzcash,sadapay,easypaisa,bank_transfer'],
             'transaction_reference' => ['nullable', 'string', 'max:100'],
             'instagram_username' => ['nullable', 'string', 'max:100'],
             'sender_number' => ['nullable', 'string', 'max:50'],
@@ -35,8 +35,6 @@ class StoreCheckoutRequest extends FormRequest
         return [
             'payment_method.required' => 'Please select your online payment method (JazzCash or SadaPay).',
             'payment_method.in' => 'Please select either JazzCash or SadaPay for advance payment.',
-            'instagram_username.required' => 'Please enter your Instagram username so we can verify your Instagram DM and custom sizing on @alishe_nails.',
-            'transaction_reference.required' => 'Please enter the Transaction ID (TID) from your JazzCash or SadaPay payment receipt.',
         ];
     }
 }

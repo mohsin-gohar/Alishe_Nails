@@ -15,6 +15,8 @@ class StoreCartRequest extends FormRequest
     {
         return [
             'qty' => ['required', 'integer', 'min:1', 'max:200'],
+            'shape' => ['nullable', 'string', 'max:50'],
+            'size' => ['nullable', 'string', 'max:150'],
         ];
     }
 }

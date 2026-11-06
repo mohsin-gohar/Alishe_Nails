@@ -37,7 +37,12 @@ class AdminSettingsController extends Controller
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
-        $admin->update(['password' => Hash::make($validated['new_password'])]);
+        $admin->forceFill([
+            'password' => Hash::make($validated['new_password']),
+            'remember_token' => \Illuminate\Support\Str::random(60),
+        ])->save();
+
+        $request->session()->regenerate();
 
         return back()->with('success', 'Admin password updated.');
     }

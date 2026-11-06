@@ -18,24 +18,24 @@
             </p>
 
             <div class="form-field" style="margin-bottom:12px;">
-                <label>WhatsApp Number</label>
-                <input type="text" value="{{ config('services.whatsapp.number') }}" disabled>
+                <label for="cfg-whatsapp">WhatsApp Number</label>
+                <input id="cfg-whatsapp" type="text" value="{{ config('services.whatsapp.number') }}" disabled>
             </div>
             <div class="form-field" style="margin-bottom:12px;">
-                <label>Instagram Handle</label>
-                <input type="text" value="{{ '@'.config('services.instagram.handle') }}" disabled>
+                <label for="cfg-instagram">Instagram Handle</label>
+                <input id="cfg-instagram" type="text" value="{{ '@'.config('services.instagram.handle') }}" disabled>
             </div>
             <div class="form-field" style="margin-bottom:12px;">
-                <label>Bank Account ({{ config('services.payment.bank_name') }})</label>
-                <input type="text" value="{{ config('services.payment.bank_account_title') }} &middot; {{ config('services.payment.bank_account_number') }}" disabled>
+                <label for="cfg-bank">Bank Account ({{ config('services.payment.bank_name') }})</label>
+                <input id="cfg-bank" type="text" value="{{ config('services.payment.bank_account_title') }} &middot; {{ config('services.payment.bank_account_number') }}" disabled>
             </div>
             <div class="form-field" style="margin-bottom:12px;">
-                <label>JazzCash Account</label>
-                <input type="text" value="{{ config('services.payment.jazzcash_account_title') }} &middot; {{ config('services.payment.jazzcash_number') }}" disabled>
+                <label for="cfg-jazzcash">JazzCash Account</label>
+                <input id="cfg-jazzcash" type="text" value="{{ config('services.payment.jazzcash_account_title') }} &middot; {{ config('services.payment.jazzcash_number') }}" disabled>
             </div>
             <div class="form-field">
-                <label>SadaPay Account</label>
-                <input type="text" value="{{ config('services.payment.sadapay_account_title') }} &middot; {{ config('services.payment.sadapay_number') }}" disabled>
+                <label for="cfg-sadapay">SadaPay Account</label>
+                <input id="cfg-sadapay" type="text" value="{{ config('services.payment.sadapay_account_title') }} &middot; {{ config('services.payment.sadapay_number') }}" disabled>
             </div>
         </div>
 
@@ -71,8 +71,8 @@
             </p>
 
             <div class="form-field" style="margin-bottom:12px;">
-                <label>Last Sync</label>
-                <input type="text"
+                <label for="cfg-last-sync">Last Sync</label>
+                <input id="cfg-last-sync" type="text"
                        value="{{ $instagramStatus ? \Illuminate\Support\Carbon::parse($instagramStatus['at'])->format('d M Y, h:i A') : 'Never' }}"
                        disabled>
             </div>

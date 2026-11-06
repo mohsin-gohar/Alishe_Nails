@@ -9,6 +9,12 @@ class NewsletterController extends Controller
 {
     public function store(NewsletterRequest $request)
     {
+        // Honeypot: real users never see/fill this field. If a bot does, we
+        // pretend the subscription worked so it does not learn anything.
+        if ($request->filled('website')) {
+            return back()->with('success', 'Thanks for subscribing to Alishe Nails!');
+        }
+
         $email = $request->validated()['email'];
 
         $existing = NewsletterSubscriber::where('email', $email)->first();

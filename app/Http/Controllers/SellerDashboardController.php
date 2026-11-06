@@ -86,7 +86,20 @@ class SellerDashboardController extends Controller
 
     private function storeImage($file): string
     {
-        $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'-'.time().'-'.Str::random(6).'.'.strtolower($file->getClientOriginalExtension());
+        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (! in_array($file->getMimeType(), $allowed, true)) {
+            abort(422, 'Invalid image type.');
+        }
+
+        $extension = match ($file->getMimeType()) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => 'jpg',
+        };
+
+        $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'-'.time().'-'.Str::random(6).'.'.$extension;
 
         if (! is_dir(public_path('images/products'))) {
             mkdir(public_path('images/products'), 0775, true);

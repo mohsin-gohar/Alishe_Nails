@@ -43,7 +43,12 @@ class ProfileController extends Controller
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
-        $user->update(['password' => Hash::make($validated['password'])]);
+        $user->forceFill([
+            'password' => Hash::make($validated['password']),
+            'remember_token' => \Illuminate\Support\Str::random(60),
+        ])->save();
+
+        $request->session()->regenerate();
 
         return back()->with('success', 'Password updated.');
     }

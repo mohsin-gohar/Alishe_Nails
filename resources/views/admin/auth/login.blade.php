@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="login-box">
-        <h2 style="text-align:center;margin-bottom:24px;">Admin Login</h2>
+        <h1 style="text-align:center;margin-bottom:24px;font-size:1.6rem;">Admin Login</h1>
 
         <form action="{{ route('admin.login.attempt') }}" method="POST">
             @csrf

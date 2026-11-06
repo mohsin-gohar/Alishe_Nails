@@ -134,7 +134,17 @@ class AdminProductController extends Controller
      */
     private function storeMediaFile(UploadedFile $file, string $type): string
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        $mime = $file->getMimeType();
+        $allowedExtensions = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'video/mp4' => 'mp4',
+            'application/mp4' => 'mp4',
+            'video/webm' => 'webm',
+            'audio/webm' => 'webm',
+        ];
+        $extension = $allowedExtensions[$mime] ?? strtolower($file->getClientOriginalExtension());
         $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'-'.time().'-'.Str::random(6).'.'.$extension;
 
         $directory = $type === 'video' ? 'videos/products' : 'images/products';

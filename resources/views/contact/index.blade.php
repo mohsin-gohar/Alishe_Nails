@@ -16,7 +16,7 @@
 
                 <form action="{{ route('contact.store') }}" method="POST">
                     {{-- Honeypot: hidden from real visitors via CSS; ContactRequest rejects any submission that fills this in. --}}
-                    <input type="text" name="website" value="" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <input type="text" name="website" value="" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
                     @csrf
 
                     <div class="form-grid">

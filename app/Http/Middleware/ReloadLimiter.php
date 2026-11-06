@@ -23,12 +23,18 @@ class ReloadLimiter
             return $next($request);
         }
 
-        // Increased from 5 to 30 per minute per route per IP. The original
-        // limit of 5 was far too aggressive and would lock out a normal
-        // visitor after a handful of quick page refreshes.
-        $key = 'reload:' . $request->ip() . ':' . $request->path();
+        // Exempt administrative and seller portal routes from reload limiting
+        // so staff work and product management are never locked out.
+        if ($request->is('admin*') || $request->is('seller*')) {
+            return $next($request);
+        }
 
-        if (RateLimiter::tooManyAttempts($key, 30)) {
+        // Count each distinct URL separately (path + query string) so
+        // navigating between filter/sort links is not mistaken for reload
+        // spam. Only repeatedly refreshing the exact same URL is limited.
+        $key = 'reload:' . $request->ip() . ':' . $request->getRequestUri();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
 
             return response()->view('errors.429', [], 429)

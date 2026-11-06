@@ -37,6 +37,9 @@ class AdminPagesRenderTest extends TestCase
             route('admin.reviews.index'),
             route('admin.campaign-pitches.index'),
             route('admin.analytics.index'),
+            route('admin.coupons.index'),
+            route('admin.marketplace.sellers.index'),
+            route('admin.subscriptions.index'),
             route('admin.settings.index'),
         ];
 

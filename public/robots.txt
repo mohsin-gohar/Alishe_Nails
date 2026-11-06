@@ -4,4 +4,4 @@ Disallow: /seller/
 Disallow: /account/
 Disallow: /checkout/
 
-Sitemap: /sitemap.xml
+Sitemap: https://alishenails.website/sitemap.xml

@@ -181,6 +181,7 @@ class Product extends Model
     {
         $items = collect($this->media ?? [])
             ->filter(fn ($item) => is_array($item) && ! empty($item['type']) && ! empty($item['path']))
+            ->unique(fn ($item) => $item['type'].'|'.$item['path'])
             ->sortBy('order')
             ->values();
 
@@ -195,6 +196,12 @@ class Product extends Model
         }
 
         foreach ((array) ($this->gallery ?? []) as $path) {
+            // Older rows stored the cover image in both `image` and
+            // `gallery`; skip the duplicate so galleries never repeat.
+            if ($path === $this->attributes['image']) {
+                continue;
+            }
+
             $legacy[] = ['type' => 'image', 'path' => $path, 'order' => count($legacy)];
         }
 

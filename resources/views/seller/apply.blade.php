@@ -1,10 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Sell on Alishe Nails')
+@section('robots', 'noindex,nofollow')
 @section('content')
 <div class="page-header"><h1>Sell Your Designs</h1><p>Bring your community and your nail art to Alishe Nails.</p></div>
 <div class="container" style="max-width:820px;padding-block:40px 80px;">
     <form action="{{ route('seller.apply.store') }}" method="POST" class="checkout-card">
         @csrf
+        <input type="text" name="website" value="" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
         <div class="form-grid">
             <div class="form-field"><label for="name">Your name / brand</label><input id="name" name="name" value="{{ old('name') }}" required>@error('name')<div class="error">{{ $message }}</div>@enderror</div>
             <div class="form-field"><label for="email">Email</label><input id="email" type="email" name="email" value="{{ old('email') }}" required>@error('email')<div class="error">{{ $message }}</div>@enderror</div>

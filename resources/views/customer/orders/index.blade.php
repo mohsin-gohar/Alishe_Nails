@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'My Orders — Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
     <div class="container" style="padding-block:48px 64px;">
@@ -15,8 +16,8 @@
                 <a href="{{ route('shop.index') }}" class="btn btn-primary">Shop the Collection</a>
             </div>
         @else
-            <div class="admin-card" style="background:#fff;border-radius:var(--radius-md);">
-                <table class="data-table">
+            <div class="admin-card" style="background:#fff;border-radius:var(--radius-md);overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <table class="data-table" style="min-width:520px;">
                     <thead>
                         <tr>
                             <th>Order</th>

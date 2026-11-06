@@ -12,7 +12,7 @@
 
     <div class="admin-card">
         <form method="GET" action="{{ route('admin.campaign-pitches.index') }}" style="margin-bottom:20px;">
-            <select class="select-sort" name="status" onchange="this.form.requestSubmit()">
+            <select class="select-sort" name="status" onchange="this.form.requestSubmit()" aria-label="Filter pitches by status">
                 <option value="">All Pitches</option>
                 @foreach (\App\Models\CampaignPitch::STATUS_LABELS as $value => $label)
                     <option value="{{ $value }}" {{ request('status') == $value ? 'selected' : '' }}>{{ $label }}</option>

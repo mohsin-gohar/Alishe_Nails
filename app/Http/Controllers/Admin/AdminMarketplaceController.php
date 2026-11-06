@@ -12,7 +12,7 @@ class AdminMarketplaceController extends Controller
 {
     public function index()
     {
-        return redirect()->route('admin.subscriptions.index');
+        return redirect()->route('admin.marketplace.sellers.index');
     }
 
     public function approve(Seller $seller)

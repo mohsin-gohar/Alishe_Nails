@@ -12,10 +12,12 @@ class SitemapController extends Controller
         $urls = collect([
             ['loc' => route('home'), 'priority' => '1.0'],
             ['loc' => route('shop.index'), 'priority' => '0.9'],
+            ['loc' => route('custom-design.create'), 'priority' => '0.6'],
             ['loc' => route('about.index'), 'priority' => '0.6'],
             ['loc' => route('how-to-apply.index'), 'priority' => '0.6'],
             ['loc' => route('policies.index'), 'priority' => '0.4'],
             ['loc' => route('contact.index'), 'priority' => '0.5'],
+            ['loc' => route('seller.apply'), 'priority' => '0.3'],
         ])->merge(
             Product::active()->get(['slug', 'updated_at'])->map(fn (Product $product) => [
                 'loc' => route('products.show', $product),

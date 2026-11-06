@@ -15,7 +15,7 @@
 
     <div class="admin-card">
         <form method="GET" action="{{ route('admin.shipping.index') }}" style="margin-bottom:20px;display:flex;gap:12px;">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search city or area..." class="input-search" style="max-width:300px;">
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search city or area..." class="input-search" style="max-width:300px;" aria-label="Search shipping zones">
             <button type="submit" class="btn btn-outline btn-sm">Search</button>
         </form>
 

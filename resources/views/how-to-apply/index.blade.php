@@ -14,7 +14,7 @@
     <div class="container" style="max-width:860px;padding-bottom:72px;">
 
         {{-- Adhesive Choice: Glue vs Tabs --}}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:40px;">
+        <div class="apply-options-grid" style="margin-bottom:40px;">
             <div style="background:#FAF5F2;border:1.5px solid var(--rose);border-radius:var(--radius-md);padding:24px;">
                 <span style="background:var(--rose);color:#fff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;display:inline-block;margin-bottom:10px;">
                     Option A &middot; Long Wear
@@ -77,7 +77,7 @@
             <p style="font-size:0.9rem;line-height:1.6;color:rgba(43,29,29,.8);margin-bottom:16px;">
                 Never rip, pry, or force press-on nails off — doing so can peel delicate keratin layers from your natural nail beds. Follow this simple 3-step soaking ritual:
             </p>
-            <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;font-size:0.85rem;color:rgba(43,29,29,.85);">
+            <div class="removal-grid" style="font-size:0.85rem;color:rgba(43,29,29,.85);">
                 <div style="background:#fff;border-radius:8px;padding:16px;border:1px solid var(--border-soft);">
                     <strong style="color:var(--rose-dark);display:block;margin-bottom:4px;">1. Warm Water Bath</strong>
                     Fill a bowl with warm water, add a few drops of liquid soap and olive/cuticle oil.

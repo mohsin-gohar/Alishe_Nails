@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Order #'.$order->order_number.' — Alishe Nails')
+@section('title', 'Order #'.$order->order_number.' - Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
     <div class="container" style="max-width:720px;padding-block:48px 64px;">

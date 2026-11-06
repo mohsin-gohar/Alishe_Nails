@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Your Cart — Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
 
@@ -11,7 +12,7 @@
         @if (empty($items))
             <div class="cart-empty">
                 <i class="fa-solid fa-bag-shopping" style="font-size:2.4rem;color:var(--rose);"></i>
-                <h2 style="margin-top:16px;">Your cart is empty</h2>
+                <h1 style="margin-top:16px;font-size:1.6rem;">Your cart is empty</h1>
                 <p>Looks like you haven't added anything yet.</p>
                 <a href="{{ route('shop.index') }}" class="btn btn-primary">Shop the Collection</a>
             </div>

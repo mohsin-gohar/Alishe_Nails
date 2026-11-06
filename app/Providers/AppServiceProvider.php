@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Support\Cart;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,5 +27,12 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $view->with('cartCount', Cart::count());
         });
+
+        // Production hardening: never emit a plain-HTTP asset or link when the
+        // site is served over TLS (prevents mixed-content blocks from browsers
+        // and preserves the "fully secure" padlock).
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

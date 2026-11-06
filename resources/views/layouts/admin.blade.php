@@ -35,6 +35,9 @@
                     <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-tags"></i> Categories
                     </a>
+                    <a href="{{ route('admin.coupons.index') }}" class="admin-nav-link {{ request()->routeIs('admin.coupons.*') ? 'is-active' : '' }}">
+                        <i class="fa-solid fa-ticket"></i> Coupons
+                    </a>
                     <a href="{{ route('admin.shipping.index') }}" class="admin-nav-link {{ request()->routeIs('admin.shipping.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-truck"></i> Shipping Rates
                     </a>
@@ -50,8 +53,8 @@
                     <a href="{{ route('admin.analytics.index') }}" class="admin-nav-link {{ request()->routeIs('admin.analytics.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-chart-line"></i> Analytics
                     </a>
-                    <a href="{{ route('admin.marketplace.index') }}" class="admin-nav-link {{ request()->routeIs('admin.marketplace.*') ? 'is-active' : '' }}">
-                        <i class="fa-solid fa-store"></i> Marketplace
+                    <a href="{{ route('admin.marketplace.sellers.index') }}" class="admin-nav-link {{ request()->routeIs('admin.marketplace.*') ? 'is-active' : '' }}">
+                        <i class="fa-solid fa-store"></i> Sellers
                     </a>
                     <a href="{{ route('admin.subscriptions.index') }}" class="admin-nav-link {{ request()->routeIs('admin.subscriptions.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-repeat"></i> Subscriptions
