@@ -53,7 +53,7 @@
     while ($picked->count() < 3) {
         $picked->push(public_path('images/logo.jpeg'));
     }
-    $headerImages = $picked->map(fn ($file) => {
+    $headerImages = $picked->map(function ($file) {
         $relativePath = ltrim(str_replace(public_path(), '', (string) $file), DIRECTORY_SEPARATOR);
         $relativePath = str_replace('\\', '/', $relativePath);
         return asset($relativePath);
@@ -171,7 +171,7 @@
     <script defer src="https://clarity.ms/universal.js?v=1"></script>
     <script>
         window.clarity=window.clarity||function(){arguments._push=arguments;window.clarity._L=+new Date;
-        var recr=document.getElementsByTagName('script')[0];recr.parentNode.insertBefore(clarity recr);
+        var recr=document.getElementsByTagName('script')[0];recr.parentNode.insertBefore(clarity, recr);
         clarity('set', 'siteId', '{{ config('services.clarity_project_id') }}');
         clarity('view');
     </script>

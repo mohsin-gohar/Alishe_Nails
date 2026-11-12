@@ -65,11 +65,11 @@
 
                     <div class="filter-group">
                         <h6>Length</h6>
-                        @foreach (['Short', 'Medium', 'Long', 'Extra Long'] as $length)
+                            @foreach (['Short', 'Medium', 'Long', 'Extra Long'] as $length)
                             <label class="filter-option">
                                 <input type="checkbox" name="length[]" value="{{ $length }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($length, (array) request('length', [])) ? 'checked' : '' }}>>
+                                    {{ in_array($length, (array) request('length', [])) ? 'checked' : '' }}>
                                 {{ $length }} ({{ $lengthCounts[$length] ?? 0 }})
                             </label>
                         @endforeach
@@ -77,11 +77,11 @@
 
                     <div class="filter-group">
                         <h6>Finish</h6>
-                        @foreach (['Glossy', 'Matte', 'Glitter/Chrome'] as $finish)
+                            @foreach (['Glossy', 'Matte', 'Glitter/Chrome'] as $finish)
                             <label class="filter-option">
                                 <input type="checkbox" name="finish[]" value="{{ $finish }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($finish, (array) request('finish', [])) ? 'checked' : '' }}>>
+                                    {{ in_array($finish, (array) request('finish', [])) ? 'checked' : '' }}>
                                 {{ $finish }} ({{ $finishCounts[$finish] ?? 0 }})
                             </label>
                         @endforeach
