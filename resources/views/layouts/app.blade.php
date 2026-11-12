@@ -53,9 +53,11 @@
     while ($picked->count() < 3) {
         $picked->push(public_path('images/logo.jpeg'));
     }
-    $headerImages = $picked->map(fn ($file) => str_starts_with((string) $file, public_path('images'))
-        ? asset(str_replace('\\', '/', str_replace(public_path().'\\', '', $file)))
-        : asset('images/logo.jpeg'))
+    $headerImages = $picked->map(fn ($file) => {
+        $relativePath = ltrim(str_replace(public_path(), '', (string) $file), DIRECTORY_SEPARATOR);
+        $relativePath = str_replace('\\', '/', $relativePath);
+        return asset($relativePath);
+    })
         ->values()
         ->all();
 @endphp

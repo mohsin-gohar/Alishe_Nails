@@ -3,58 +3,150 @@
 
 @section('title', 'Alishe Nails — Bespoke Couture Press-On Nails | Karachi Atelier')
 
+@section('meta_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+
+@section('og_title', 'Alishe Nails — Bespoke Couture Press-On Nails | Karachi Atelier')
+
+@section('og_description', 'Handcrafted 7-layer salon gel press-on nails. Damage-free, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+
+@push('styles')
+    <style>
+        /* Hero showreel — homepage only, so it lives here rather than in app.css. */
+        .hero-media {
+            position: relative;
+            flex: 1 1 340px;
+            min-width: 310px;
+            max-width: 540px;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border: 2px solid #F0E2D8;
+            border-radius: 24px;
+            background: #2B231F;
+            box-shadow: 0 20px 40px rgba(138, 92, 70, 0.15);
+        }
+
+        .hero-video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-video-label {
+            position: absolute;
+            bottom: 18px;
+            left: 18px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            background: rgba(43, 35, 31, 0.75);
+            backdrop-filter: blur(8px);
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: #F8EFEA;
+        }
+
+        @media (max-width: 860px) {
+            .hero-media {
+                max-width: 100%;
+            }
+        }
+
+        /* Homepage product rails */
+        .home-rail {
+            padding-block: 8px;
+        }
+
+        .home-rail__head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .home-rail__head h2 {
+            margin: 0 0 6px;
+            font-size: 2.1rem;
+        }
+
+        .home-rail__head p {
+            margin: 0;
+            color: rgba(43, 29, 29, 0.7);
+        }
+    </style>
+@endpush
+
 @section('content')
 
     {{-- ---------- 1. Haute Couture Hero ---------- --}}
-    <section class="hero">
-        <div class="container hero__grid">
-            <div>
-                <span class="hero__badge-luxury">
-                    <i class="fa-solid fa-crown"></i> Bespoke Press-On Nail Atelier &middot; Karachi
-                </span>
-                <h1 style="font-size:2.8rem;line-height:1.15;margin-bottom:16px;">
-                    Couture Nails,<br><span class="italic-accent">Sculpted for Elegance</span>
-                </h1>
-                <p class="lead" style="font-size:1.05rem;line-height:1.6;color:rgba(43,29,29,.8);margin-bottom:24px;">
-                    Handcrafted in small batches using 7-layer salon gel &amp; fine nail artistry. 100% damage-free, reusable up to 5 times, delivered in signature luxury packaging across Karachi.
-                </p>
+    <section style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:40px;padding:60px 20px;max-width:1250px;margin:0 auto;">
 
-                <div class="hero__actions">
-                    <a href="{{ route('shop.index') }}" class="btn btn-gold-luxury">
-                        <i class="fa-solid fa-gem"></i> Explore The Collection
-                    </a>
-                    <a href="{{ route('custom-design.create') }}" class="btn btn-outline">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Custom Bespoke Design
-                    </a>
-                </div>
+        <div style="flex:1;min-width:310px;max-width:580px;">
+            <span class="hero__badge-luxury">
+                <i class="fa-solid fa-crown"></i> Bespoke Press-On Nail Atelier &middot; Karachi
+            </span>
 
-                <div class="hero__trust-strip">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <span class="hero__trust-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span>
-                        <strong>4.9 / 5</strong>
-                        <span style="opacity:.75;">(1,200+ Karachi Clients)</span>
-                    </div>
-                    <span>&bull;</span>
-                    <div><i class="fa-solid fa-box-open" style="color:var(--rose);"></i> Complimentary Prep Kit</div>
-                    <span>&bull;</span>
-                    <div><i class="fa-solid fa-shield-halved" style="color:#2E7D32;"></i> Zero Damage</div>
-                </div>
+            <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(36px,4.5vw,54px);color:#2B231F;margin:16px 0 16px 0;font-weight:500;line-height:1.15;">
+                Couture Nails, <br>
+                <span style="font-style:italic;color:#9C6B55;">Sculpted for Elegance</span>
+            </h1>
+
+            <p style="font-size:15px;color:#6E5D53;line-height:1.7;margin:0 0 28px 0;">
+                Handcrafted in small batches using 7-layer salon gel &amp; fine nail artistry. 100% damage-free, reusable up to 5 times, delivered in signature luxury packaging across Karachi.
+            </p>
+
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:30px;">
+                <a href="{{ route('shop.index') }}" class="btn btn-gold-luxury">
+                    <i class="fa-solid fa-gem"></i> Explore The Collection
+                </a>
+                <a href="{{ route('custom-design.create') }}" class="btn btn-outline">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Custom Bespoke Design
+                </a>
             </div>
 
-            <div class="hero__image" style="border:1.5px solid rgba(212,175,55,0.3);box-shadow:0 16px 40px rgba(43,29,29,0.12);">
-                @if (file_exists(public_path('vedios/headervedio.mp4')))
-                    <video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
-                        <source src="{{ asset('vedios/headervedio.mp4') }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                @else
-                    <div class="img-placeholder" style="aspect-ratio:4/3.2;background:linear-gradient(135deg,#FFF2F5,#F6D6DC);">
-                        <i class="fa-solid fa-gem" style="font-size:2.5rem;color:var(--rose);margin-bottom:10px;"></i>
-                        <br>Alishe Nails Atelier
-                    </div>
-                @endif
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;color:#6E5D53;border-top:1px solid #ECE0D8;padding-top:20px;">
+                <span style="color:#D9A937;font-weight:700;">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#2B231F;">4.9 / 5</span> <span style="font-size:11.5px;color:#8C7A6B;">(1,200+ Karachi Clients)</span></span>
+                <span>&bull;</span>
+                <span>&#127873; Complimentary Prep Kit</span>
+                <span>&bull;</span>
+                <span style="color:#2E7D46;font-weight:600;">&#10003; Zero Damage</span>
             </div>
         </div>
+
+        <div class="hero-media">
+            @if ($heroVideoUrl)
+                <video
+                    class="hero-video"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    @if ($heroPosterUrl) poster="{{ $heroPosterUrl }}" @endif
+                    aria-label="Alishe Nails atelier showreel">
+                    <source src="{{ $heroVideoUrl }}" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+            @elseif ($heroPosterUrl)
+                <img class="hero-video"
+                     src="{{ $heroPosterUrl }}"
+                     alt="Alishe Nails press-on nail collection"
+                     width="1080" height="810" fetchpriority="high">
+            @else
+                <div class="img-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF2F5,#F6D6DC);color:var(--rose);">
+                    Alishe Nails Atelier
+                </div>
+            @endif
+
+            <div class="hero-video-label">
+                Alishe Nails &bull; Karachi Studio
+            </div>
+        </div>
+
     </section>
 
     {{-- ---------- 2. Haute Couture Value Props (4 Columns) ---------- --}}
@@ -309,39 +401,50 @@
         </div>
     </section>
 
-    {{-- ---------- 8. Verified Karachi Client Testimonials ---------- --}}
-    <section class="container testimonials-section">
+    {{-- ---------- 8. Top 20 Showcase (2 Rails × 10 Products Each) ---------- --}}
+    <section class="container" style="padding-block:48px 64px;">
         <div class="section-heading">
-            <span class="eyebrow">Client Love</span>
-            <h2 style="font-size:2.1rem;margin-bottom:6px;">Loved Across Karachi</h2>
-            <p style="margin:0;color:rgba(43,29,29,.7);">Read authentic reviews from women who elevated their manicure routine.</p>
+            <span class="eyebrow">Trending Now</span>
+            <h2 style="font-size:2.1rem;margin-bottom:6px;">Popular This Season</h2>
+            <p style="margin:0;color:rgba(43,29,29,.7);">Hand-picked favorites from our collection — selling fast across Karachi.</p>
         </div>
 
-        <div class="testimonials-grid">
-            <div class="testimonial-card">
-                <div class="testimonial-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                <p class="testimonial-quote">"I was skeptical about press-ons, but Alishe Nails completely blew me away! The fit is so seamless everyone at the wedding thought I spent 4 hours at a high-end salon. Stayed solid for 2.5 weeks!"</p>
-                <div class="testimonial-client">
-                    <strong>Syeda Ayesha K.</strong>
-                    <span class="testimonial-location"><i class="fa-solid fa-location-dot"></i> DHA Phase 6, Karachi</span>
+        <div class="two-rail-grid">
+            {{-- Rail A: Best Sellers & Featured --}}
+            <div class="home-rail">
+                <div class="home-rail__head">
+                    <div>
+                        <h2>Best Sellers</h2>
+                        <p>Top-rated sets our Karachi clients love most.</p>
+                    </div>
+                    <a href="{{ route('shop.index') }}" style="font-size:13px;color:#2B231F;font-weight:600;">View All →</a>
+                </div>
+
+                <div class="product-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+                    @forelse ($showcasePrimary as $product)
+                        <x-product-card :product="$product" />
+                    @empty
+                        <p style="grid-column:1/-1;text-align:center;color:#6E5D53;">No best sellers yet — add tags in the admin.</p>
+                    @endforelse
                 </div>
             </div>
 
-            <div class="testimonial-card">
-                <div class="testimonial-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                <p class="testimonial-quote">"The quality of the gel and packaging is pure luxury. Sizing was spot on after measuring my nails in mm. Sent my payment via SadaPay and got my order in 48 hours. 10/10 service!"</p>
-                <div class="testimonial-client">
-                    <strong>Mahnoor Tariq</strong>
-                    <span class="testimonial-location"><i class="fa-solid fa-location-dot"></i> Clifton Block 4, Karachi</span>
+            {{-- Rail B: Featured & New Arrivals --}}
+            <div class="home-rail">
+                <div class="home-rail__head">
+                    <div>
+                        <h2>Featured & New</h2>
+                        <p>Fresh arrivals and hand-selected showstoppers.</p>
+                    </div>
+                    <a href="{{ route('shop.index') }}" style="font-size:13px;color:#2B231F;font-weight:600;">View All →</a>
                 </div>
-            </div>
 
-            <div class="testimonial-card">
-                <div class="testimonial-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                <p class="testimonial-quote">"No more ruining my natural nails with salon drills. These are thick, durable, and don't bend at all. I have already re-worn my French Ombre set 3 times using the adhesive tabs!"</p>
-                <div class="testimonial-client">
-                    <strong>Zainab Farooq</strong>
-                    <span class="testimonial-location"><i class="fa-solid fa-location-dot"></i> Gulshan-e-Iqbal, Karachi</span>
+                <div class="product-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+                    @forelse ($showcaseSecondary as $product)
+                        <x-product-card :product="$product" />
+                    @empty
+                        <p style="grid-column:1/-1;text-align:center;color:#6E5D53;">No featured items yet — add tags in the admin.</p>
+                    @endforelse
                 </div>
             </div>
         </div>

@@ -369,4 +369,41 @@
         </div>
     </div>
 
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Recalculate checkout total to ensure delivery charges are always included
+            const subtotalEl = document.querySelector('.summary-row:nth-child(1) strong');
+            const shippingEl = document.getElementById('checkout-shipping-amount');
+            const totalEl = document.getElementById('checkout-total-amount');
+            const btnTotalEl = document.getElementById('checkout-btn-total');
+
+            if (!subtotalEl || !totalEl || !btnTotalEl) return;
+
+            function parsePKR(text) {
+                return parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
+            }
+
+            function updateTotals() {
+                const subtotal = parsePKR(subtotalEl.textContent);
+                let shipping = 0;
+                if (shippingEl) {
+                    const shippingText = shippingEl.textContent;
+                    if (!shippingText.includes('Coordinated directly')) {
+                        shipping = parsePKR(shippingText);
+                    }
+                }
+
+                // Calculate total: subtotal + shipping (discount handled server-side, default 0 for safety)
+                const total = subtotal + shipping;
+
+                totalEl.textContent = 'PKR ' + total.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                btnTotalEl.textContent = 'PKR ' + total.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+
+            updateTotals();
+        });
+    </script>
+@endpush
+
 @endsection
