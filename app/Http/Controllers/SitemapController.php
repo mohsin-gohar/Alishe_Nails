@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class SitemapController extends Controller
 {
@@ -19,15 +20,25 @@ class SitemapController extends Controller
             ['loc' => route('contact.index'), 'priority' => '0.5'],
             ['loc' => route('seller.apply'), 'priority' => '0.3'],
         ])->merge(
-            Product::active()->get(['slug', 'updated_at'])->map(fn (Product $product) => [
-                'loc' => route('products.show', $product),
-                'lastmod' => optional($product->updated_at)->toAtomString(),
-                'priority' => '0.8',
-            ])
+            Cache::remember('sitemap_products', 3600, function () {
+                return Product::active()
+                    ->select('slug', 'updated_at')
+                    ->get()
+                    ->map(fn (Product $product) => [
+                        'loc' => route('products.show', $product),
+                        'lastmod' => optional($product->updated_at)->toAtomString(),
+                        'priority' => '0.8',
+                    ]);
+            })
         );
 
-        return response()
+        $response = response()
             ->view('sitemap', compact('urls'))
-            ->header('Content-Type', 'application/xml; charset=UTF-8');
+            ->header('Content-Type', 'application/xml; charset=utf-8');
+
+        // Clean any leading whitespace that might have been output
+        $response->setContent(ob_get_clean());
+
+        return $response;
     }
 }
