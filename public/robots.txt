@@ -1,7 +1,7 @@
 User-agent: *
 Disallow: /admin/
-Disallow: /seller/
-Disallow: /account/
+Disallow: /cart/
 Disallow: /checkout/
+Disallow: /login
 
 Sitemap: https://alishenails.website/sitemap.xml

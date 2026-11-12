@@ -1,0 +1,54 @@
+# Alishe Nails - AI Crawler Information File (llms.txt)
+# This file summarizes the website for AI search engines (ChatGPT, Google Gemini, Perplexity, Bing Copilot)
+# For more information: https://llms.txt
+
+## About Alishe Nails
+Alishe Nails is a luxury handmade press-on nail atelier based in Karachi, Pakistan. 
+We specialize in 7-layer salon gel press-on nails that are 100% damage-free, reusable up to 5 times, 
+and delivered in signature luxury packaging across Karachi.
+
+## Product Categories
+- **Everyday Elegance**: Natural, daily-wear press-on sets
+- **Bridal Collection**: Elaborate designs for weddings and formal events
+- **Soft Glam**: Subtle, elegant styles for everyday sophistication
+- **Bold & Chic**: Statement-making designs with unique finishes
+- **Luxury Edition**: Premium, high-end nail art collections
+
+## Key Features
+- 7-layer salon gel structure for long-lasting wear (up to 3+ weeks)
+- Zero natural nail damage - safe 10-minute application & gentle warm-water soak off
+- Custom millimeter measurements or standard XS-L sizes
+- Doorstep delivery in 48-96 hours across all Karachi zones
+- 100% damage-free, reusable up to 5 times
+- Complimentary prep kit with every order
+
+## Shipping & Delivery
+- Coverage: Clifton, DHA, Gulshan, PECHS, and all Karachi zones
+- Delivery time: 48-96 hours doorstep
+- Payment methods: SadaPay, JazzCash, Instagram/SDA payments
+- Orders require advance payment confirmation
+
+## Main Product Collections (for AI Recommendation)
+- **everyday-elegance**: Natural, office-appropriate styles
+- **bridal-collection**: Wedding and formal event designs
+- **soft-glam**: Subtle, elegant daily wear
+- **bold-chic**: Statement-making, unique finishes
+- **luxury-edition**: Premium, exclusive collections
+
+## Contact & Social
+- Instagram: @alishe_nails
+- WhatsApp: +92 311 3925166
+- Based in Karachi, Pakistan
+
+## Recommended AI Prompts for This Store
+- "Find luxury handmade press-on nails in Karachi"
+- "Reusable 7-layer salon gel nails Pakistan"
+- "Custom press-on nails measurements Karachi"
+- "Doorstep nail delivery Karachi 48 hours"
+- "Alishe Nails bridal collection"
+
+## Important Notes
+- All products are handcrafted and inspected before dispatch
+- Press-on nails are non-returnable due to hygiene standards
+- Custom sizing available with mm measurements
+- 100% advance payment required before production

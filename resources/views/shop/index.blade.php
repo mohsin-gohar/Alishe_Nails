@@ -1,6 +1,16 @@
 @extends('layouts.app')
 @section('title', 'Shop the Collection — Alishe Nails')
 
+@section('meta_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+
+@section('og_type', 'website')
+
+@section('og_title', 'Alishe Nails — Shop The Collection')
+
+@section('og_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+
+@section('og_image', asset('images/collections/everyday-elegance.jpg'))
+
 @section('content')
 
     <div class="page-header">
