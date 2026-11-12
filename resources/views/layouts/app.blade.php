@@ -141,5 +141,40 @@
 
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')
+
+    {{-- Google Analytics 4 --}}
+    @if (!empty(config('services.ga4_measurement_id')))
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4_measurement_id') }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ config('services.ga4_measurement_id') }}');
+    </script>
+    @endif
+
+    {{-- Facebook Meta Pixel --}}
+    @if (!empty(config('services.meta_pixel_id')))
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){callMethod.apply(arguments.callQueue=n.callQueue=[]);
+        callMethod.push=callMethod.callMethod.bind(n);n._jb2=n._jb2||v;s=b.createElement(e);s.async=!0;
+        s.src=v;t=b.getElementsByTagName(e)[0];t.parentNode.insertBefore(s,t)}(window, document,'script',
+        'https://connect.facebook.net/en_US/sdk.js');
+        fbq('init', '{{ config('services.meta_pixel_id') }}');
+        fbq('track', 'PageView');
+    </script>
+    @endif
+
+    {{-- Microsoft Clarity --}}
+    @if (!empty(config('services.clarity_project_id')))
+    <script defer src="https://clarity.ms/universal.js?v=1"></script>
+    <script>
+        window.clarity=window.clarity||function(){arguments._push=arguments;window.clarity._L=+new Date;
+        var recr=document.getElementsByTagName('script')[0];recr.parentNode.insertBefore(clarity recr);
+        clarity('set', 'siteId', '{{ config('services.clarity_project_id') }}');
+        clarity('view');
+    </script>
+    @endif
 </body>
 </html>

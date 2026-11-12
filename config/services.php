@@ -39,7 +39,7 @@ return [
     ],
 
     'whatsapp' => [
-        'number' => env('WHATSAPP_NUMBER', '+92 3113925166'),
+        'number' => env('WHATSAPP_ORDER_NUMBER', '+92 3113925166'),
     ],
 
     'payment' => [

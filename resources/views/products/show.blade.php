@@ -57,6 +57,11 @@
 
             {{-- ---------- Info ---------- --}}
             <div class="product-info">
+                <!-- WhatsApp Order Button -->
+                <a href="https://wa.me/{{ config('services.whatsapp.number') }}?text={{ urlencode('Assalam-o-Alaikum! Mujhe ' . $product->name . ' khareedna hai. Damme: PKR ' . $product->price . ' Product URL: ' . route('products.show', $product)) }}" target="_blank" rel="noopener" class="btn btn-whatsapp-wameline">
+                    <i class="fa-brands fa-whatsapp"></i> Order via WhatsApp
+                </a>
+                
                 @if ($product->badge)
                     <span class="product-card__badge" style="position:static;display:inline-block;margin-bottom:12px;">{{ $product->badge }}</span>
                 @endif
