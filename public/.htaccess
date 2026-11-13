@@ -5,9 +5,9 @@
 
     RewriteEngine On
 
-    # Redirect /public/ in the browser URL back to root clean URL
-    RewriteCond %{THE_REQUEST} \s/alishe-nails/public/([^\s?]*) [NC]
-    RewriteRule ^ /alishe-nails/%1 [L,R=302]
+    # Redirect /public/ in the browser URL back to the clean URL (supports root and subdirectory installs)
+    RewriteCond %{THE_REQUEST} \s(.*/)public/([^\s?]*) [NC]
+    RewriteRule ^ %1%2 [L,R=301,NE]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

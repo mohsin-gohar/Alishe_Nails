@@ -50,6 +50,28 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', function () {
+    $lines = [
+        'User-agent: *',
+        'Disallow: /admin/',
+        'Disallow: /seller/',
+        'Disallow: /account/',
+        'Disallow: /cart/',
+        'Disallow: /checkout/',
+        'Disallow: /track-order',
+        'Disallow: /login',
+        'Disallow: /register',
+        'Disallow: /forgot-password',
+        'Disallow: /reset-password',
+        'Disallow: /password',
+        'Disallow: /newsletter/',
+        '',
+        'Sitemap: '.url('sitemap.xml'),
+        '',
+    ];
+
+    return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('robots');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
@@ -148,7 +170,7 @@ Route::middleware('auth:web')->prefix('account')->name('account.')->group(functi
 
 /*
 |--------------------------------------------------------------------------
-| Admin ('admin' guard â€” completely separate from customer auth)
+| Admin ('admin' guard - completely separate from customer auth)
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('admin.')->group(function () {

@@ -9,7 +9,15 @@ class ReloadLimitTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_homepage_blocks_reload_spam_after_five_requests(): void
+    protected function setUp(): void
+    {
+        parent::setUp();
+        putenv('RELOAD_LIMIT_PER_MINUTE=5');
+        $_ENV['RELOAD_LIMIT_PER_MINUTE'] = '5';
+        $_SERVER['RELOAD_LIMIT_PER_MINUTE'] = '5';
+    }
+
+    public function test_homepage_blocks_reload_spam_after_configured_limit(): void
     {
         for ($i = 0; $i < 5; $i++) {
             $this->get('/')->assertOk();
@@ -18,10 +26,10 @@ class ReloadLimitTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(429);
-        $response->assertSee('You cannot reload again');
+        $response->assertSee('Too Many Requests');
     }
 
-    public function test_login_page_blocks_reload_spam_after_five_requests(): void
+    public function test_login_page_blocks_reload_spam_after_configured_limit(): void
     {
         for ($i = 0; $i < 5; $i++) {
             $this->get('/login')->assertOk();
@@ -30,7 +38,7 @@ class ReloadLimitTest extends TestCase
         $this->get('/login')->assertStatus(429);
     }
 
-    public function test_register_page_blocks_reload_spam_after_five_requests(): void
+    public function test_register_page_blocks_reload_spam_after_configured_limit(): void
     {
         for ($i = 0; $i < 5; $i++) {
             $this->get('/register')->assertOk();
