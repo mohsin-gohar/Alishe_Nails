@@ -67,4 +67,8 @@ return [
     'admin' => [
         'notification_email' => env('ADMIN_NOTIFICATION_EMAIL', 'owner@alishenails.com'),
     ],
+
+    'ga4_measurement_id' => env('GA4_MEASUREMENT_ID'),
+    'meta_pixel_id' => env('META_PIXEL_ID'),
+    'clarity_project_id' => env('CLARITY_PROJECT_ID'),
 ];

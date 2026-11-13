@@ -8,10 +8,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Prevents reload spam: a single IP may load the same page at most 5 times
- * per minute. After that, further requests are rejected with HTTP 429 and a
- * clear "you cannot reload again" message, protecting the server from being
- * hammered by repeated refreshes (including on /login and /register).
+ * Prevents reload spam: a single IP may load the same page at most N times
+ * per minute. After that, further requests are rejected with HTTP 429.
+ * Threshold is configurable via RELOAD_LIMIT_PER_MINUTE (default 30).
  */
 class ReloadLimiter
 {
@@ -29,12 +28,14 @@ class ReloadLimiter
             return $next($request);
         }
 
+        $limit = max(1, (int) env('RELOAD_LIMIT_PER_MINUTE', 30));
+
         // Count each distinct URL separately (path + query string) so
         // navigating between filter/sort links is not mistaken for reload
         // spam. Only repeatedly refreshing the exact same URL is limited.
         $key = 'reload:'.$request->ip().':'.$request->getRequestUri();
 
-        if (RateLimiter::tooManyAttempts($key, 5)) {
+        if (RateLimiter::tooManyAttempts($key, $limit)) {
             $seconds = RateLimiter::availableIn($key);
 
             return response()->view('errors.429', [], 429)

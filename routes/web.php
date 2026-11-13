@@ -148,7 +148,7 @@ Route::middleware('auth:web')->prefix('account')->name('account.')->group(functi
 
 /*
 |--------------------------------------------------------------------------
-| Admin ('admin' guard â€” completely separate from customer auth)
+| Admin ('admin' guard - completely separate from customer auth)
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('admin.')->group(function () {

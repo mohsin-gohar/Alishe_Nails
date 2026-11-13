@@ -3,6 +3,7 @@
 @section('robots', 'noindex, follow')
 
 @section('title', 'Page Not Found — Alishe Nails')
+@section('robots', 'noindex,nofollow')
 
 @section('content')
 <div class="container" style="padding-block:96px;text-align:center;max-width:640px;margin-inline:auto;">
