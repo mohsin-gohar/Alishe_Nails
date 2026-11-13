@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -45,7 +46,7 @@ class ProfileController extends Controller
 
         $user->forceFill([
             'password' => Hash::make($validated['password']),
-            'remember_token' => \Illuminate\Support\Str::random(60),
+            'remember_token' => Str::random(60),
         ])->save();
 
         $request->session()->regenerate();

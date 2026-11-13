@@ -185,7 +185,7 @@
     <script defer src="https://clarity.ms/universal.js?v=1"></script>
     <script>
         window.clarity=window.clarity||function(){arguments._push=arguments;window.clarity._L=+new Date;
-        var recr=document.getElementsByTagName('script')[0];recr.parentNode.insertBefore(clarity recr);
+        var recr=document.getElementsByTagName('script')[0];recr.parentNode.insertBefore(clarity, recr);
         clarity('set', 'siteId', '{{ config('services.clarity_project_id') }}');
         clarity('view');
     </script>

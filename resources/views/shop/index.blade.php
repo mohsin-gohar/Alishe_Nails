@@ -76,7 +76,7 @@
                             <label class="filter-option">
                                 <input type="checkbox" name="length[]" value="{{ $length }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($length, (array) request('length', [])) ? 'checked' : '' }}>>
+                                    {{ in_array($length, (array) request('length', [])) ? 'checked' : '' }}>
                                 {{ $length }} ({{ $lengthCounts[$length] ?? 0 }})
                             </label>
                         @endforeach

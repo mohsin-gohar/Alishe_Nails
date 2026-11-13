@@ -43,9 +43,13 @@ class HomeController extends Controller
 
             foreach ($extensions as $extension) {
                 foreach (glob($directory.'/*.'.strtolower($extension)) ?: [] as $file) {
+                    // The user's named hero video always wins, even if its
+                    // filemtime is older than a leftover clip in the folder.
+                    $isHero = (strtolower(basename($file)) === 'headervedio.mp4');
+
                     $candidates[] = [
                         'path' => $prefix.'/'.basename($file),
-                        'mtime' => (int) filemtime($file),
+                        'mtime' => $isHero ? PHP_INT_MAX : (int) filemtime($file),
                     ];
                 }
             }

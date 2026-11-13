@@ -70,8 +70,10 @@ class SitemapController extends Controller
             return array_merge($static, $categories, $products);
         });
 
-        return response()
+        $response = response()
             ->view('sitemap', compact('urls'))
-            ->header('Content-Type', 'application/xml; charset=UTF-8');
+            ->header('Content-Type', 'application/xml; charset=utf-8');
+
+        return $response;
     }
 }

@@ -9,8 +9,8 @@ Yeh guide AlifHost ya kisi bhi standard cPanel shared hosting par **Alishe Nails
 - [x] **No /public in URLs:** Root `.htaccess` aur `public/index.php` configure ho chuke hain.
 - [x] **Vite Assets Compiled:** `npm run build` run ho chuka hai (`public/build` mein production assets moujood hain). `node_modules` server par upload karne ki bilkul zaroorat nahi hai.
 - [x] **Database Export:** Fresh database backup ready hai: `database/alishe_nails_backup.sql`.
-- [x] **All 113 Tests Passed:** Code 100% bug-free aur tested hai.
-- [x] **Production Config:** `deploy/alifhost/.env.production` ready hai.
+- [x] **Automated Tests:** 113 tests pass in the local SQLite test environment; this does not guarantee zero defects or validate the production server.
+- [ ] **Production Config:** Create the server's `.env` from `.env.example`; production secrets are not included in this repository.
 
 ---
 
@@ -65,12 +65,11 @@ Agar aap files bahar move nahi karna chahte aur saara project seedha `public_htm
 
 ## Step 4: `.env` Configure Karein
 
-1. Server par `alishe-nails` folder ke andar `.env` file ko edit karein (ya `deploy/alifhost/.env.production` copy karein).
+1. Server par `alishe-nails` folder ke andar `.env` file banayein from `.env.example`; never commit or publish this file.
 2. Yeh values update karein:
    ```ini
    APP_NAME="Alishe Nails"
    APP_ENV=production
-   APP_KEY=base64:zAJOUdLY1DJh9uF3qqf3zuS6SCJZHzgh4fzma4lkgLw=
    APP_DEBUG=false
    APP_URL=https://yourdomain.com
 
@@ -86,6 +85,8 @@ Agar aap files bahar move nahi karna chahte aur saara project seedha `public_htm
    QUEUE_CONNECTION=database
    ```
 3. `yourdomain.com` ki jagah apni actual domain likhein.
+4. `APP_KEY` ko document ya source control se copy na karein. Server par `php artisan key:generate --force` chala kar nayi key banayein. Is guide ke pehle se published key ko compromised samjhein; agar woh kisi live environment mein use hui hai, rotation plan karein, kyunke purani encrypted values decrypt nahi hongi aur active sessions invalidate honge.
+5. Production `ADMIN_EMAIL` aur unique `ADMIN_SEED_PASSWORD` ko server ke protected environment/secrets manager mein set karein. Repository ka sample password kabhi use na karein; production seeder known default ko reject karta hai.
 
 ---
 
@@ -116,5 +117,5 @@ Website open karein:
 👉 `https://yourdomain.com`  
 Admin Login:
 👉 `https://yourdomain.com/admin/login`  
-- **Email:** `admin@alishenails.com`
-- **Password:** `ChangeMe123!`
+- **Email:** Set `ADMIN_EMAIL` in the protected server environment.
+- **Password:** Set a unique `ADMIN_SEED_PASSWORD` in the protected server environment; no production credential is published in this guide.

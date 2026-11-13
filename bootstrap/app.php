@@ -2,8 +2,8 @@
 
 use App\Http\Middleware\EnsureActiveSubscription;
 use App\Http\Middleware\EnsureAdmin;
-use App\Http\Middleware\ReloadLimiter;
 use App\Http\Middleware\EnsureSeller;
+use App\Http\Middleware\ReloadLimiter;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(SecurityHeaders::class);
-        $middleware->appendToGroup('web', \App\Http\Middleware\ReloadLimiter::class);
+        $middleware->appendToGroup('web', ReloadLimiter::class);
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'seller' => EnsureSeller::class,

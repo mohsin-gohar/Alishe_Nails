@@ -7,6 +7,7 @@ use App\Services\InstagramFeedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class AdminSettingsController extends Controller
@@ -39,7 +40,7 @@ class AdminSettingsController extends Controller
 
         $admin->forceFill([
             'password' => Hash::make($validated['new_password']),
-            'remember_token' => \Illuminate\Support\Str::random(60),
+            'remember_token' => Str::random(60),
         ])->save();
 
         $request->session()->regenerate();

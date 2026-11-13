@@ -7,9 +7,9 @@ use App\Http\Requests\SellerLoginRequest;
 use App\Models\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 
 class SellerAuthController extends Controller
 {
