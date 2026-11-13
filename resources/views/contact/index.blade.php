@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('title', 'Contact — Alishe Nails')
 
+@section('meta_description', 'Talk to the Alishe Nails concierge for sizing help, order updates and bespoke design enquiries — WhatsApp, Instagram or the contact form, answered within a few hours.')
+
 @section('content')
 
     <div class="page-header">
@@ -12,7 +14,7 @@
         <div class="contact-layout">
             {{-- ---------- Contact form ---------- --}}
             <div>
-                <h3 style="margin-bottom:20px;">Send us a message</h3>
+                <h2 style="margin-bottom:20px;">Send us a message</h2>
 
                 <form action="{{ route('contact.store') }}" method="POST">
                     {{-- Honeypot: hidden from real visitors via CSS; ContactRequest rejects any submission that fills this in. --}}
@@ -54,7 +56,7 @@
             {{-- ---------- Contact info ---------- --}}
             <div>
                 <div class="contact-info-card">
-                    <h5>Instagram</h5>
+                    <h3>Instagram</h3>
                     <p style="margin:8px 0 12px;">Follow along for new drops and behind-the-scenes.</p>
                     <a href="https://instagram.com/{{ config('services.instagram.handle') }}"
                        class="btn btn-outline btn-sm" target="_blank" rel="noopener">
@@ -63,19 +65,19 @@
                 </div>
 
                 <div class="contact-info-card">
-                    <h5>WhatsApp</h5>
+                    <h3>WhatsApp</h3>
                     <p style="margin:8px 0 12px;">Chat with us directly for instant support and sizing guidance.</p>
                     <a href="https://wa.me/923113925166"
-                       class="btn btn-outline btn-sm" target="_blank" rel="noopener" style="color:#25D366;border-color:#25D366;">
+                       class="btn btn-outline btn-sm" target="_blank" rel="noopener" style="color:#14713c;border-color:#14713c;">
                         <i class="fa-brands fa-whatsapp"></i> +92 311 3925166
                     </a>
                 </div>
 
                 <div class="contact-info-card">
-                    <h5>Contact Information</h5>
+                    <h3>Contact Information</h3>
                     <p style="margin:8px 0 4px;"><i class="fa-solid fa-envelope"></i> hello@alishenails.com</p>
                     <p style="margin:0 0 4px;"><i class="fa-solid fa-location-dot"></i> Karachi, Pakistan</p>
-                    <p style="margin:4px 0 0;font-size:0.85rem;color:#7A6E68;"><i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi (48-96 hrs)</p>
+                    <p style="margin:4px 0 0;font-size:0.85rem;color:#6b5a5c;"><i class="fa-solid fa-truck-fast"></i> Exclusively Delivering Across Karachi (48-96 hrs)</p>
                 </div>
             </div>
         </div>

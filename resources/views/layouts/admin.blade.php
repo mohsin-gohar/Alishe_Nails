@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Alishe Nails administration panel — catalogue, orders, merchandising and customer care.">
     <title>@yield('title', 'Admin — Alishe Nails')</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/googlefonts.css') }}?v={{ filemtime(public_path('css/googlefonts.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}?v={{ filemtime(public_path('css/fontawesome.min.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/admin.css') }}?v={{ filemtime(public_path('css/admin.css')) }}">
 </head>
 <body class="admin-body">
 
@@ -17,7 +19,7 @@
             {{-- ---------- Sidebar ---------- --}}
             <aside class="admin-sidebar">
                 <a href="{{ route('admin.dashboard') }}" class="admin-sidebar__brand" style="display:flex;align-items:center;gap:10px;">
-                    <img src="{{ asset('images/logo.jpeg') }}" alt="Alishe Nails Logo" style="height:32px;width:32px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid rgba(212,175,55,0.4);">
+                    <x-optimized-image src="images/logo.jpeg" alt="Alishe Nails Logo" class="admin-brand__logo" loading="eager" />
                     <span>Alishe Nails</span>
                 </a>
 
@@ -32,11 +34,11 @@
                     <a href="{{ route('admin.products.index') }}" class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-box"></i> Products
                     </a>
+                    <a href="{{ route('admin.homepage.index') }}" class="admin-nav-link {{ request()->routeIs('admin.homepage.*') ? 'is-active' : '' }}">
+                        <i class="fa-solid fa-house-chimney"></i> Homepage Studio
+                    </a>
                     <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-tags"></i> Categories
-                    </a>
-                    <a href="{{ route('admin.coupons.index') }}" class="admin-nav-link {{ request()->routeIs('admin.coupons.*') ? 'is-active' : '' }}">
-                        <i class="fa-solid fa-ticket"></i> Coupons
                     </a>
                     <a href="{{ route('admin.shipping.index') }}" class="admin-nav-link {{ request()->routeIs('admin.shipping.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-truck"></i> Shipping Rates
@@ -47,17 +49,8 @@
                     <a href="{{ route('admin.reviews.index') }}" class="admin-nav-link {{ request()->routeIs('admin.reviews.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-star"></i> Reviews
                     </a>
-                    <a href="{{ route('admin.campaign-pitches.index') }}" class="admin-nav-link {{ request()->routeIs('admin.campaign-pitches.*') ? 'is-active' : '' }}">
-                        <i class="fa-solid fa-bullhorn"></i> Campaign Pitches
-                    </a>
                     <a href="{{ route('admin.analytics.index') }}" class="admin-nav-link {{ request()->routeIs('admin.analytics.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-chart-line"></i> Analytics
-                    </a>
-                    <a href="{{ route('admin.marketplace.sellers.index') }}" class="admin-nav-link {{ request()->routeIs('admin.marketplace.*') ? 'is-active' : '' }}">
-                        <i class="fa-solid fa-store"></i> Sellers
-                    </a>
-                    <a href="{{ route('admin.subscriptions.index') }}" class="admin-nav-link {{ request()->routeIs('admin.subscriptions.*') ? 'is-active' : '' }}">
-                        <i class="fa-solid fa-repeat"></i> Subscriptions
                     </a>
                 </nav>
 

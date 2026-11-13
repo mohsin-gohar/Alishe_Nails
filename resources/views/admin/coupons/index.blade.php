@@ -12,7 +12,7 @@
     <div class="admin-grid" style="grid-template-columns: minmax(0, 360px) 1fr; gap: 24px;">
         <div class="admin-card">
             <div class="admin-card__head">
-                <h3>Create Coupon</h3>
+                <h2>Create Coupon</h2>
             </div>
 
             <form action="{{ route('admin.coupons.store') }}" method="POST" class="form-grid">
@@ -56,7 +56,7 @@
 
         <div class="admin-card">
             <div class="admin-card__head">
-                <h3>All Coupons</h3>
+                <h2>All Coupons</h2>
             </div>
 
             <table class="data-table">
@@ -68,7 +68,7 @@
                         <th>Expiry</th>
                         <th>Uses</th>
                         <th>Status</th>
-                        <th></th>
+                        <th scope="col"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody>

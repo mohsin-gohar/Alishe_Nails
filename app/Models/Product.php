@@ -31,6 +31,11 @@ class Product extends Model
         'badge',
         'is_best_seller',
         'is_featured',
+        'is_homepage',
+        'homepage_order',
+        'meta_title',
+        'meta_description',
+        'tags',
         'stock',
         'is_active',
         'whats_included',
@@ -44,6 +49,8 @@ class Product extends Model
         'compare_at_price' => 'decimal:2',
         'is_best_seller' => 'boolean',
         'is_featured' => 'boolean',
+        'is_homepage' => 'boolean',
+        'homepage_order' => 'integer',
         'is_active' => 'boolean',
     ];
 
@@ -53,11 +60,13 @@ class Product extends Model
     {
         static::saved(function () {
             Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('home_page_data');
             Cache::forget('shop_sidebar_facets');
         });
 
         static::deleted(function () {
             Cache::forget('home_collections_and_bestsellers');
+            Cache::forget('home_page_data');
             Cache::forget('shop_sidebar_facets');
         });
     }

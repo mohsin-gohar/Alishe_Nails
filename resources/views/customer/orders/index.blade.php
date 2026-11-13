@@ -10,7 +10,7 @@
 
         @if ($orders->isEmpty())
             <div class="cart-empty">
-                <i class="fa-solid fa-receipt" style="font-size:2.2rem;color:var(--rose);"></i>
+                <i class="fa-solid fa-receipt" style="font-size:2.2rem;color:var(--rose-dark);"></i>
                 <h3 style="margin-top:16px;">No orders yet</h3>
                 <p>When you place an order, it'll show up here.</p>
                 <a href="{{ route('shop.index') }}" class="btn btn-primary">Shop the Collection</a>

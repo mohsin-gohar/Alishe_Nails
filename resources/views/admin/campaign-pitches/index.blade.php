@@ -30,7 +30,7 @@
                     <th>Budget</th>
                     <th>Message</th>
                     <th>Status</th>
-                    <th></th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -44,7 +44,7 @@
                         <td style="max-width:220px;">
                             {{ \Illuminate\Support\Str::limit($pitch->message, 80) }}
                             @if ($pitch->portfolio_links)
-                                <div style="font-size:.78rem;color:rgba(43,29,29,.6);">Portfolio: {{ \Illuminate\Support\Str::limit($pitch->portfolio_links, 60) }}</div>
+                                <div style="font-size:.78rem;color:rgba(43,29,29,.75);">Portfolio: {{ \Illuminate\Support\Str::limit($pitch->portfolio_links, 60) }}</div>
                             @endif
                         </td>
                         <td>

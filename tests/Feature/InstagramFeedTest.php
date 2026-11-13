@@ -169,7 +169,7 @@ class InstagramFeedTest extends TestCase
         $this->assertDatabaseCount('instagram_posts', 1);
     }
 
-    public function test_the_homepage_shows_synced_instagram_posts(): void
+    public function test_the_homepage_no_longer_renders_the_instagram_gallery(): void
     {
         InstagramPost::create([
             'instagram_id' => '17905000000000001',
@@ -180,51 +180,11 @@ class InstagramFeedTest extends TestCase
             'posted_at' => now(),
         ]);
 
-        $response = $this->get('/');
-
-        $response->assertOk();
-        $response->assertSee('https://www.instagram.com/p/ABC123/');
-        $response->assertSee('https://scontent.cdninstagram.com/v/img1.jpg', false);
-        $response->assertSee('New french tip drop');
-    }
-
-    public function test_the_homepage_falls_back_to_placeholders_without_synced_posts(): void
-    {
-        $response = $this->get('/');
-
-        $response->assertOk();
-        $response->assertSee('socials-grid');
-        // The static fallback block renders either the fallback images or placeholder, not an empty grid.
-        $this->assertTrue(
-            str_contains($response->content(), 'Social image unavailable') ||
-            str_contains($response->content(), 'images/instagram/coffee-moment.jpg'),
-            'Expected homepage to render static fallback images or placeholders when no synced posts exist.'
-        );
-    }
-
-    public function test_the_homepage_only_shows_active_posts(): void
-    {
-        InstagramPost::create([
-            'instagram_id' => '1',
-            'type' => 'IMAGE',
-            'media_url' => 'https://scontent.cdninstagram.com/v/visible.jpg',
-            'permalink' => 'https://www.instagram.com/p/VISIBLE/',
-            'posted_at' => now(),
-            'is_active' => true,
-        ]);
-        InstagramPost::create([
-            'instagram_id' => '2',
-            'type' => 'IMAGE',
-            'media_url' => 'https://scontent.cdninstagram.com/v/hidden.jpg',
-            'permalink' => 'https://www.instagram.com/p/HIDDEN/',
-            'posted_at' => now(),
-            'is_active' => false,
-        ]);
-
-        $response = $this->get('/');
-
-        $response->assertSee('https://www.instagram.com/p/VISIBLE/');
-        $response->assertDontSee('https://www.instagram.com/p/HIDDEN/');
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('The Atelier Journal')
+            ->assertDontSee('socials-grid')
+            ->assertDontSee('https://www.instagram.com/p/ABC123/');
     }
 
     public function test_the_sync_command_fetches_and_stores_posts(): void
@@ -294,50 +254,6 @@ class InstagramFeedTest extends TestCase
         $response->assertSee('Sync Now');
         $response->assertSee('Synced 2 Instagram post(s).');
         $response->assertSee(route('admin.instagram.sync'));
-    }
-
-    public function test_video_posts_render_their_thumbnail_and_a_play_badge(): void
-    {
-        InstagramPost::create([
-            'instagram_id' => '17905000000000002',
-            'type' => 'VIDEO',
-            'media_url' => 'https://scontent.cdninstagram.com/v/vid1.mp4',
-            'thumbnail_url' => 'https://scontent.cdninstagram.com/v/vid1_thumb.jpg',
-            'permalink' => 'https://www.instagram.com/reel/XYZ789/',
-            'posted_at' => now(),
-        ]);
-
-        $response = $this->get('/');
-
-        // The gallery shows the thumbnail poster, never the raw video file.
-        $response->assertSee('https://scontent.cdninstagram.com/v/vid1_thumb.jpg', false);
-        $response->assertDontSee('https://scontent.cdninstagram.com/v/vid1.mp4', false);
-        $response->assertSee('fa-solid fa-play', false);
-    }
-
-    public function test_the_homepage_orders_posts_newest_first(): void
-    {
-        InstagramPost::create([
-            'instagram_id' => 'old',
-            'type' => 'IMAGE',
-            'media_url' => 'https://scontent.cdninstagram.com/v/old.jpg',
-            'permalink' => 'https://www.instagram.com/p/OLDPOST/',
-            'posted_at' => now()->subDay(),
-        ]);
-        InstagramPost::create([
-            'instagram_id' => 'new',
-            'type' => 'IMAGE',
-            'media_url' => 'https://scontent.cdninstagram.com/v/new.jpg',
-            'permalink' => 'https://www.instagram.com/p/NEWPOST/',
-            'posted_at' => now(),
-        ]);
-
-        $response = $this->get('/');
-
-        $response->assertSeeInOrder([
-            'https://www.instagram.com/p/NEWPOST/',
-            'https://www.instagram.com/p/OLDPOST/',
-        ]);
     }
 
     public function test_the_sync_command_passes_the_limit_option_to_the_api(): void

@@ -12,19 +12,19 @@
 
     <div class="dashboard-grid">
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Revenue — Last 7 Days</h3></div>
+            <div class="admin-card__head"><h2>Revenue — Last 7 Days</h2></div>
             <canvas id="revenueChart" height="110"></canvas>
         </div>
 
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Orders by Status</h3></div>
+            <div class="admin-card__head"><h2>Orders by Status</h2></div>
             @forelse ($ordersByStatus as $status => $count)
                 <div class="legend-item">
                     <span><span class="status-pill status-{{ $status }}">{{ ucfirst($status) }}</span></span>
                     <span>{{ $count }}</span>
                 </div>
             @empty
-                <p style="font-size:.85rem;color:rgba(43,29,29,.6);">No orders yet.</p>
+                <p style="font-size:.85rem;color:rgba(43,29,29,.75);">No orders yet.</p>
             @endforelse
 
             <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);">
@@ -36,7 +36,7 @@
 
     <div class="admin-card" style="margin-bottom:20px;">
         <div class="admin-card__head">
-            <h3><i class="fa-brands fa-instagram" style="color:#e1306c;"></i> Instagram Business Analytics</h3>
+            <h2><i class="fa-brands fa-instagram" style="color:#e1306c;"></i> Instagram Business Analytics</h2>
             <a href="https://instagram.com/{{ $instagramHandle }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
                 {{ '@'.$instagramHandle }} <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
@@ -59,7 +59,7 @@
             </div>
 
             @if (!empty($instagramData['media']['data']))
-                <h4 style="font-size:.9rem;margin-bottom:12px;">Recent Instagram Posts</h4>
+                <h4 style="font-size:.9rem;margin-bottom:12px;">Recent Instagram Posts</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:12px;">
                     @foreach (array_slice($instagramData['media']['data'], 0, 6) as $post)
                         <a href="{{ $post['permalink'] ?? '#' }}" target="_blank" rel="noopener" style="display:block;position:relative;border-radius:8px;overflow:hidden;">
@@ -89,7 +89,7 @@
                     INSTAGRAM_BUSINESS_ACCOUNT_ID="your-instagram-business-account-id"<br>
                     INSTAGRAM_ACCESS_TOKEN="your-meta-user-access-token"
                 </div>
-                <p style="font-size:.78rem;color:rgba(43,29,29,.55);margin-top:10px;margin-bottom:0;">
+                <p style="font-size:.78rem;color:rgba(43,29,29,.75);margin-top:10px;margin-bottom:0;">
                     Target Instagram handle: <strong>{{ '@'.$instagramHandle }}</strong> (<a href="https://instagram.com/{{ $instagramHandle }}" target="_blank" rel="noopener" style="text-decoration:underline;">View Profile</a>)
                 </p>
             </div>
@@ -97,7 +97,7 @@
     </div>
 
     <div class="admin-card">
-        <div class="admin-card__head"><h3>Top Products by Units Sold</h3></div>
+        <div class="admin-card__head"><h2>Top Products by Units Sold</h2></div>
         <table class="data-table">
             <thead>
                 <tr>
@@ -121,7 +121,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="{{ asset('js/chart.umd.min.js') }}"></script>
     <script>
         const ctx = document.getElementById('revenueChart');
         new Chart(ctx, {

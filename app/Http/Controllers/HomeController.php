@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
-use App\Services\InstagramFeedService;
 use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
@@ -15,45 +14,84 @@ class HomeController extends Controller
     public const SHOWCASE_SIZE = 20;
 
     /**
-     * Cards rendered per homepage product rail.
-     */
-    public const SHOWCASE_RAIL_SIZE = 10;
-
-    /**
      * Hero video locations, in priority order. The first file that actually
      * exists on disk wins, so the homepage keeps working whether the clip was
      * uploaded as `videos/alishe.mp4` (the canonical name) or still lives in
      * the older `vedios/` folder from a previous deployment.
      *
+     * The resolver scans the public `videos/` and `vedios/` folders, so any
+     * newly dropped hero clip (or an updated re-upload of an existing one) is
+     * picked up automatically without a code change.
+     *
      * @return list<string>
      */
     public static function heroVideoCandidates(): array
     {
-        return [
-            'videos/alishe.mp4',
-            'vedios/headervedio.mp4',
+        $directories = [
+            'videos' => public_path('videos'),
+            'vedios' => public_path('vedios'),
         ];
+
+        $candidates = [];
+
+        foreach ($directories as $prefix => $directory) {
+            if (! is_dir($directory)) {
+                continue;
+            }
+
+            $extensions = ['mp4', 'webm'];
+
+            foreach ($extensions as $extension) {
+                foreach (glob($directory.'/*.'.strtolower($extension)) ?: [] as $file) {
+                    $candidates[] = [
+                        'path' => $prefix.'/'.basename($file),
+                        'mtime' => (int) filemtime($file),
+                    ];
+                }
+            }
+        }
+
+        usort($candidates, fn (array $a, array $b) => $b['mtime'] <=> $a['mtime']);
+
+        return array_values(array_map(fn (array $candidate) => $candidate['path'], $candidates));
     }
 
-    public function index(InstagramFeedService $instagram)
+    public function index()
     {
-        [$collections, $bestSellers, $showcaseProducts] = Cache::remember('home_collections_and_bestsellers', 300, function () {
-            return [
-                Category::whereHas('products', fn ($q) => $q->where('is_active', true))
-                    ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
-                    ->take(4)
-                    ->get(),
-                Product::active()
-                    ->where('is_best_seller', true)
-                    ->with('seller')
-                    ->withCount('approvedReviews')
-                    ->withAvg('approvedReviews', 'rating')
-                    ->latest()
-                    ->take(4)
-                    ->get(),
-                // Homepage rails: best sellers first, then featured pieces, then
-                // newest arrivals so a shopper always sees fresh stock too.
-                Product::active()
+        $data = Cache::remember('home_page_data', 300, function () {
+            $collections = Category::where('is_active', true)
+                ->whereHas('products', fn ($q) => $q->where('is_active', true))
+                ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->take(4)
+                ->get();
+
+            $bestSellers = Product::active()
+                ->where('is_best_seller', true)
+                ->with('seller')
+                ->withCount('approvedReviews')
+                ->withAvg('approvedReviews', 'rating')
+                ->latest()
+                ->take(4)
+                ->get();
+
+            // Hand-picked homepage lineup, in the exact order saved from the
+            // admin Homepage Studio. If the admin has not curated anything
+            // yet, fall back to the previous automatic merchandising logic so
+            // the storefront is never empty.
+            $showcaseProducts = Product::active()
+                ->where('is_homepage', true)
+                ->with(['category', 'seller'])
+                ->withCount('approvedReviews')
+                ->withAvg('approvedReviews', 'rating')
+                ->orderBy('homepage_order')
+                ->orderBy('id')
+                ->take(self::SHOWCASE_SIZE)
+                ->get();
+
+            if ($showcaseProducts->isEmpty()) {
+                $showcaseProducts = Product::active()
                     ->with(['category', 'seller'])
                     ->withCount('approvedReviews')
                     ->withAvg('approvedReviews', 'rating')
@@ -61,17 +99,15 @@ class HomeController extends Controller
                     ->orderByDesc('is_featured')
                     ->latest()
                     ->take(self::SHOWCASE_SIZE)
-                    ->get(),
-            ];
+                    ->get();
+            }
+
+            return compact('collections', 'bestSellers', 'showcaseProducts');
         });
 
-        // Two balanced rails of ten cards each (top 20 products in total).
-        $showcasePrimary = $showcaseProducts->take(self::SHOWCASE_RAIL_SIZE)->values();
-        $showcaseSecondary = $showcaseProducts->slice(self::SHOWCASE_RAIL_SIZE)->values();
-
-        // Reads only from the local instagram_posts table (the sync cache),
-        // so API/token problems can never crash or slow the homepage.
-        $instagramPosts = $instagram->latestFeed((int) config('services.instagram.feed_size', 8));
+        $collections = $data['collections'];
+        $bestSellers = $data['bestSellers'];
+        $showcaseProducts = $data['showcaseProducts'];
 
         // Hero video: resolve to a browser-ready URL, or null when no clip has
         // been uploaded yet so the view can fall back to a still image.
@@ -86,9 +122,7 @@ class HomeController extends Controller
         return view('home.index', compact(
             'collections',
             'bestSellers',
-            'showcasePrimary',
-            'showcaseSecondary',
-            'instagramPosts',
+            'showcaseProducts',
             'heroVideoUrl',
             'heroPosterUrl'
         ));

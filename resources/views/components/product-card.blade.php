@@ -12,7 +12,7 @@
                 @if ($cover['type'] === 'video')
                     <video src="{{ $cover['url'] }}" muted loop playsinline controls preload="metadata"></video>
                 @else
-                    <img src="{{ $cover['url'] }}" alt="{{ $product->name }}" loading="lazy" data-image-fallback>
+                    <x-optimized-image :src="$cover['url']" :alt="$product->name" :fallback="true" />
                 @endif
             @else
                 <div class="img-placeholder">
@@ -37,7 +37,7 @@
                 </button>
             </form>
         @else
-            <a href="{{ route('login') }}" class="product-card__wishlist" data-wishlist-id="{{ $product->id }}" aria-label="Add {{ $product->name }} to wishlist" aria-pressed="false" title="Login to save this product">
+            <a href="{{ route('login') }}" class="product-card__wishlist" data-wishlist-id="{{ $product->id }}" aria-label="Add {{ $product->name }} to wishlist" title="Login to save this product">
                 <i class="fa-regular fa-heart"></i>
             </a>
         @endauth

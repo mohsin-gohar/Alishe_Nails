@@ -11,7 +11,7 @@
 
         @if (empty($items))
             <div class="cart-empty">
-                <i class="fa-solid fa-bag-shopping" style="font-size:2.4rem;color:var(--rose);"></i>
+                <i class="fa-solid fa-bag-shopping" style="font-size:2.4rem;color:var(--rose-dark);"></i>
                 <h1 style="margin-top:16px;font-size:1.6rem;">Your cart is empty</h1>
                 <p>Looks like you haven't added anything yet.</p>
                 <a href="{{ route('shop.index') }}" class="btn btn-primary">Shop the Collection</a>
@@ -27,7 +27,7 @@
                                     $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? asset('images/products/'.$item['image']) : null;
                                 @endphp
                                 @if ($url)
-                                    <img src="{{ $url }}" alt="{{ $item['name'] }}" data-image-fallback>
+                                    <x-optimized-image :src="$url" :alt="$item['name']" :fallback="true" />
                                 @else
                                     <div class="img-placeholder" style="font-size:.6rem;">No image</div>
                                 @endif
@@ -72,10 +72,20 @@
                     <div class="summary-row"><span>Subtotal</span><span>PKR {{ number_format($subtotal, 0) }}</span></div>
                     <div class="summary-row">
                         <span>Delivery (Karachi)</span>
-                        <span style="font-size:.85rem;text-align:right;color:var(--espresso);font-weight:500;">Coordinated directly</span>
+                        <span style="font-size:.9rem;text-align:right;color:var(--espresso);font-weight:600;">
+                            @if ($shipping > 0)
+                                PKR {{ number_format($shipping, 0) }}
+                            @else
+                                Free
+                            @endif
+                        </span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Estimated Total</span>
+                        <span>PKR {{ number_format($total, 0) }}</span>
                     </div>
                     <p style="font-size:.8rem;color:rgba(43,29,29,.65);margin:12px 0 0;">
-                        <i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi. Delivery charges will be coordinated directly upon order confirmation.
+                        <i class="fa-solid fa-truck-fast"></i> Flat Karachi doorstep delivery. Your exact zone is confirmed at checkout.
                     </p>
 
                     <a href="{{ route('checkout.index') }}" class="btn btn-primary btn-block" style="margin-top:20px;">Proceed to Checkout</a>

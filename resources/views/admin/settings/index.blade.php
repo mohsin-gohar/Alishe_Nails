@@ -12,7 +12,7 @@
 
     <div class="dashboard-grid">
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Store &amp; Payment Configuration</h3></div>
+            <div class="admin-card__head"><h2>Store &amp; Payment Configuration</h2></div>
             <p style="font-size:.85rem;color:rgba(43,29,29,.65);margin-bottom:16px;">
                 These values come from your <code>.env</code> file (e.g. <code>BANK_NAME</code>, <code>JAZZCASH_NUMBER</code>, <code>WHATSAPP_NUMBER</code>). Edit your <code>.env</code> file directly to update them.
             </p>
@@ -40,7 +40,7 @@
         </div>
 
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Change Admin Password</h3></div>
+            <div class="admin-card__head"><h2>Change Admin Password</h2></div>
             <form action="{{ route('admin.settings.password') }}" method="POST">
                 @csrf
                 <div class="form-field" style="margin-bottom:14px;">
@@ -62,7 +62,7 @@
         </div>
 
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Instagram Feed</h3></div>
+            <div class="admin-card__head"><h2>Instagram Feed</h2></div>
             <p style="font-size:.85rem;color:rgba(43,29,29,.65);margin-bottom:16px;">
                 The homepage "Follow Us on Instagram" gallery is synced from the
                 <strong>{{ '@'.config('services.instagram.handle') }}</strong> account via the Instagram Graph API —

@@ -8,7 +8,7 @@
             <i class="fa-solid fa-check"></i>
         </div>
 
-        <span class="eyebrow" style="display:block;color:var(--rose-dark);font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">
+        <span class="eyebrow" data-order-number="{{ $order->order_number }}" style="display:block;color:var(--rose-dark);font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">
             Order #{{ $order->order_number }} Successfully Placed
         </span>
         <h1 style="font-size:2.2rem;margin-bottom:10px;">Thank You, {{ $order->first_name }}!</h1>
@@ -20,10 +20,10 @@
         <div style="background:#FAF5F2;border:1.5px solid rgba(212,175,55,0.4);border-radius:var(--radius-lg);padding:24px;margin-top:28px;text-align:left;box-shadow:0 8px 24px rgba(43,29,29,0.06);">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border-soft);padding-bottom:14px;margin-bottom:18px;">
                 <div>
-                    <h3 style="font-size:1.15rem;margin:0 0 4px;color:var(--espresso);">
+                    <h2 style="font-size:1.15rem;margin:0 0 4px;color:var(--espresso);">
                         <i class="fa-solid fa-lock" style="color:var(--gold);margin-right:6px;"></i> 100% Advance Payment Details
-                    </h3>
-                    <small style="color:#7A6E68;font-size:0.8rem;">Please transfer the exact order amount: <strong>PKR {{ number_format($order->total, 0) }}</strong></small>
+                    </h2>
+                    <small style="color:#6b5a5c;font-size:0.8rem;">Please transfer the exact order amount: <strong>PKR {{ number_format($order->total, 0) }}</strong></small>
                 </div>
                 <div style="background:var(--blush);color:var(--rose-dark);font-weight:700;font-size:0.85rem;padding:6px 14px;border-radius:20px;">
                     Total: PKR {{ number_format($order->total, 0) }}
@@ -63,7 +63,7 @@
             {{-- Instant Verification Step --}}
             <div style="margin-top:20px;background:#ffffff;border-radius:10px;padding:16px;border:1px solid var(--border-soft);">
                 <strong style="display:block;font-size:0.88rem;color:var(--espresso);margin-bottom:6px;">
-                    <i class="fa-solid fa-camera" style="color:var(--rose);"></i> Next: Send Payment Screenshot &amp; Order #{{ $order->order_number }}
+                    <i class="fa-solid fa-camera" style="color:var(--rose-dark);"></i> Next: Send Payment Screenshot &amp; Order #{{ $order->order_number }}
                 </strong>
                 <p style="font-size:0.82rem;color:rgba(43,29,29,.75);margin:0 0 14px;line-height:1.5;">
                     After completing the transfer, kindly send a screenshot along with your order number via WhatsApp or Instagram. Our team will verify and begin hand-crafting your set immediately!
@@ -74,7 +74,7 @@
                 @endphp
 
                 <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                    <a href="https://wa.me/923113925166?text={{ urlencode($waMsg) }}" target="_blank" rel="noopener" class="btn" style="flex:1;background:#25D366;color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;font-size:0.85rem;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
+                    <a href="https://wa.me/923113925166?text={{ urlencode($waMsg) }}" target="_blank" rel="noopener" class="btn" style="flex:1;background:#14713c;color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;font-size:0.85rem;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
                         <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i> Send Screenshot on WhatsApp
                     </a>
                     <a href="https://ig.me/m/{{ config('services.instagram.handle', 'alishe_nails') }}" target="_blank" rel="noopener" class="btn" style="flex:1;background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;font-size:0.85rem;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
@@ -86,13 +86,13 @@
 
         {{-- ---------- Order Items Summary ---------- --}}
         <div class="summary-card" style="text-align:left;margin-top:28px;">
-            <h4 style="margin-bottom:14px;font-size:1rem;color:var(--espresso);">Order Summary</h4>
+            <h3 style="margin-bottom:14px;font-size:1rem;color:var(--espresso);">Order Summary</h3>
             @foreach ($order->items as $item)
                 <div class="summary-row" style="font-size:0.88rem;">
                     <span>
                         <strong>{{ $item->product_name }}</strong>
-                        @if($item->shape)<span style="color:#7A6E68;"> &bull; {{ $item->shape }}</span>@endif
-                        @if($item->size)<span style="color:#7A6E68;"> &bull; Size: {{ $item->size }}</span>@endif
+                        @if($item->shape)<span style="color:#6b5a5c;"> &bull; {{ $item->shape }}</span>@endif
+                        @if($item->size)<span style="color:#6b5a5c;"> &bull; Size: {{ $item->size }}</span>@endif
                         <span style="color:var(--rose-dark);font-weight:600;"> &times; {{ $item->quantity }}</span>
                     </span>
                     <span>PKR {{ number_format($item->line_total, 0) }}</span>
@@ -102,7 +102,7 @@
                 <span>Grand Total</span>
                 <span style="color:var(--rose-dark);">PKR {{ number_format($order->total, 0) }}</span>
             </div>
-            <div style="margin-top:14px;font-size:0.75rem;color:#7A6E68;line-height:1.4;">
+            <div style="margin-top:14px;font-size:0.75rem;color:#6b5a5c;line-height:1.4;">
                 <i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (48–96 hrs doorstep delivery).<br>
                 <i class="fa-solid fa-ban"></i> Due to handcrafted hygiene standards, press-on nails are strictly non-returnable.
             </div>

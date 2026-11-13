@@ -27,7 +27,7 @@
                     <th>Delivery Fee</th>
                     <th>Free Shipping Above</th>
                     <th>Status</th>
-                    <th></th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>

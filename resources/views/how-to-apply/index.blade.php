@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('title', 'How to Apply & Sizing Guide — Alishe Nails')
 
+@section('meta_description', 'Step-by-step guide to apply Alishe Nails press-ons: measuring your nail bed, salon-gel prep, the 10-minute bond, and gentle damage-free removal.')
+
 @section('content')
 
     <div class="page-header">
@@ -16,10 +18,10 @@
         {{-- Adhesive Choice: Glue vs Tabs --}}
         <div class="apply-options-grid" style="margin-bottom:40px;">
             <div style="background:#FAF5F2;border:1.5px solid var(--rose);border-radius:var(--radius-md);padding:24px;">
-                <span style="background:var(--rose);color:#fff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;display:inline-block;margin-bottom:10px;">
+                <span style="background:var(--rose-strong);color:#fff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;display:inline-block;margin-bottom:10px;">
                     Option A &middot; Long Wear
                 </span>
-                <h3 style="font-size:1.2rem;margin-bottom:8px;">Brush-On Salon Glue</h3>
+                <h2 style="font-size:1.2rem;margin-bottom:8px;">Brush-On Salon Glue</h2>
                 <p style="font-size:0.85rem;color:rgba(43,29,29,.75);margin-bottom:12px;line-height:1.5;">
                     Best for weddings, busy routines, and vacations. Bonds securely for <strong>2 to 3 weeks</strong> of uninterrupted salon shine.
                 </p>
@@ -29,14 +31,14 @@
             </div>
 
             <div style="background:#FAF5F2;border:1.5px solid var(--gold);border-radius:var(--radius-md);padding:24px;">
-                <span style="background:var(--gold);color:#fff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;display:inline-block;margin-bottom:10px;">
+                <span style="background:var(--gold-deep);color:#fff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;display:inline-block;margin-bottom:10px;">
                     Option B &middot; Event / Weekend
                 </span>
                 <h3 style="font-size:1.2rem;margin-bottom:8px;">Ultra-Bond Adhesive Tabs</h3>
                 <p style="font-size:0.85rem;color:rgba(43,29,29,.75);margin-bottom:12px;line-height:1.5;">
                     Best for weekend events, dinner dates, and photoshoots. Lasts <strong>3 to 5 days</strong> with zero glue residue for instant reusability.
                 </p>
-                <div style="font-size:0.8rem;color:#8c7324;font-weight:600;">
+                <div style="font-size:0.8rem;color:#6f5a1c;font-weight:600;">
                     <i class="fa-solid fa-check"></i> 100% painless instant removal
                 </div>
             </div>
@@ -61,7 +63,7 @@
                 <div class="step-item">
                     <div class="step-item__num">{{ $loop->iteration }}</div>
                     <div>
-                        <h4 style="margin-bottom:6px;font-size:1.05rem;">{{ $title }}</h4>
+                        <h3 style="margin-bottom:6px;font-size:1.05rem;">{{ $title }}</h3>
                         <p style="margin:0;color:rgba(43,29,29,.78);font-size:0.88rem;line-height:1.6;">{{ $description }}</p>
                     </div>
                 </div>
@@ -71,7 +73,7 @@
         {{-- Safe Removal Guide --}}
         <div style="background:#FFF9FA;border:1.5px solid rgba(185,122,135,0.3);border-radius:var(--radius-lg);padding:30px;margin-block:40px;">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                <i class="fa-solid fa-soap" style="color:var(--rose);font-size:1.6rem;"></i>
+                <i class="fa-solid fa-soap" style="color:var(--rose-dark);font-size:1.6rem;"></i>
                 <h3 style="margin:0;font-size:1.4rem;">Gentle &amp; Damage-Free Removal Protocol</h3>
             </div>
             <p style="font-size:0.9rem;line-height:1.6;color:rgba(43,29,29,.8);margin-bottom:16px;">

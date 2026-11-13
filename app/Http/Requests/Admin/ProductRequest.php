@@ -24,12 +24,18 @@ class ProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:5000'],
             'shape' => ['nullable', 'string', 'in:Almond,Coffin,Square,Stiletto'],
             'length' => ['nullable', 'string', 'in:Short,Medium,Long,Extra Long'],
-            'finish' => ['nullable', 'string', 'in:Glossy,Matte,Glitter/Chrome'],
+            'finish' => ['nullable', 'string', 'max:60'],
             'badge' => ['nullable', 'string', 'max:30'],
             'is_best_seller' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
+            'is_homepage' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'stock' => ['required', 'integer', 'min:0', 'max:100000'],
+
+            // SEO + internal search keywords.
+            'meta_title' => ['nullable', 'string', 'max:70'],
+            'meta_description' => ['nullable', 'string', 'max:255'],
+            'tags' => ['nullable', 'string', 'max:255'],
 
             // ---------- Unified ordered media gallery ----------
             // Already-uploaded items the admin kept, in their chosen order:

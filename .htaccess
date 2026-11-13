@@ -1,46 +1,138 @@
-<IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
+# ==============================================================================
+#  Alishe Nails — Apache configuration (project root)
+#
+#  Structure on shared hosting:
+#      <project-root>/.htaccess      <- this file (security + caching + rewrite)
+#      <project-root>/public/         <- document root served by Apache
+#
+#  NOTE: every <IfModule> block below is properly opened AND closed. A stray
+#  closing tag makes the whole Apache config fail to parse, which takes the
+#  entire site down with a 500 — keep the pairs balanced.
+# ==============================================================================
 
+# ------------------------------------------------------------------------------
+#  1. HTTPS — every request is upgraded to TLS (e-commerce requirement)
+# ------------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # ------------------------------------------------------------------
-    # Security: block direct access to sensitive files and directories.
-    # ------------------------------------------------------------------
-    RewriteRule ^(\.env(\..+)?|\.git|\.htaccess|\.htpasswd|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|artisan)$ - [F,L,NC]
-    RewriteRule ^(database|deploy|tests|bootstrap|config|routes|lang)/ - [F,L,NC]
-    RewriteRule ^storage/(framework|logs|framework/views)/ - [F,L,NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ------------------------------------------------------------------------------
+#  2. Compression — text assets are gzipped, cutting transfer size by ~70%
+#     (brotli is used when the server supports it, gzip is the fallback)
+# ------------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json application/xml
+    AddOutputFilterByType DEFLATE application/rss+xml image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/xml
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/x-javascript
+    AddOutputFilterByType BROTLI_COMPRESS application/json application/xml
+    AddOutputFilterByType BROTLI_COMPRESS application/rss+xml image/svg+xml
+</IfModule>
+
+# ------------------------------------------------------------------------------
+#  3. Browser caching — fingerprinted assets are cached for a year, images for
+#     a month. Repeat visitors then download almost nothing at all.
+# ------------------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                "access plus 1 year"
+    ExpiresByType application/javascript  "access plus 1 year"
+    ExpiresByType text/javascript         "access plus 1 year"
+    ExpiresByType image/webp              "access plus 1 year"
+    ExpiresByType image/svg+xml           "access plus 1 year"
+    ExpiresByType image/jpeg              "access plus 1 month"
+    ExpiresByType image/png               "access plus 1 month"
+    ExpiresByType font/woff2              "access plus 1 year"
+    ExpiresByType font/woff               "access plus 1 year"
+    ExpiresByType font/ttf                "access plus 1 year"
+    ExpiresByType application/pdf         "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Fingerprinted CSS/JS can be cached forever.
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    <FilesMatch "\.(webp|jpg|jpeg|png|svg|woff2?|ttf)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    # The favicon and the manifest should never be cached for long.
+    <FilesMatch "\.(ico)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
 
     # ------------------------------------------------------------------
-    # Never let crawlers index application internals (defense-in-depth).
+    #  Security headers
     # ------------------------------------------------------------------
-    RewriteRule ^(storage/framework|bootstrap/cache)/ - [F,L,NC]
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 
-    # ------------------------------------------------------------------
-    # Handle Authorization Header
-    # ------------------------------------------------------------------
+    # Content-Security-Policy. 'unsafe-inline'/'unsafe-eval' stay for the
+    # inline theme bootstrap; https: is allowed for the CDN font/icon assets.
+    Header always set Content-Security-Policy "default-src 'self' data: https:; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; font-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+
+    # Remove the X-Powered-By fingerprint.
+    Header unset X-Powered-By
+</IfModule>
+
+# ------------------------------------------------------------------------------
+#  4. Security — block direct access to sensitive files and folders
+# ------------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Application internals must never be reachable over HTTP.
+    RewriteRule ^(\.env(\..*)?|\.git|\.gitignore|\.htaccess|\.htpasswd|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|artisan|server\.php)$ - [F,L,NC]
+    RewriteRule ^(database|deploy|tests|bootstrap|config|routes|lang|node_modules|storage/framework|storage/logs|storage/app)/ - [F,L,NC]
+
+    # Preserve the Authorization header for API authentication.
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Redirect Trailing Slashes If Not A Folder...
+    # Strip trailing slashes (one canonical URL per page — good for SEO).
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Public Directory internally without showing /public in URL
+    # Send everything into the public directory, where the front controller lives.
     RewriteCond %{REQUEST_URI} !^public/
     RewriteRule ^(.*)$ public/$1 [L,NC]
 </IfModule>
 
-# Suppress directory listings server-side as an extra safeguard.
+# ------------------------------------------------------------------------------
+#  5. Never list directory contents
+# ------------------------------------------------------------------------------
 <IfModule mod_autoindex.c>
     Options -Indexes
 </IfModule>
 
-# Header requirement is best-effort; the middleware sets real security headers.
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set Referrer-Policy "strict-origin-when-cross-origin"
+# ------------------------------------------------------------------------------
+#  6. Default charset
+# ------------------------------------------------------------------------------
+<IfModule mod_mime.c>
+    AddDefaultCharset UTF-8
+</IfModule>
+
+# ------------------------------------------------------------------------------
+#  7. Upload limits — generous enough for a 20 MB product video
+# ------------------------------------------------------------------------------
+<IfModule mod_php.c>
+    php_value upload_max_filesize 40M
+    php_value post_max_size 40M
+    php_value memory_limit 512M
+    php_value max_execution_time 120
 </IfModule>

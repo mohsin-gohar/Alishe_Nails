@@ -1,15 +1,22 @@
 @extends('layouts.app')
 @section('title', 'Shop the Collection — Alishe Nails')
 
-@section('meta_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+@section('meta_description', 'Explore the full Alishe Nails collection: press-on nail sets, 7-layer salon gel, brushes, finishing products and gift boxes crafted in Karachi.')
 
 @section('og_type', 'website')
 
 @section('og_title', 'Alishe Nails — Shop The Collection')
 
-@section('og_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+@section('og_description', 'Explore the full Alishe Nails collection: press-on nail sets, 7-layer salon gel, brushes, finishing products and gift boxes crafted in Karachi.')
 
 @section('og_image', asset('images/collections/everyday-elegance.jpg'))
+
+@push('head')
+    <x-breadcrumb-schema :items="[
+        ['name' => 'Home', 'url' => route('home')],
+        ['name' => 'Shop', 'url' => route('shop.index')],
+    ]" />
+@endpush
 
 @section('content')
 
@@ -34,7 +41,7 @@
 
                     @if (isset($categories) && $categories->isNotEmpty())
                         <div class="filter-group">
-                            <h6>Category</h6>
+                            <h2>Category</h2>
                             @foreach ($categories as $cat)
                                 @php
                                     $catSelected = is_array(request('category'))
@@ -52,7 +59,7 @@
                     @endif
 
                     <div class="filter-group">
-                        <h6>Shape</h6>
+                        <h2>Shape</h2>
                         @foreach (['Almond', 'Coffin', 'Square', 'Stiletto'] as $shape)
                             <label class="filter-option">
                                 <input type="checkbox" name="shape[]" value="{{ $shape }}"
@@ -64,7 +71,7 @@
                     </div>
 
                     <div class="filter-group">
-                        <h6>Length</h6>
+                        <h2>Length</h2>
                         @foreach (['Short', 'Medium', 'Long', 'Extra Long'] as $length)
                             <label class="filter-option">
                                 <input type="checkbox" name="length[]" value="{{ $length }}"
@@ -76,13 +83,13 @@
                     </div>
 
                     <div class="filter-group">
-                        <h6>Finish</h6>
-                        @foreach (['Glossy', 'Matte', 'Glitter/Chrome'] as $finish)
+                        <h2>Finish</h2>
+                        @foreach (($finishCounts ?? []) as $finish => $finishCount)
                             <label class="filter-option">
                                 <input type="checkbox" name="finish[]" value="{{ $finish }}"
                                     onchange="this.form.requestSubmit()"
-                                    {{ in_array($finish, (array) request('finish', [])) ? 'checked' : '' }}>>
-                                {{ $finish }} ({{ $finishCounts[$finish] ?? 0 }})
+                                    {{ in_array($finish, (array) request('finish', [])) ? 'checked' : '' }}>
+                                {{ $finish }} ({{ $finishCount }})
                             </label>
                         @endforeach
                     </div>

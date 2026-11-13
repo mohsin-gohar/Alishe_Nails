@@ -216,6 +216,40 @@ class CheckoutTest extends TestCase
             ]);
     }
 
+    public function test_shipping_falls_back_to_the_flat_karachi_fee_when_no_rate_matches(): void
+    {
+        // Alishe Nails charges a flat PKR 300 across Karachi, even if the
+        // customer picks a zone the owner has not configured yet.
+        $product = $this->makeProduct(['price' => 2500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $response = $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'A Zone That Does Not Exist',
+        ]));
+
+        $response->assertOk()
+            ->assertJson([
+                'subtotal' => 2500,
+                'shipping' => 300,
+                'is_free' => false,
+                'total' => 2800,
+            ]);
+    }
+
+    public function test_cart_shows_the_flat_karachi_delivery_fee_before_checkout(): void
+    {
+        ShippingRate::query()->delete();
+
+        $product = $this->makeProduct(['price' => 2500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('PKR 300')
+            ->assertSee('PKR 2,800');
+    }
+
     public function test_checkout_with_online_payment_defaults_reference_when_omitted(): void
     {
         $product = $this->makeProduct(['price' => 1500]);

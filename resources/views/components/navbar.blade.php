@@ -5,7 +5,7 @@
 <header class="navbar" data-navbar>
     <div class="container navbar__inner">
         <a href="{{ route('home') }}" class="navbar__brand">
-           <img src="{{ asset('images/logo.jpeg') }}" alt="Alishe Nails Logo" style="height:30px;object-fit:contain;">
+            <x-optimized-image src="images/logo.jpeg" alt="Alishe Nails Logo" class="navbar__logo" loading="eager" fetchpriority="high" />
             Alishe Nails
         </a>
 
@@ -22,12 +22,13 @@
 
         <div class="navbar__actions">
             <button class="navbar__icon-btn" type="button" data-search-toggle aria-label="Search">
-                <i class="fa-solid fa-magnifying-glass"></i>
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             </button>
 
-            <a href="{{ route('cart.index') }}" class="navbar__icon-btn" aria-label="Cart">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <span class="navbar__cart-count">{{ $cartCount ?? 0 }}</span>
+            <a href="{{ route('cart.index') }}" class="navbar__icon-btn">
+                <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+                <span class="sr-only">Cart</span>
+                <span class="navbar__cart-count" aria-hidden="true">{{ $cartCount ?? 0 }}</span>
             </a>
 
             @auth('web')
@@ -63,7 +64,7 @@
     <div class="container" data-search-form style="display:none;padding-block:8px 12px;">
         <form action="{{ route('shop.index') }}" method="GET" style="display:flex;align-items:center;gap:8px;width:100%;background:#fff;border:1px solid var(--rose);border-radius:8px;padding:6px 12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
             <i class="fa-solid fa-magnifying-glass" style="color:var(--rose-dark);"></i>
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search press-on nails (e.g. Ombre, Mauve, Coffin)..." style="flex:1;border:none;outline:none;background:transparent;font-size:.9rem;font-family:inherit;" required>
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search press-on nails (e.g. Ombre, Mauve, Coffin)..." aria-label="Search products" style="flex:1;border:none;outline:none;background:transparent;font-size:.9rem;font-family:inherit;" required>
             <button type="submit" class="btn btn-primary btn-sm" style="padding:6px 14px;">Search</button>
             <button type="button" data-search-close style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#8a8a8a;padding:4px;" aria-label="Close search">
                 <i class="fa-solid fa-xmark"></i>

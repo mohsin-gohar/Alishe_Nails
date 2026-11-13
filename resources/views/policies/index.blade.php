@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('title', 'Policies — Alishe Nails')
 
+@section('meta_description', 'Alishe Nails policies: hygiene standards, 100% advance payment via SadaPay or JazzCash, Karachi delivery timelines and the returns position on press-on sets.')
+
 @section('content')
     <div class="page-header">
         <h1>Our Policies</h1>
@@ -9,7 +11,7 @@
 
     <div class="container" style="max-width:820px;padding-bottom:64px;">
         <section class="checkout-card" aria-labelledby="shipping-policy-heading" style="margin-bottom:24px;">
-            <span class="eyebrow" style="display:block;color:var(--rose);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Shipping &amp; Delivery</span>
+            <span class="eyebrow" style="display:block;color:var(--rose-dark);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Shipping &amp; Delivery</span>
             <h2 id="shipping-policy-heading">Karachi-Exclusive Delivery Policy</h2>
             <p style="font-size:1.05rem;font-weight:600;color:var(--espresso);">
                 Alishe Nails currently operates and delivers exclusively within the city of Karachi.
@@ -22,7 +24,7 @@
         </section>
 
         <section class="checkout-card" aria-labelledby="returns-policy-heading">
-            <span class="eyebrow" style="display:block;color:var(--rose);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Returns &amp; Refunds</span>
+            <span class="eyebrow" style="display:block;color:var(--rose-dark);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Returns &amp; Refunds</span>
             <h2 id="returns-policy-heading">No Returns or Exchanges</h2>
             <p style="font-size:1.05rem;font-weight:600;color:var(--rose-dark);">
                 Due to the handmade and hygienic nature of our press-on nails, we do not accept returns, exchanges, or refunds on any order once it has been placed.
@@ -43,7 +45,7 @@
         </section>
 
         <section class="checkout-card" style="margin-top:24px;" aria-labelledby="privacy-policy-heading">
-            <span class="eyebrow" style="display:block;color:var(--rose);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Privacy</span>
+            <span class="eyebrow" style="display:block;color:var(--rose-dark);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Privacy</span>
             <h2 id="privacy-policy-heading">Privacy Policy</h2>
 
             <h3>Information we collect and why</h3>

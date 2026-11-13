@@ -13,7 +13,7 @@
 
     <div class="dashboard-grid">
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Items</h3></div>
+            <div class="admin-card__head"><h2>Items</h2></div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -46,7 +46,7 @@
 
         <div>
             <div class="admin-card" style="margin-bottom:20px;">
-                <div class="admin-card__head"><h3>Customer</h3></div>
+                <div class="admin-card__head"><h2>Customer</h2></div>
                 <p style="margin:0 0 6px;"><strong>{{ $order->first_name }} {{ $order->last_name }}</strong></p>
                 <p style="margin:0 0 6px;font-size:.85rem;"><i class="fa-solid fa-envelope"></i> {{ $order->email }}</p>
                 <p style="margin:0 0 6px;font-size:.85rem;"><i class="fa-solid fa-phone"></i> {{ $order->phone }}</p>
@@ -59,14 +59,14 @@
                 @endif
                 @if ($order->transaction_reference)
                     <div style="margin-top:10px;padding:8px 12px;background:#FAF5F2;border-left:3px solid var(--rose);border-radius:4px;font-size:.85rem;">
-                        <strong><i class="fa-solid fa-receipt" style="color:var(--rose);"></i> Verification &amp; Instagram:</strong>
+                        <strong><i class="fa-solid fa-receipt" style="color:var(--rose-dark);"></i> Verification &amp; Instagram:</strong>
                         <div style="margin-top:4px;font-family:monospace;word-break:break-word;font-weight:600;color:var(--espresso);">{{ $order->transaction_reference }}</div>
                     </div>
                 @endif
             </div>
 
             <div class="admin-card">
-                <div class="admin-card__head"><h3>Payment</h3></div>
+                <div class="admin-card__head"><h2>Payment</h2></div>
                 <p style="margin:0 0 6px;font-size:.85rem;text-transform:capitalize;">
                     <i class="fa-solid fa-credit-card"></i> {{ str_replace('_', ' ', $order->payment_method) }}
                 </p>
@@ -92,7 +92,7 @@
             </div>
 
             <div class="admin-card">
-                <div class="admin-card__head"><h3>Update Order Status</h3></div>
+                <div class="admin-card__head"><h2>Update Order Status</h2></div>
                 <form action="{{ route('admin.orders.updateStatus', $order) }}" method="POST">
                     @csrf
                     @method('PATCH')
@@ -108,7 +108,7 @@
                     <button type="submit" class="btn btn-primary btn-block">Update Status</button>
                 </form>
 
-                <p style="font-size:.8rem;color:rgba(43,29,29,.6);margin-top:14px;">
+                <p style="font-size:.8rem;color:rgba(43,29,29,.75);margin-top:14px;">
                     Changing the status to <strong>Cancelled</strong> automatically restores the reserved stock to inventory.
                 </p>
             </div>

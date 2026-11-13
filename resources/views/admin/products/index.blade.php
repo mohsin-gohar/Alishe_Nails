@@ -23,7 +23,8 @@
                     <th>Price</th>
                     <th>Stock</th>
                     <th>Best Seller</th>
-                    <th></th>
+                    <th>Homepage</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -31,7 +32,7 @@
                     <tr>
                         <td>
                             @if ($product->cover_image_url)
-                                <img src="{{ $product->cover_image_url }}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;" alt="{{ $product->name }}">
+                                <x-optimized-image :src="$product->cover_image_url" :alt="$product->name" class="admin-thumb" loading="lazy" />
                             @else
                                 <div style="width:44px;height:44px;border-radius:6px;background:var(--blush);"></div>
                             @endif
@@ -46,6 +47,13 @@
                             @endif
                         </td>
                         <td>{{ $product->is_best_seller ? 'Yes' : 'No' }}</td>
+                        <td>
+                            @if ($product->is_homepage)
+                                <span class="status-pill status-delivered">#{{ $product->homepage_order ?? '—' }}</span>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td style="display:flex;gap:8px;">
                             <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-outline btn-sm">Edit</a>
                             <form action="{{ route('admin.products.destroy', $product) }}" method="POST"
@@ -57,7 +65,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" style="text-align:center;padding:30px;">No products yet — add your first one.</td></tr>
+                    <tr><td colspan="8" style="text-align:center;padding:30px;">No products yet — add your first one.</td></tr>
                 @endforelse
             </tbody>
         </table>

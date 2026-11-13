@@ -2,28 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpeg') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/favicon.png') }}">
     <link rel="canonical" href="{{ url()->current() }}">
     <title>@yield('title', 'Alishe Nails — Timeless Nails, Made for You')</title>
-    <meta name="description" content="@yield('meta_description', 'Luxury handmade press-on nails for every occasion. Shop the Alishe Nails collection.')">
+    <meta name="description" content="@yield('meta_description', 'Luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero damage, reusable up to 5 times.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'press-on nails, handcrafted nails, salon gel, Alishe Nails, Karachi nails')">
     <meta name="robots" content="@yield('robots', 'index,follow')">
-    <meta name="theme-color" content="#2B1D1D">
+    <meta name="theme-color" content="#2B231F">
+    <meta name="msapplication-TileColor" content="#2B231F">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:site_name" content="Alishe Nails">
     <meta property="og:locale" content="en_PK">
     <meta property="og:title" content="@yield('og_title', 'Alishe Nails — Timeless Nails, Made for You')">
-    <meta property="og:description" content="@yield('og_description', 'Luxury handmade press-on nails for every occasion.')">
+    <meta property="og:description" content="@yield('og_description', 'Luxury handcrafted 7-layer salon gel press-on nails. Zero damage, reusable up to 5 times, delivered across Karachi in 48-96 hours.')">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="@yield('og_image', asset('images/logo.jpeg'))">
+    <meta property="og:image" content="@yield('og_image', asset('images/og/og-image.jpg'))">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="@yield('og_title', 'Alishe Nails — Timeless Nails, Made for You')">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', 'Alishe Nails — Timeless Nails, Made for You')">
+    <meta name="twitter:description" content="@yield('og_description', 'Luxury handcrafted 7-layer salon gel press-on nails. Zero damage, reusable up to 5 times, delivered across Karachi in 48-96 hours.')">
+    <meta name="twitter:creator" content="@yield('twitter_creator', '@alishe_nails')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    {{-- Fonts and icons are self-hosted: no third-party DNS lookup, no extra
+         TLS handshake, no third-party request to track a visitor, and the
+         assets can be cached for a year by the browser. --}}
+    <link rel="preload" href="{{ asset('css/googlefonts.css') }}?v={{ filemtime(public_path('css/googlefonts.css')) }}" as="style">
+    <link rel="preload" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" as="style">
 
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/googlefonts.css') }}?v={{ filemtime(public_path('css/googlefonts.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}?v={{ filemtime(public_path('css/fontawesome.min.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     @stack('styles')
     @stack('head')
 </head>
@@ -53,7 +67,7 @@
     while ($picked->count() < 3) {
         $picked->push(public_path('images/logo.jpeg'));
     }
-    $headerImages = $picked->map(fn ($file) => {
+    $headerImages = $picked->map(function ($file) {
         $relativePath = ltrim(str_replace(public_path(), '', (string) $file), DIRECTORY_SEPARATOR);
         $relativePath = str_replace('\\', '/', $relativePath);
         return asset($relativePath);
@@ -115,7 +129,7 @@
                     'contactPoint' => [
                         '@type' => 'ContactPoint',
                         'contactType' => 'customer support',
-                        'telephone' => config('services.whatsapp.number', '+92 311 3925166'),
+                        'telephone' => '+'.$globalWaDigits,
                         'areaServed' => 'PK',
                         'availableLanguage' => ['en', 'ur'],
                     ],
@@ -139,7 +153,7 @@
     {!! json_encode($orgSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
 
-    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
     @stack('scripts')
 
     {{-- Google Analytics 4 --}}

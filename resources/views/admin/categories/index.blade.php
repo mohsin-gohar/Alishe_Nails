@@ -6,7 +6,7 @@
     <div class="admin-page-head">
         <div>
             <h1>Categories</h1>
-            <p>{{ $categories->total() }} categories</p>
+            <p>{{ $categories->total() }} categories · control homepage tiles, images and display order</p>
         </div>
         <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i> Add Category
@@ -17,16 +17,34 @@
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Name</th>
+                    <th>Description</th>
                     <th>Products</th>
-                    <th></th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($categories as $category)
                     <tr>
+                        <td>
+                            @if ($category->image_url)
+                                <x-optimized-image :src="$category->image_url" :alt="$category->name" class="admin-thumb admin-thumb--wide" loading="lazy" />
+                            @else
+                                <div style="width:56px;height:42px;border-radius:6px;background:var(--blush);"></div>
+                            @endif
+                        </td>
                         <td>{{ $category->name }}</td>
+                        <td style="max-width:280px;">{{ \Illuminate\Support\Str::limit($category->description, 70) ?: '—' }}</td>
                         <td>{{ $category->products_count }}</td>
+                        <td>{{ $category->sort_order }}</td>
+                        <td>
+                            <span class="status-pill {{ $category->is_active ? 'status-delivered' : 'status-cancelled' }}">
+                                {{ $category->is_active ? 'Active' : 'Hidden' }}
+                            </span>
+                        </td>
                         <td style="display:flex;gap:8px;">
                             <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-outline btn-sm">Edit</a>
                             <form action="{{ route('admin.categories.destroy', $category) }}" method="POST"
@@ -38,7 +56,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" style="text-align:center;padding:30px;">No categories yet.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:30px;">No categories yet.</td></tr>
                 @endforelse
             </tbody>
         </table>

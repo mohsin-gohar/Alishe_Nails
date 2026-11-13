@@ -70,11 +70,13 @@
 
                 <div class="form-field">
                     <label for="finish">Finish</label>
-                    <select id="finish" name="finish">
-                        @foreach (['Glossy', 'Matte', 'Glitter/Chrome'] as $finish)
-                            <option value="{{ $finish }}" {{ old('finish', $product->finish) == $finish ? 'selected' : '' }}>{{ $finish }}</option>
+                    <input list="finish-options" id="finish" name="finish" value="{{ old('finish', $product->finish) }}" placeholder="e.g. Matte, Glitter, No Finish">
+                    <datalist id="finish-options">
+                        @foreach (['Glossy', 'Matte', 'Glitter/Chrome'] as $finishOption)
+                            <option value="{{ $finishOption }}"></option>
                         @endforeach
-                    </select>
+                    </datalist>
+                    <small style="color:#6b5a5c;">Aap khud custom finish bhi likh sakte hain — jaise “No Finish”, “Soft Matte”, “Ivory Sheen”.</small>
                 </div>
 
                 <div class="form-field">
@@ -90,6 +92,30 @@
                 <div class="form-field full">
                     <label for="description">Full Description</label>
                     <textarea id="description" name="description" rows="4">{{ old('description', $product->description) }}</textarea>
+                </div>
+
+                <div class="form-field full">
+                    <label for="tags">Search Keywords / Tags <span style="font-weight:400;color:#6b5a5c;">(comma separated)</span></label>
+                    <input type="text" id="tags" name="tags" value="{{ old('tags', $product->tags) }}"
+                           placeholder="ombre, coffin, bridal, chrome, nude">
+                    <small style="color:#6b5a5c;">Used by the shop search and for internal merchandising.</small>
+                    @error('tags') <div class="error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-field">
+                    <label for="meta_title">SEO Title <span style="font-weight:400;color:#6b5a5c;">(max 70)</span></label>
+                    <input type="text" id="meta_title" name="meta_title" maxlength="70"
+                           value="{{ old('meta_title', $product->meta_title) }}"
+                           placeholder="{{ $product->name ?: 'Product name — Alishe Nails' }}">
+                    @error('meta_title') <div class="error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-field">
+                    <label for="meta_description">SEO Description <span style="font-weight:400;color:#6b5a5c;">(max 255)</span></label>
+                    <input type="text" id="meta_description" name="meta_description" maxlength="255"
+                           value="{{ old('meta_description', $product->meta_description) }}"
+                           placeholder="Short, keyword-rich description for Google results.">
+                    @error('meta_description') <div class="error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-field full" data-media-manager data-max-items="10" data-asset-base="{{ rtrim(asset('/'), '/') }}">
@@ -138,6 +164,16 @@
                         <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}>
                         Show in Featured Collections
                     </label>
+                </div>
+
+                <div class="form-field">
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" name="is_homepage" value="1" {{ old('is_homepage', $product->is_homepage) ? 'checked' : '' }}>
+                        Show on Homepage
+                    </label>
+                    <small style="display:block;margin:4px 0 0 26px;color:#6b5a5c;">
+                        Order aur full lineup <a href="{{ route('admin.homepage.index') }}">Homepage Studio</a> se manage karein.
+                    </small>
                 </div>
 
                 <div class="form-field">

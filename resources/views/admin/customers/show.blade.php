@@ -13,7 +13,7 @@
 
     <div class="dashboard-grid">
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Order History</h3></div>
+            <div class="admin-card__head"><h2>Order History</h2></div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -39,7 +39,7 @@
         </div>
 
         <div class="admin-card">
-            <div class="admin-card__head"><h3>Contact Info</h3></div>
+            <div class="admin-card__head"><h2>Contact Info</h2></div>
             {{-- Never display password hashes or tokens — only safe, non-secret fields. --}}
             <p style="margin:0 0 6px;font-size:.85rem;"><i class="fa-solid fa-envelope"></i> {{ $customer->email }}</p>
             <p style="margin:0 0 6px;font-size:.85rem;"><i class="fa-solid fa-phone"></i> {{ $customer->phone ?? '—' }}</p>

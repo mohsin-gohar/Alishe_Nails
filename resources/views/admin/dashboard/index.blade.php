@@ -8,9 +8,14 @@
             <h1>Dashboard Overview</h1>
             <p>Welcome back to the command center.</p>
         </div>
-        <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> New Product
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="{{ route('admin.homepage.index') }}" class="btn btn-outline">
+                <i class="fa-solid fa-house-chimney"></i> Homepage Studio
+            </a>
+            <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i> New Product
+            </a>
+        </div>
     </div>
 
     {{-- ---------- Stat cards ---------- --}}
@@ -62,7 +67,7 @@
     <div class="dashboard-grid">
         <div class="admin-card">
             <div class="admin-card__head">
-                <h3>Recent Orders</h3>
+                <h2>Recent Orders</h2>
                 <a href="{{ route('admin.orders.index') }}">View All &rarr;</a>
             </div>
 
@@ -99,7 +104,7 @@
 
         <div class="admin-card">
             <div class="admin-card__head">
-                <h3>Top Performing</h3>
+                <h2>Top Performing</h2>
             </div>
 
             <div class="top-performing__total">
@@ -117,7 +122,7 @@
                     <span>{{ $totalUnitsSold > 0 ? round(($product->units_sold / $totalUnitsSold) * 100) : 0 }}%</span>
                 </div>
             @empty
-                <p style="font-size:.85rem;color:rgba(43,29,29,.6);">No sales data yet.</p>
+                <p style="font-size:.85rem;color:rgba(43,29,29,.75);">No sales data yet.</p>
             @endforelse
         </div>
     </div>
@@ -126,18 +131,18 @@
     <div class="dashboard-grid">
         <div class="campaign-banner">
             @if (file_exists(public_path('images/brand/about-hands.jpg')))
-                <img src="{{ asset('images/brand/about-hands.jpg') }}" alt="Spring Collection">
+                <x-optimized-image src="images/brand/about-hands.jpg" alt="Spring Collection" loading="lazy" />
             @endif
             <div class="campaign-banner__content">
                 <span class="campaign-banner__tag">Campaign</span>
-                <h3>Spring Collection Setup</h3>
+                <h2>Spring Collection Setup</h2>
                 <p>Prepare inventory and marketing materials for the upcoming seasonal drop.</p>
             </div>
         </div>
 
         <div class="admin-card">
             <div class="admin-card__head">
-                <h3>Tasks &amp; Alerts</h3>
+                <h2>Tasks &amp; Alerts</h2>
             </div>
 
             @if ($lowStockCount > 0)
@@ -168,8 +173,26 @@
                 </div>
             @endif
 
-            @if ($lowStockCount == 0 && $pendingOrders == 0)
-                <p style="font-size:.85rem;color:rgba(43,29,29,.6);">All caught up — no pending tasks.</p>
+            @php
+                $homepageCount = \App\Models\Product::where('is_homepage', true)->count();
+            @endphp
+            <div class="task-item">
+                <div class="task-item__icon"><i class="fa-solid fa-house-chimney"></i></div>
+                <div class="task-item__body">
+                    <strong>Homepage Lineup</strong>
+                    <small>
+                        @if ($homepageCount > 0)
+                            {{ $homepageCount }} product(s) hand-picked for “The Home Edit”.
+                        @else
+                            No products curated yet — automatic merchandising is live.
+                        @endif
+                    </small>
+                </div>
+                <a href="{{ route('admin.homepage.index') }}" class="task-item__action">Manage</a>
+            </div>
+
+            @if ($lowStockCount == 0 && $pendingOrders == 0 && $homepageCount > 0)
+                <p style="font-size:.85rem;color:rgba(43,29,29,.75);">All caught up — no pending tasks.</p>
             @endif
         </div>
     </div>

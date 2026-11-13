@@ -1,4 +1,6 @@
 @extends('layouts.app')
+
+@section('robots', 'noindex, follow')
 @section('title', 'Seller Subscription — Alishe Nails')
 @section('content')
 <div class="page-header"><h1>Choose Your Subscription</h1><p>Keep your designs visible and continue selling on Alishe Nails.</p></div>

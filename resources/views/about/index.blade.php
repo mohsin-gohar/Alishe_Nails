@@ -2,6 +2,8 @@
 
 @section('title', 'Our Story & Craftsmanship — Alishe Nails Karachi')
 
+@section('meta_description', 'Meet the Alishe Nails atelier in Karachi: hand-painted press-on nails built on a 7-layer salon gel structure, tested on real hands and made in small batches.')
+
 @section('content')
 
     <div class="page-header">
@@ -40,7 +42,7 @@
 
             <div class="about-story__image" style="border:1.5px solid rgba(212,175,55,0.3);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 16px 40px rgba(43,29,29,0.1);">
                 @if (file_exists(public_path('images/brand/about-hands.jpg')))
-                    <img src="{{ asset('images/brand/about-hands.jpg') }}" alt="Alishe Nails handmade press-on nails" style="width:100%;height:100%;object-fit:cover;">
+                    <x-optimized-image src="images/brand/about-hands.jpg" alt="Alishe Nails handmade press-on nails" class="about-hands__img" loading="lazy" />
                 @else
                     <div class="img-placeholder" style="aspect-ratio:4/3.5;background:linear-gradient(135deg,#FFF2F5,#F6D6DC);display:flex;flex-direction:column;align-items:center;justify-content:center;">
                         <i class="fa-solid fa-crown" style="font-size:2.8rem;color:var(--gold);margin-bottom:12px;"></i>
@@ -56,17 +58,17 @@
     <section class="about-values container" style="margin-top:48px;">
         <div class="value-card">
             <i class="fa-solid fa-hand-sparkles" style="color:var(--rose-dark);font-size:1.8rem;margin-bottom:12px;"></i>
-            <h4>100% Hand-Painted</h4>
+            <h3>100% Hand-Painted</h3>
             <p style="font-size:.88rem;color:rgba(43,29,29,.7);">Every single nail is sculpted, buffed, and painted by hand in small artisan batches for bespoke individuality.</p>
         </div>
         <div class="value-card">
             <i class="fa-solid fa-shield-heart" style="color:#2E7D32;font-size:1.8rem;margin-bottom:12px;"></i>
-            <h4>Healthy Natural Nails</h4>
+            <h3>Healthy Natural Nails</h3>
             <p style="font-size:.88rem;color:rgba(43,29,29,.7);">Zero drills, zero thinning, and zero toxic salon odors. Safe for everyday wear and gentle on delicate nail beds.</p>
         </div>
         <div class="value-card">
             <i class="fa-solid fa-repeat" style="color:var(--gold);font-size:1.8rem;margin-bottom:12px;"></i>
-            <h4>Reusable Up to 5 Times</h4>
+            <h3>Reusable Up to 5 Times</h3>
             <p style="font-size:.88rem;color:rgba(43,29,29,.7);">Crafted with reinforced salon gel that doesn't bend or crack. Re-wear your favourite set whenever you dress up.</p>
         </div>
     </section>

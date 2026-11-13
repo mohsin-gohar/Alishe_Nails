@@ -15,3 +15,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Generated browser-audit artefacts (reports change on every run)
+/tools/audit/*.json
+/tools/audit/*.txt

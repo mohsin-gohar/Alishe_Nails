@@ -21,7 +21,7 @@ class SellerProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:5000'],
             'shape' => ['nullable', 'string', 'in:Almond,Coffin,Square,Stiletto'],
             'length' => ['nullable', 'string', 'in:Short,Medium,Long,Extra Long'],
-            'finish' => ['nullable', 'string', 'in:Glossy,Matte,Glitter/Chrome'],
+            'finish' => ['nullable', 'string', 'max:60'],
             'stock' => ['required', 'integer', 'min:0', 'max:100000'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'gallery' => ['nullable', 'array', 'max:8'],

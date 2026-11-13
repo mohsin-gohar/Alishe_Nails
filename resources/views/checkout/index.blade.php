@@ -35,12 +35,12 @@
                                 <span class="step-badge">1</span>
                                 <span>Contact &amp; Delivery Information</span>
                             </h2>
-                            <span style="font-size:0.78rem;color:#7A6E68;font-weight:500;">Step 1 of 2</span>
+                            <span style="font-size:0.78rem;color:#6b5a5c;font-weight:500;">Step 1 of 2</span>
                         </div>
 
                         @guest('web')
                             <div class="guest-login-prompt">
-                                <i class="fa-regular fa-user" style="color:var(--rose);font-size:1.05rem;"></i>
+                                <i class="fa-regular fa-user" style="color:var(--rose-dark);font-size:1.05rem;"></i>
                                 <div>
                                     Already have an Alishe Nails account?
                                     <a href="{{ route('login') }}">Log in</a> or <a href="{{ route('register') }}">Create an account</a> for faster checkout and order tracking.
@@ -149,12 +149,12 @@
                                 <span class="step-badge">2</span>
                                 <span>Delivery &amp; Payment</span>
                             </h2>
-                            <span style="font-size:0.78rem;color:#7A6E68;font-weight:500;">Step 2 of 2</span>
+                            <span style="font-size:0.78rem;color:#6b5a5c;font-weight:500;">Step 2 of 2</span>
                         </div>
 
                         <div class="shipping-method-card">
                             <div class="shipping-method-card__left">
-                                <input type="radio" checked readonly style="accent-color:var(--rose);width:18px;height:18px;">
+                                <input type="radio" checked readonly style="accent-color:var(--rose-dark);width:18px;height:18px;">
                                 <div>
                                     <div class="shipping-method-card__title">Karachi Express Doorstep Delivery (2–4 Business Days)</div>
                                     <div class="shipping-method-card__sub">Carefully handcrafted, quality-tested &amp; packed in signature gift box.</div>
@@ -173,7 +173,7 @@
                                     <input type="radio" name="payment_method" value="sadapay" {{ old('payment_method', 'sadapay') === 'sadapay' ? 'checked' : '' }}>
                                     <span>
                                         <span class="payment-brand-badge payment-brand-badge--sadapay">SadaPay</span>
-                                        <span style="display:block;font-size:0.8rem;color:#7A6E68;margin-top:4px;">Transfer via SadaPay app or bank transfer</span>
+                                        <span style="display:block;font-size:0.8rem;color:#6b5a5c;margin-top:4px;">Transfer via SadaPay app or bank transfer</span>
                                     </span>
                                 </span>
                                 <i class="fa-solid fa-arrow-right" style="color:#C7B8B0;"></i>
@@ -184,14 +184,14 @@
                                     <input type="radio" name="payment_method" value="jazzcash" {{ old('payment_method') === 'jazzcash' ? 'checked' : '' }}>
                                     <span>
                                         <span class="payment-brand-badge payment-brand-badge--jazzcash">JazzCash</span>
-                                        <span style="display:block;font-size:0.8rem;color:#7A6E68;margin-top:4px;">Transfer via JazzCash mobile account</span>
+                                        <span style="display:block;font-size:0.8rem;color:#6b5a5c;margin-top:4px;">Transfer via JazzCash mobile account</span>
                                     </span>
                                 </span>
                                 <i class="fa-solid fa-arrow-right" style="color:#C7B8B0;"></i>
                             </label>
 
-                            <p style="font-size:0.78rem;color:#7A6E68;margin:10px 0 0;line-height:1.5;">
-                                <i class="fa-solid fa-circle-info" style="color:var(--rose);"></i>
+                            <p style="font-size:0.78rem;color:#6b5a5c;margin:10px 0 0;line-height:1.5;">
+                                <i class="fa-solid fa-circle-info" style="color:var(--rose-dark);"></i>
                                 Your Order ID and the verified payment account details will be shown on the confirmation screen right after you place the order.
                             </p>
                         </div>
@@ -251,7 +251,7 @@
                                             $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? asset('images/products/'.$item['image']) : null;
                                         @endphp
                                         @if ($url)
-                                            <img src="{{ $url }}" alt="{{ $item['name'] }}">
+                                            <x-optimized-image :src="$url" :alt="$item['name']" :fallback="true" />
                                         @else
                                             <div class="img-placeholder" style="font-size:.55rem;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;">Alishe</div>
                                         @endif
@@ -269,7 +269,7 @@
                                             <span>&bull; Shape: <strong>{{ $item['shape'] }}</strong></span>
                                         @endif
                                     </div>
-                                    <div style="font-size:0.75rem;color:#7A6E68;margin-top:2px;">
+                                    <div style="font-size:0.75rem;color:#6b5a5c;margin-top:2px;">
                                         PKR {{ number_format($item['price'], 0) }} &times; {{ $item['qty'] }}
                                     </div>
                                 </div>
@@ -343,7 +343,7 @@
                         <span>Place Order &bull; <span id="checkout-btn-total">PKR {{ number_format($total, 0) }}</span></span>
                     </button>
 
-                    <div style="text-align:center;margin-top:12px;font-size:0.74rem;color:#7A6E68;">
+                    <div style="text-align:center;margin-top:12px;font-size:0.74rem;color:#6b5a5c;">
                         <i class="fa-solid fa-shield-check" style="color:#2E7D32;"></i> Safe checkout &amp; fast doorstep dispatch across Karachi.
                     </div>
 
@@ -370,40 +370,6 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Recalculate checkout total to ensure delivery charges are always included
-            const subtotalEl = document.querySelector('.summary-row:nth-child(1) strong');
-            const shippingEl = document.getElementById('checkout-shipping-amount');
-            const totalEl = document.getElementById('checkout-total-amount');
-            const btnTotalEl = document.getElementById('checkout-btn-total');
-
-            if (!subtotalEl || !totalEl || !btnTotalEl) return;
-
-            function parsePKR(text) {
-                return parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
-            }
-
-            function updateTotals() {
-                const subtotal = parsePKR(subtotalEl.textContent);
-                let shipping = 0;
-                if (shippingEl) {
-                    const shippingText = shippingEl.textContent;
-                    if (!shippingText.includes('Coordinated directly')) {
-                        shipping = parsePKR(shippingText);
-                    }
-                }
-
-                // Calculate total: subtotal + shipping (discount handled server-side, default 0 for safety)
-                const total = subtotal + shipping;
-
-                totalEl.textContent = 'PKR ' + total.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                btnTotalEl.textContent = 'PKR ' + total.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            }
-
-            updateTotals();
-        });
-    </script>
-@endpush
+    @endpush
 
 @endsection

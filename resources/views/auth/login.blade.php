@@ -30,7 +30,7 @@
     <p style="text-align:center;margin-top:20px;font-size:.9rem;">
         New here? <a href="{{ route('register') }}" style="text-decoration:underline;color:var(--rose-dark);">Create an account</a>
     </p>
-    <p style="text-align:center;margin-top:10px;font-size:.85rem;color:rgba(43,29,29,.6);">
+    <p style="text-align:center;margin-top:10px;font-size:.85rem;color:rgba(43,29,29,.75);">
         Store Administrator? <a href="{{ route('admin.login') }}" style="text-decoration:underline;color:var(--espresso);font-weight:600;">Admin Login Portal &rarr;</a>
     </p>
 </div>

@@ -6,6 +6,7 @@ use App\Http\Requests\SellerProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SubscriptionPlan;
+use App\Services\ImageOptimizer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -84,6 +85,10 @@ class SellerDashboardController extends Controller
         return $data;
     }
 
+    /**
+     * Stores a seller upload through the image pipeline (WebP, EXIF stripped,
+     * resolution capped) so marketplace listings are as light as our own.
+     */
     private function storeImage($file): string
     {
         $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -91,23 +96,7 @@ class SellerDashboardController extends Controller
             abort(422, 'Invalid image type.');
         }
 
-        $extension = match ($file->getMimeType()) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/gif' => 'gif',
-            default => 'jpg',
-        };
-
-        $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'-'.time().'-'.Str::random(6).'.'.$extension;
-
-        if (! is_dir(public_path('images/products'))) {
-            mkdir(public_path('images/products'), 0775, true);
-        }
-
-        $file->move(public_path('images/products'), $filename);
-
-        return $filename;
+        return app(ImageOptimizer::class)->store($file, 'images/products');
     }
 
     private function uniqueSlug(string $name): string

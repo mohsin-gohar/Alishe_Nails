@@ -1,9 +1,19 @@
 @extends('layouts.app')
-@section('title', $product->name.' — Alishe Nails')
+@section('title', $product->meta_title ?: $product->name.' — Alishe Nails')
+@section('meta_description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->description ?: 'Shop '.$product->name.' from Alishe Nails.'), 155))
+@section('meta_keywords', $product->tags ?: $product->name.', press-on nails, Alishe Nails')
 @section('og_type', 'product')
-@section('og_title', $product->name.' — Alishe Nails')
-@section('og_description', $product->short_description ?: 'Shop '.$product->name.' from Alishe Nails.')
+@section('og_title', $product->meta_title ?: $product->name.' — Alishe Nails')
+@section('og_description', $product->meta_description ?: $product->short_description ?: 'Shop '.$product->name.' from Alishe Nails.')
 @section('og_image', $product->cover_image_url ?: asset('images/logo.jpeg'))
+
+@push('head')
+    <x-breadcrumb-schema :items="[
+        ['name' => 'Home', 'url' => route('home')],
+        ['name' => 'Shop All', 'url' => route('shop.index')],
+        ['name' => $product->name, 'url' => route('products.show', $product)],
+    ]" />
+@endpush
 
 @section('content')
 
@@ -27,7 +37,7 @@
                             @if ($media['type'] === 'video')
                                 <video src="{{ $media['url'] }}" controls muted loop playsinline preload="metadata"></video>
                             @else
-                                <img src="{{ $media['url'] }}" alt="{{ $product->name }} media {{ $i + 1 }}" data-image-fallback>
+                                <x-optimized-image :src="$media['url']" :alt="$product->name.' media '.($i + 1)" loading="eager" fetchpriority="high" />
                             @endif
                         </div>
                     @empty
@@ -47,7 +57,7 @@
                                     <video src="{{ $media['url'] }}" muted preload="metadata"></video>
                                     <span class="product-gallery__thumb-play"><i class="fa-solid fa-play"></i></span>
                                 @else
-                                    <img src="{{ $media['url'] }}" alt="{{ $product->name }} thumbnail {{ $i + 1 }}">
+                                    <x-optimized-image :src="$media['url']" :alt="$product->name.' thumbnail '.($i + 1)" loading="lazy" />
                                 @endif
                             </button>
                         @endforeach
@@ -58,7 +68,13 @@
             {{-- ---------- Info ---------- --}}
             <div class="product-info">
                 <!-- WhatsApp Order Button -->
-                <a href="https://wa.me/{{ config('services.whatsapp.number') }}?text={{ urlencode('Assalam-o-Alaikum! Mujhe ' . $product->name . ' khareedna hai. Damme: PKR ' . $product->price . ' Product URL: ' . route('products.show', $product)) }}" target="_blank" rel="noopener" class="btn btn-whatsapp-wameline">
+                @php
+                    $waHeaderDigits = preg_replace('/\D/', '', (string) config('services.whatsapp.number', '923113925166'));
+                    if (str_starts_with($waHeaderDigits, '0')) {
+                        $waHeaderDigits = '92'.substr($waHeaderDigits, 1);
+                    }
+                @endphp
+                <a href="https://wa.me/{{ $waHeaderDigits }}?text={{ urlencode('Assalam-o-Alaikum! Mujhe ' . $product->name . ' khareedna hai. Damme: PKR ' . $product->price . ' Product URL: ' . route('products.show', $product)) }}" target="_blank" rel="noopener" class="btn btn-whatsapp-wameline">
                     <i class="fa-brands fa-whatsapp"></i> Order via WhatsApp
                 </a>
                 
@@ -70,7 +86,7 @@
                     @for ($i = 1; $i <= 5; $i++)
                         <i class="fa-{{ $i <= round($product->average_rating) ? 'solid' : 'regular' }} fa-star"></i>
                     @endfor
-                    <span style="color:rgba(43,29,29,.6);">({{ $product->reviews_count }} Reviews)</span>
+                    <span style="color:rgba(43,29,29,.75);">({{ $product->reviews_count }} Reviews)</span>
                 </div>
 
                 <h1>{{ $product->name }}</h1>
@@ -115,7 +131,7 @@
 
                     @if ($product->shape)
                         <div class="option-group" data-option-group>
-                            <div class="option-group__head"><h6>Shape &amp; Length</h6></div>
+                            <div class="option-group__head"><h2>Shape &amp; Length</h2></div>
                             <div class="option-pills">
                                 <div class="option-pill is-selected" data-value="{{ $product->shape }} {{ $product->length }}">{{ $product->length }} {{ $product->shape }}</div>
                                 <div class="option-pill" data-value="Short Square">Short Square</div>
@@ -127,7 +143,7 @@
 
                     <div class="option-group" data-option-group id="size-option-group">
                         <div class="option-group__head">
-                            <h6>Size</h6>
+                            <h2>Size</h2>
                             <button type="button" class="text-button" data-modal-open="size-guide-modal">Sizing Guide</button>
                         </div>
                         <div class="option-pills">
@@ -140,7 +156,7 @@
                         {{-- Custom Size Millimeter Inputs --}}
                         <div class="custom-size-box" id="custom-size-box">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <strong style="font-size:0.82rem;color:var(--espresso);"><i class="fa-solid fa-ruler-combined" style="color:var(--rose);"></i> Custom Nail Measurements (mm):</strong>
+                                <strong style="font-size:0.82rem;color:var(--espresso);"><i class="fa-solid fa-ruler-combined" style="color:var(--rose-dark);"></i> Custom Nail Measurements (mm):</strong>
                                 <small style="font-size:0.72rem;color:var(--rose-dark);font-weight:600;">Width across widest point</small>
                             </div>
                             <div class="custom-size-grid">
@@ -165,7 +181,7 @@
                                     <input type="number" id="custom-pinky" class="custom-mm-input" data-finger="P" value="9" min="8" max="25" step="0.5">
                                 </div>
                             </div>
-                            <small style="display:block;margin-top:6px;font-size:0.72rem;color:#7A6E68;">
+                            <small style="display:block;margin-top:6px;font-size:0.72rem;color:#6b5a5c;">
                                 <i class="fa-solid fa-circle-info"></i> Enter the millimeter width for each natural nail bed.
                             </small>
                         </div>
@@ -184,7 +200,7 @@
                     </div>
 
                     <div class="product-live-subtotal-box">
-                        <span class="subtotal-label"><i class="fa-solid fa-calculator" style="color:var(--rose);margin-right:6px;"></i> Live subtotal:</span>
+                        <span class="subtotal-label"><i class="fa-solid fa-calculator" style="color:var(--rose-dark);margin-right:6px;"></i> Live subtotal:</span>
                         <span class="subtotal-amount" id="product-live-subtotal" data-unit-price="{{ $product->price }}">
                             PKR {{ number_format($product->price, 0) }}
                         </span>
@@ -308,7 +324,7 @@
                     <p style="margin:0;">{{ $review->comment }}</p>
                 </div>
             @empty
-                <p style="color:rgba(43,29,29,.6);">No reviews yet — be the first to share your experience.</p>
+                <p style="color:rgba(43,29,29,.75);">No reviews yet — be the first to share your experience.</p>
             @endforelse
 
             @auth('web')
@@ -336,7 +352,7 @@
                         </form>
                     </div>
                 @else
-                    <p style="font-size:.85rem;color:rgba(43,29,29,.6);margin-top:16px;">You've already reviewed this product.</p>
+                    <p style="font-size:.85rem;color:rgba(43,29,29,.75);margin-top:16px;">You've already reviewed this product.</p>
                 @endif
             @else
                 <p style="font-size:.85rem;margin-top:16px;">
@@ -371,7 +387,7 @@
             </p>
 
             <div style="background:#FAF5F2;border:1px solid var(--border-soft);border-radius:10px;padding:16px;margin-bottom:20px;">
-                <h4 style="font-size:0.9rem;margin-bottom:12px;color:var(--espresso);"><i class="fa-solid fa-tape" style="color:var(--rose);"></i> The 3-Step Clear Tape Method:</h4>
+                <h3 style="font-size:0.9rem;margin-bottom:12px;color:var(--espresso);"><i class="fa-solid fa-tape" style="color:var(--rose-dark);"></i> The 3-Step Clear Tape Method:</h3>
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:0.78rem;color:rgba(43,29,29,.8);">
                     <div>
                         <strong style="display:block;color:var(--rose-dark);margin-bottom:2px;">1. Apply Tape</strong>

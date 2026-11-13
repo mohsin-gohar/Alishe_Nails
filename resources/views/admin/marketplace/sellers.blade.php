@@ -33,7 +33,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align:center;padding:32px 16px;color:rgba(43,29,29,.6);">
+                    <td colspan="5" style="text-align:center;padding:32px 16px;color:rgba(43,29,29,.75);">
                         No seller applications received yet.
                     </td>
                 </tr>

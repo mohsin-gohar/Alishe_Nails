@@ -26,7 +26,7 @@
         <div class="form-field" style="margin-bottom:16px;">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
-            <div style="font-size:.75rem;color:rgba(43,29,29,.55);margin-top:4px;">At least 8 characters, with letters and numbers.</div>
+            <div style="font-size:.75rem;color:rgba(43,29,29,.75);margin-top:4px;">At least 8 characters, with letters and numbers.</div>
             @error('password') <div class="error">{{ $message }}</div> @enderror
         </div>
         <div class="form-field" style="margin-bottom:20px;">

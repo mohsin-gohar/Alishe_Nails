@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminHomepageController;
 use App\Http\Controllers\Admin\AdminInstagramController;
 use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -24,7 +25,6 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\CustomDesignController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\HomeController;
@@ -38,6 +38,7 @@ use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\SellerSubscriptionController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\TrackOrderController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', RobotsController::class)->name('robots');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
@@ -84,8 +86,6 @@ Route::get('/policies', [PolicyController::class, 'index'])->name('policies.inde
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:30,1')->name('contact.store');
-Route::get('/custom-design', [CustomDesignController::class, 'create'])->name('custom-design.create');
-Route::post('/custom-design', [CustomDesignController::class, 'store'])->middleware('throttle:30,1')->name('custom-design.store');
 
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'store'])
     ->middleware('throttle:30,1')
@@ -152,8 +152,14 @@ Route::middleware('auth:web')->prefix('account')->name('account.')->group(functi
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('admin.')->group(function () {
+    // The GET is deliberately NOT behind `guest:admin`: that middleware
+    // redirects to "/" (Laravel's default guest target) before the
+    // controller ever runs, so an administrator who is already signed in
+    // would be dumped on the storefront. AdminAuthController::showLogin()
+    // performs the same check and sends them to the dashboard instead.
+    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+
     Route::middleware('guest:admin')->group(function () {
-        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:30,1')->name('login.attempt');
     });
 
@@ -164,6 +170,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('products', AdminProductController::class)->names('products')->except(['show']);
         Route::resource('categories', AdminCategoryController::class)->names('categories')->except(['show']);
+
+        // Homepage merchandising studio: choose and order featured products.
+        Route::get('/homepage', [AdminHomepageController::class, 'index'])->name('homepage.index');
+        Route::post('/homepage', [AdminHomepageController::class, 'update'])->name('homepage.update');
+
         Route::resource('shipping', AdminShippingController::class)->names('shipping')->except(['show']);
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');

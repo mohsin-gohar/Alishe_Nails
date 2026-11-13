@@ -170,8 +170,33 @@ document.addEventListener('DOMContentLoaded', function () {
   var navbar = document.querySelector('.navbar');
   var navToggle = document.querySelector('.navbar__toggle');
   if (navToggle && navbar) {
+    var setNavState = function (open) {
+      navbar.classList.toggle('is-open', open);
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+
+    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle.setAttribute('aria-controls', 'primary-navigation');
+    navbar.querySelector('.navbar__mobile-links').id = 'primary-navigation';
+
     navToggle.addEventListener('click', function () {
-      navbar.classList.toggle('is-open');
+      setNavState(!navbar.classList.contains('is-open'));
+    });
+
+    // Close on Escape for keyboard users.
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && navbar.classList.contains('is-open')) {
+        setNavState(false);
+        navToggle.focus();
+      }
+    });
+
+    // Reset state when resizing back to desktop.
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 1024 && navbar.classList.contains('is-open')) {
+        setNavState(false);
+      }
     });
   }
 

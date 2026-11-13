@@ -23,7 +23,7 @@
                     <th>Orders</th>
                     <th>Total Spent</th>
                     <th>Joined</th>
-                    <th></th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -35,7 +35,7 @@
                         </td>
                         <td>
                             <div>{{ $customer->email }}</div>
-                            <div style="font-size:.78rem;color:rgba(43,29,29,.6);">{{ $customer->phone ?? '—' }}</div>
+                            <div style="font-size:.78rem;color:rgba(43,29,29,.75);">{{ $customer->phone ?? '—' }}</div>
                         </td>
                         <td>{{ $customer->orders_count }}</td>
                         <td>PKR {{ number_format($customer->orders_sum_total ?? 0, 0) }}</td>

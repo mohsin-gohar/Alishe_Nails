@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCartRequest;
 use App\Http\Requests\UpdateCartRequest;
 use App\Models\Product;
+use App\Models\ShippingRate;
 use App\Support\Cart;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -14,10 +15,17 @@ class CartController extends Controller
     public function index()
     {
         $items = Cart::content();
+        $subtotal = Cart::subtotal();
+
+        // A flat Karachi delivery fee is shown before checkout so the customer
+        // never reaches the payment step with a surprise charge.
+        $shipping = ShippingRate::calculateFee('Karachi', null, $subtotal)['fee'];
 
         return view('cart.index', [
             'items' => $items,
-            'subtotal' => Cart::subtotal(),
+            'subtotal' => $subtotal,
+            'shipping' => $shipping,
+            'total' => $subtotal + $shipping,
         ]);
     }
 

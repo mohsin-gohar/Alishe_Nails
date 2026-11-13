@@ -11,7 +11,7 @@
         </div>
 
         <h1 style="font-size:1.6rem;">Order #{{ $order->order_number }}</h1>
-        <p style="color:rgba(43,29,29,.6);">Placed {{ $order->created_at->format('M j, Y') }} &middot;
+        <p style="color:rgba(43,29,29,.75);">Placed {{ $order->created_at->format('M j, Y') }} &middot;
             <span class="status-pill status-{{ $order->status }}">{{ ucwords(str_replace('_', ' ', $order->status)) }}</span>
         </p>
 

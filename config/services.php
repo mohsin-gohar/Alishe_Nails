@@ -39,7 +39,10 @@ return [
     ],
 
     'whatsapp' => [
-        'number' => env('WHATSAPP_ORDER_NUMBER', '+92 3113925166'),
+        // Digits only — wa.me rejects spaces and a leading "+". Normalising
+        // here means a number written as "+92 311 3925166" in .env still
+        // produces a working link everywhere on the site.
+        'number' => preg_replace('/\D/', '', (string) env('WHATSAPP_ORDER_NUMBER', '923113925166')),
     ],
 
     'payment' => [

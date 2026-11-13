@@ -56,7 +56,7 @@ class ShippingRate extends Model
                 ->first();
         }
 
-        $standardFee = $rate ? (float) $rate->delivery_fee : 250.00;
+        $standardFee = $rate ? (float) $rate->delivery_fee : 300.00;
         $threshold = ($rate && $rate->free_shipping_threshold !== null)
             ? (float) $rate->free_shipping_threshold
             : null;

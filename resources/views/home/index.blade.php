@@ -3,11 +3,11 @@
 
 @section('title', 'Alishe Nails — Bespoke Couture Press-On Nails | Karachi Atelier')
 
-@section('meta_description', 'Shop luxury handcrafted press-on nails from Alishe Nails Karachi. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+@section('meta_description', 'Bespoke handcrafted press-on nails from the Alishe Nails Karachi atelier. 7-layer salon gel, zero natural nail damage, reusable up to 5 times, made for your hands.')
 
 @section('og_title', 'Alishe Nails — Bespoke Couture Press-On Nails | Karachi Atelier')
 
-@section('og_description', 'Handcrafted 7-layer salon gel press-on nails. Damage-free, reusable up to 5 times, delivered across Karachi in 48–96 hours.')
+@section('og_description', 'Bespoke 7-layer salon gel press-on nails. Damage-free, reusable up to 5 times, crafted for your hands in the Karachi atelier.')
 
 @push('styles')
     <style>
@@ -103,13 +103,10 @@
                 <a href="{{ route('shop.index') }}" class="btn btn-gold-luxury">
                     <i class="fa-solid fa-gem"></i> Explore The Collection
                 </a>
-                <a href="{{ route('custom-design.create') }}" class="btn btn-outline">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Custom Bespoke Design
-                </a>
             </div>
 
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;color:#6E5D53;border-top:1px solid #ECE0D8;padding-top:20px;">
-                <span style="color:#D9A937;font-weight:700;">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#2B231F;">4.9 / 5</span> <span style="font-size:11.5px;color:#8C7A6B;">(1,200+ Karachi Clients)</span></span>
+                <span style="color:#D9A937;font-weight:700;">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#2B231F;">4.9 / 5</span> <span style="font-size:11.5px;color:#6f6053;">(1,200+ Karachi Clients)</span></span>
                 <span>&bull;</span>
                 <span>&#127873; Complimentary Prep Kit</span>
                 <span>&bull;</span>
@@ -137,7 +134,7 @@
                      alt="Alishe Nails press-on nail collection"
                      width="1080" height="810" fetchpriority="high">
             @else
-                <div class="img-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF2F5,#F6D6DC);color:var(--rose);">
+                <div class="img-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF2F5,#F6D6DC);color:var(--rose-dark);">
                     Alishe Nails Atelier
                 </div>
             @endif
@@ -151,25 +148,26 @@
 
     {{-- ---------- 2. Haute Couture Value Props (4 Columns) ---------- --}}
     <section class="container">
+        <h2 class="sr-only">The Alishe Nails Difference</h2>
         <div class="luxe-value-grid">
             <div class="luxe-value-card">
                 <div class="luxe-value-icon"><i class="fa-solid fa-gem"></i></div>
-                <h4>Salon Gel Architecture</h4>
+                <h3>Salon Gel Architecture</h3>
                 <p>7-layer reinforced gel structure. Non-bending, chip-resistant glass shine that lasts up to 3+ weeks.</p>
             </div>
             <div class="luxe-value-card">
                 <div class="luxe-value-icon"><i class="fa-solid fa-truck-fast"></i></div>
-                <h4>Karachi White-Glove Courier</h4>
+                <h3>Karachi White-Glove Courier</h3>
                 <p>Doorstep delivery in 48–96 hours across Clifton, DHA, Gulshan, PECHS, and all Karachi zones.</p>
             </div>
             <div class="luxe-value-card">
                 <div class="luxe-value-icon"><i class="fa-solid fa-shield-heart"></i></div>
-                <h4>Zero Natural Nail Damage</h4>
+                <h3>Zero Natural Nail Damage</h3>
                 <p>Safe 10-minute application &amp; gentle warm-water soak off. Keeps your natural nail beds healthy.</p>
             </div>
             <div class="luxe-value-card">
                 <div class="luxe-value-icon"><i class="fa-solid fa-ruler-combined"></i></div>
-                <h4>Bespoke Tailoring &amp; Sizing</h4>
+                <h3>Bespoke Tailoring &amp; Sizing</h3>
                 <p>Custom millimeter measurements or standard XS–L sizes for an undetectable salon-quality fit.</p>
             </div>
         </div>
@@ -192,11 +190,17 @@
                                 $slug = preg_replace('/[^A-Za-z0-9-]+/', '-', $collection->name);
                                 $slug = strtolower(trim($slug, '-'));
                                 $file = 'images/collections/' . $slug . '.jpg';
-                                $imgSrc = file_exists(public_path($file)) ? asset($file) : asset('images/collections/everyday-elegance.jpg');
+                                $fallback = file_exists(public_path($file))
+                                    ? asset($file)
+                                    : asset('images/collections/everyday-elegance.jpg');
+                                $imgSrc = $collection->image_url ?: $fallback;
                             @endphp
-                            <img src="{{ $imgSrc }}" alt="{{ $collection->name }}" loading="lazy">
+                            <x-optimized-image :src="$imgSrc" :alt="$collection->name" loading="lazy" />
                         </a>
-                        <h4>{{ $collection->name }}</h4>
+                        <h3>{{ $collection->name }}</h3>
+                        @if ($collection->description)
+                            <p style="margin:-6px 0 12px;font-size:.85rem;color:rgba(43,29,29,.65);">{{ $collection->description }}</p>
+                        @endif
                         <a href="{{ route('shop.index', ['category' => [$collection->slug]]) }}" class="btn btn-outline btn-sm">Shop Collection</a>
                     </div>
                 @endforeach
@@ -220,7 +224,7 @@
                     <div class="shape-silhouette">
                         <div class="shape-icon-art shape-art-almond"></div>
                     </div>
-                    <h4>Almond</h4>
+                    <h3>Almond</h3>
                     <span class="shape-length">Medium / Long</span>
                     <p class="shape-desc">Slender sides tapering to a soft curve. Elongates fingers for a timeless, graceful look.</p>
                     <span class="shape-link">Shop Almond &rarr;</span>
@@ -230,7 +234,7 @@
                     <div class="shape-silhouette">
                         <div class="shape-icon-art shape-art-coffin"></div>
                     </div>
-                    <h4>Coffin / Ballerina</h4>
+                    <h3>Coffin / Ballerina</h3>
                     <span class="shape-length">Long / Medium</span>
                     <p class="shape-desc">Tapered edges with a crisp flat tip. The premier choice for contemporary high-glam nail art.</p>
                     <span class="shape-link">Shop Coffin &rarr;</span>
@@ -240,7 +244,7 @@
                     <div class="shape-silhouette">
                         <div class="shape-icon-art shape-art-square"></div>
                     </div>
-                    <h4>Square</h4>
+                    <h3>Square</h3>
                     <span class="shape-length">Short / Medium</span>
                     <p class="shape-desc">Crisp 90-degree parallel edges. Classic, clean, and durable for everyday busy hands.</p>
                     <span class="shape-link">Shop Square &rarr;</span>
@@ -250,7 +254,7 @@
                     <div class="shape-silhouette">
                         <div class="shape-icon-art shape-art-stiletto"></div>
                     </div>
-                    <h4>Stiletto</h4>
+                    <h3>Stiletto</h3>
                     <span class="shape-length">Long</span>
                     <p class="shape-desc">Dramatic, sharp pointed tip. A fierce fashion statement for weddings, galas, and photoshoots.</p>
                     <span class="shape-link">Shop Stiletto &rarr;</span>
@@ -260,7 +264,7 @@
                     <div class="shape-silhouette">
                         <div class="shape-icon-art shape-art-oval"></div>
                     </div>
-                    <h4>Oval / Round</h4>
+                    <h3>Oval / Round</h3>
                     <span class="shape-length">Short / Medium</span>
                     <p class="shape-desc">Soft, natural contours hugging the finger. Low-maintenance beauty for effortless daily wear.</p>
                     <span class="shape-link">Shop Oval &rarr;</span>
@@ -324,63 +328,7 @@
         </div>
     </section>
 
-    {{-- ---------- 6. What's Inside Every Luxury Box (The 6-Piece Prep Kit) ---------- --}}
-    <section class="unboxing-section">
-        <div class="container">
-            <div class="section-heading">
-                <span class="eyebrow">Complimentary With Every Order</span>
-                <h2 style="font-size:2.1rem;margin-bottom:6px;">The Signature 6-Piece Prep Kit</h2>
-                <p style="margin:0;color:rgba(43,29,29,.7);">Everything required for a flawless, salon-durable 10-minute application at home.</p>
-            </div>
-
-            <div class="unboxing-grid">
-                <div class="unboxing-card">
-                    <div class="unboxing-number">01</div>
-                    <div>
-                        <h4>Salon Brush-On Nail Glue</h4>
-                        <p>Medical-grade adhesive formulated for 2 to 3 weeks of secure, gap-free wear.</p>
-                    </div>
-                </div>
-                <div class="unboxing-card">
-                    <div class="unboxing-number">02</div>
-                    <div>
-                        <h4>24x Ultra-Bond Adhesive Tabs</h4>
-                        <p>Perfect for weekend wear, weddings, or quick photoshoots with zero glue residue.</p>
-                    </div>
-                </div>
-                <div class="unboxing-card">
-                    <div class="unboxing-number">03</div>
-                    <div>
-                        <h4>Dual-Grit Crystal Nail File</h4>
-                        <p>Precision shaping and gentle surface buffing to maximize adhesive adhesion.</p>
-                    </div>
-                </div>
-                <div class="unboxing-card">
-                    <div class="unboxing-number">04</div>
-                    <div>
-                        <h4>Birchwood Cuticle Stick</h4>
-                        <p>Beveled tip designed to gently push back cuticles for an undetectable flush fit.</p>
-                    </div>
-                </div>
-                <div class="unboxing-card">
-                    <div class="unboxing-number">05</div>
-                    <div>
-                        <h4>2x Alcohol Prep Pads</h4>
-                        <p>Medical-grade 70% isopropyl wipes to cleanse natural nail oils before bonding.</p>
-                    </div>
-                </div>
-                <div class="unboxing-card">
-                    <div class="unboxing-number">06</div>
-                    <div>
-                        <h4>Satin Pouch &amp; Step Guide</h4>
-                        <p>Protective keepsake pouch and full illustrated instruction card for safe re-use.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {{-- ---------- 7. Best Sellers Carousel / Grid ---------- --}}
+    {{-- ---------- 6. Best Sellers Carousel / Grid ---------- --}}
     <section class="best-sellers">
         <div class="container best-sellers__grid">
             <div class="best-sellers__intro">
@@ -401,56 +349,26 @@
         </div>
     </section>
 
-    {{-- ---------- 8. Top 20 Showcase (2 Rails × 10 Products Each) ---------- --}}
+    {{-- ---------- 7. Curated Homepage Lineup (admin-controlled) ---------- --}}
     <section class="container" style="padding-block:48px 64px;">
         <div class="section-heading">
-            <span class="eyebrow">Trending Now</span>
-            <h2 style="font-size:2.1rem;margin-bottom:6px;">Popular This Season</h2>
-            <p style="margin:0;color:rgba(43,29,29,.7);">Hand-picked favorites from our collection — selling fast across Karachi.</p>
+            <span class="eyebrow">Curated By The Atelier</span>
+            <h2 style="font-size:2.1rem;margin-bottom:6px;">The Home Edit</h2>
+            <p style="margin:0;color:rgba(43,29,29,.7);">Hand-picked favourites from our collection — in the exact order our team loves them.</p>
         </div>
 
-        <div class="two-rail-grid">
-            {{-- Rail A: Best Sellers & Featured --}}
-            <div class="home-rail">
-                <div class="home-rail__head">
-                    <div>
-                        <h2>Best Sellers</h2>
-                        <p>Top-rated sets our Karachi clients love most.</p>
-                    </div>
-                    <a href="{{ route('shop.index') }}" style="font-size:13px;color:#2B231F;font-weight:600;">View All →</a>
-                </div>
-
-                <div class="product-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
-                    @forelse ($showcasePrimary as $product)
-                        <x-product-card :product="$product" />
-                    @empty
-                        <p style="grid-column:1/-1;text-align:center;color:#6E5D53;">No best sellers yet — add tags in the admin.</p>
-                    @endforelse
-                </div>
+        @if ($showcaseProducts->isNotEmpty())
+            <div class="product-grid" style="grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 24px;">
+                @foreach ($showcaseProducts as $product)
+                    <x-product-card :product="$product" />
+                @endforeach
             </div>
-
-            {{-- Rail B: Featured & New Arrivals --}}
-            <div class="home-rail">
-                <div class="home-rail__head">
-                    <div>
-                        <h2>Featured & New</h2>
-                        <p>Fresh arrivals and hand-selected showstoppers.</p>
-                    </div>
-                    <a href="{{ route('shop.index') }}" style="font-size:13px;color:#2B231F;font-weight:600;">View All →</a>
-                </div>
-
-                <div class="product-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
-                    @forelse ($showcaseSecondary as $product)
-                        <x-product-card :product="$product" />
-                    @empty
-                        <p style="grid-column:1/-1;text-align:center;color:#6E5D53;">No featured items yet — add tags in the admin.</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
+        @else
+            <p style="text-align:center;color:#6E5D53;">No products yet — add your first product in the admin dashboard.</p>
+        @endif
     </section>
 
-    {{-- ---------- 9. Bespoke Custom Inspo Concierge Banner ---------- --}}
+    {{-- ---------- 8. Bespoke Custom Inspo Concierge Banner ---------- --}}
     <div class="container">
         <div class="concierge-banner">
             <div>
@@ -472,46 +390,5 @@
             </div>
         </div>
     </div>
-
-    {{-- ---------- 10. Instagram / Socials Showcase ---------- --}}
-    <section class="container socials" style="padding-top:20px;">
-        <div class="socials__header">
-            <div>
-                <span class="eyebrow">The Atelier Journal</span>
-                <h3 style="margin:0;">{{ '@' . config('services.instagram.handle', 'alishe_nails') }}</h3>
-            </div>
-            <a href="https://instagram.com/{{ config('services.instagram.handle', 'alishe_nails') }}" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Follow On Instagram</a>
-        </div>
-
-        <div class="socials-grid">
-            @forelse ($instagramPosts as $post)
-                <a href="{{ $post->permalink }}"
-                   class="socials-grid__item socials-grid__link"
-                   target="_blank"
-                   rel="noopener"
-                   aria-label="Open this post on Instagram">
-                    <img src="{{ $post->display_url }}"
-                         alt="{{ \Illuminate\Support\Str::limit($post->caption ?? 'Alishe Nails on Instagram', 80) }}"
-                         loading="lazy">
-                    @if ($post->isVideo())
-                        <span class="socials-grid__badge"><i class="fa-solid fa-play"></i></span>
-                    @endif
-                </a>
-            @empty
-                @php
-                    $instaImages = ['coffee-moment.jpg', 'hand-nails.jpg', 'gift-box.jpg', 'flat-lay.jpg'];
-                @endphp
-                @foreach ($instaImages as $img)
-                    <div class="socials-grid__item">
-                        @if (file_exists(public_path('images/instagram/'.$img)))
-                            <img src="{{ asset('images/instagram/'.$img) }}" alt="Alishe Nails on Instagram">
-                        @else
-                            <div class="img-placeholder">Alishe Nails<br>Social image unavailable</div>
-                        @endif
-                    </div>
-                @endforeach
-            @endforelse
-        </div>
-    </section>
 
 @endsection
