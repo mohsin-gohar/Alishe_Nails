@@ -20,6 +20,7 @@ class SellerSubscription extends Model
             Cache::forget('shop_sidebar_facets');
         });
     }
+
     protected $fillable = [
         'seller_id', 'subscription_plan_id', 'price', 'duration_days', 'status',
         'payment_method', 'transaction_reference', 'payment_notes', 'starts_at',

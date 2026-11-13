@@ -17,6 +17,10 @@ return [
             'table' => 'cache',
             'connection' => null,
         ],
+        'redis' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_CACHE_CONNECTION', 'default'),
+        ],
     ],
 
     'prefix' => env('CACHE_PREFIX', 'alishe_nails_cache'),

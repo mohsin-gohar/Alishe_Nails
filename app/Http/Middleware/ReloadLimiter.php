@@ -32,7 +32,7 @@ class ReloadLimiter
         // Count each distinct URL separately (path + query string) so
         // navigating between filter/sort links is not mistaken for reload
         // spam. Only repeatedly refreshing the exact same URL is limited.
-        $key = 'reload:' . $request->ip() . ':' . $request->getRequestUri();
+        $key = 'reload:'.$request->ip().':'.$request->getRequestUri();
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);

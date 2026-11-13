@@ -36,9 +36,6 @@ class SitemapController extends Controller
             ->view('sitemap', compact('urls'))
             ->header('Content-Type', 'application/xml; charset=utf-8');
 
-        // Clean any leading whitespace that might have been output
-        $response->setContent(ob_get_clean());
-
         return $response;
     }
 }

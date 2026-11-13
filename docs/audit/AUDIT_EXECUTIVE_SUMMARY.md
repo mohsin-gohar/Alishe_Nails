@@ -4,9 +4,23 @@
 **Project:** Alishe Nails (`alishe-nails`)  
 **Technology Stack:** Laravel 12.0, PHP 8.2.12, Tailwind CSS v4, Vite 7, MySQL 8 / SQLite, PHPUnit 11.5  
 **Domain:** Handcrafted Press-On Nails E-Commerce & Creator Marketplace (Karachi, Pakistan)  
-**Audit Date:** October 2026  
+**Audit Date:** October 2026; revalidated November 13, 2026
 **Auditor:** Enterprise Architecture & Application Security Review  
-**Audit Baseline Status:** 110 Tests Passing (353 Assertions), 0 Errors, 0 Regressions  
+**Historical Audit Baseline:** 110 Tests Passing (353 Assertions)
+
+## Revalidation - November 13, 2026
+
+This revalidation supersedes the older test count and dependency status below. It covers the current local checkout, not a live production deployment.
+
+- `php artisan test`: 113 tests passed (375 assertions).
+- `vendor/bin/pint --test`: passed across the PHP project.
+- `npm run build`: passed with Vite 7.3.8.
+- `composer audit` and `npm audit`: no known advisories after updating locked dependencies.
+- Fixed the sitemap response body being cleared after rendering and registered the Redis cache store used by the production example.
+- Removed the published application key and default admin password from the AlifHost guide. The old key remains in Git history; treat it as compromised and rotate it if it was ever deployed. Rotation can invalidate sessions and make data encrypted with the old key unreadable.
+- README payment and upload descriptions now match the implementation: COD is disabled, SadaPay is supported, and upload filenames are generated rather than UUID-based.
+
+Production certification remains pending. This workspace has no production `.env`, live database, Redis, SMTP provider, host configuration, or restore/backup environment to verify. Configure unique server-side secrets, HTTPS, queue workers, scheduler, and backups before go-live; test the target AlifHost/cPanel setup separately.
 
 ---
 

@@ -15,7 +15,7 @@ require __DIR__.'/../vendor/autoload.php';
 
 // Normalize subdirectory path if accessed through root rewrite without /public
 if (isset($_SERVER['SCRIPT_NAME']) && str_ends_with($_SERVER['SCRIPT_NAME'], '/public/index.php')) {
-    if (isset($_SERVER['REQUEST_URI']) && !str_contains($_SERVER['REQUEST_URI'], '/public')) {
+    if (isset($_SERVER['REQUEST_URI']) && ! str_contains($_SERVER['REQUEST_URI'], '/public')) {
         $_SERVER['SCRIPT_NAME'] = str_replace('/public/index.php', '/index.php', $_SERVER['SCRIPT_NAME']);
         if (isset($_SERVER['PHP_SELF'])) {
             $_SERVER['PHP_SELF'] = str_replace('/public/index.php', '/index.php', $_SERVER['PHP_SELF']);

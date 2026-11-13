@@ -10,7 +10,7 @@ Premium handmade / press-on nails e-commerce platform built with Laravel, PHP, M
 | Database | MySQL 8 |
 | Frontend | Tailwind CSS 4, Alpine.js 3, Blade, Vite |
 | Auth | Laravel (web / admin / seller guards) |
-| Payments | Cash on Delivery, Bank Transfer, JazzCash, Easypaisa |
+| Payments | Advance payment via JazzCash, SadaPay, Easypaisa, or bank transfer; COD is disabled |
 
 ## Features
 
@@ -19,7 +19,7 @@ Premium handmade / press-on nails e-commerce platform built with Laravel, PHP, M
 - Shop with search, category filters, price/sorting, pagination
 - Product details with gallery, reviews, related products
 - Cart with stock validation and price recalculation
-- Multi-step checkout with COD, bank transfer, JazzCash, Easypaisa
+- Multi-step checkout with advance payment via bank transfer, JazzCash, SadaPay, or Easypaisa
 - Order tracking via secure access token (guest) or account (user)
 - Customer account with dashboard, orders, wishlist, profile, addresses
 - Product reviews with moderation queue
@@ -55,4 +55,4 @@ Premium handmade / press-on nails e-commerce platform built with Laravel, PHP, M
 - Error pages (404, 403, 419, 429, 500)
 - SEO: sitemap, robots.txt, Open Graph metadata
 - CSRF, XSS, SQL injection, authorization protection
-- Secure file uploads with UUID-based filenames
+- Validated media uploads with generated filenames
