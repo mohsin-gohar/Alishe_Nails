@@ -77,12 +77,61 @@ Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
     };
 
     $run('migrate', ['--force' => true]);
+
+    // If the live database is completely empty (fresh deploy), seed the
+    // catalogue, admin user and shipping zones automatically. Guarded so
+    // an already-populated database is never duplicated.
+    try {
+        if (\App\Models\Product::count() === 0) {
+            $run('db:seed', ['--force' => true]);
+        } else {
+            $log[] = '[db:seed] skipped (products already exist: '.\App\Models\Product::count().')';
+        }
+    } catch (\Throwable $e) {
+        $log[] = '[db:seed] FAILED: '.$e->getMessage();
+    }
+
     $run('optimize:clear');
     $run('images:doctor', ['--from' => base_path('public/images/products')]);
     $run('config:cache');
 
     return response(implode("\n\n", $log)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
 })->name('deploy.helper');
+
+// ---------------------------------------------------------------------
+// Temporary diagnostic endpoint (no terminal required).
+// Visit:  https://yourdomain.com/check-db-products?token=YOUR_DEPLOY_TOKEN
+// Reports the live product count so an empty DB is obvious. Runs migrate.
+// Remove together with /_deploy once deployment is complete.
+// ---------------------------------------------------------------------
+Route::get('/check-db-products', function (\Illuminate\Http\Request $request) {
+    $token = (string) config('app.deploy_token', '');
+
+    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
+        abort(404);
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        return response()->json(['database_connected' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $total = \App\Models\Product::count();
+    $active = \App\Models\Product::where('is_active', true)->count();
+
+    return response()->json([
+        'database_connected' => true,
+        'total_products_in_db' => $total,
+        'active_products' => $active,
+        'sample_products' => \App\Models\Product::take(3)->get(['id', 'name', 'slug', 'is_active']),
+        'migrate_output' => $migrateOutput,
+        'hint' => $total === 0
+            ? 'DB is empty. Run /_deploy?token=... to auto-seed, or import SQL via phpMyAdmin.'
+            : ($active === 0 ? 'Products exist but none are active. Check is_active flags.' : 'Products OK. Run /_deploy to fix images.'),
+    ]);
+})->name('check.db.products');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
