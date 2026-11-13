@@ -30,6 +30,7 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
+    'deploy_token' => env('DEPLOY_TOKEN', ''),
     'timezone' => 'Asia/Karachi',
     'locale' => 'en',
     'fallback_locale' => 'en',

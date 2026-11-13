@@ -53,6 +53,37 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 
+// ---------------------------------------------------------------------
+// Temporary shared-hosting deploy helper (NO SSH/terminal required).
+// Visit:  https://yourdomain.com/_deploy?token=YOUR_DEPLOY_TOKEN
+// Remove this route (and DEPLOY_TOKEN) once deployment is complete.
+// ---------------------------------------------------------------------
+Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
+    $token = (string) config('app.deploy_token', env('DEPLOY_TOKEN'));
+
+    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
+        abort(404);
+    }
+
+    $log = [];
+    $run = function (string $command, array $parameters = []) use (&$log): void {
+        try {
+            \Illuminate\Support\Facades\Artisan::call($command, $parameters);
+            $output = trim(\Illuminate\Support\Facades\Artisan::output());
+            $log[] = "[$command] OK".($output !== '' ? "\n".$output : '');
+        } catch (\Throwable $e) {
+            $log[] = "[$command] FAILED: ".$e->getMessage();
+        }
+    };
+
+    $run('migrate', ['--force' => true]);
+    $run('optimize:clear');
+    $run('images:doctor', ['--from' => base_path('public/images/products')]);
+    $run('config:cache');
+
+    return response(implode("\n\n", $log)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('deploy.helper');
+
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
