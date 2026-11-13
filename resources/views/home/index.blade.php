@@ -41,6 +41,36 @@
             border-radius: 20px;
             background: rgba(43, 35, 31, 0.75);
             backdrop-filter: blur(8px);
+</section>
+
+    {{-- ---------- 2. Haute Couture Value Props ---------- --}}
+    <section class="container">
+        <h2 class="sr-only">The Alishe Nails Difference</h2>
+        <div class="luxe-value-grid">
+            <div class="luxe-value-card">
+                <div class="luxe-value-icon"><i class="fa-solid fa-gem"></i></div>
+                <h3>Salon Gel Architecture</h3>
+                <p>7-layer reinforced gel structure. Non-bending, chip-resistant glass shine that lasts up to 3+ weeks.</p>
+            </div>
+            <div class="luxe-value-card">
+                <div class="luxe-value-icon"><i class="fa-solid fa-truck-fast"></i></div>
+                <h3>Karachi White-Glove Courier</h3>
+                <p>Doorstep delivery in 48–96 hours across Clifton, DHA, Gulshan, PECHS, and all Karachi zones.</p>
+            </div>
+            <div class="luxe-value-card">
+                <div class="luxe-value-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                <h3>Zero Natural Nail Damage</h3>
+                <p>Safe 10-minute application & gentle warm-water soak off. Keeps your natural nail beds healthy.</p>
+            </div>
+            <div class="luxe-value-card">
+                <div class="luxe-value-icon"><i class="fa-solid fa-ruler-combined"></i></div>
+                <h3>Bespoke Tailoring & Sizing</h3>
+                <p>Custom millimeter measurements or standard XS–L sizes for an undetectable salon-quality fit.</p>
+            </div>
+        </div>
+    </section>
+
+    {{-- ---------- 3. Shop Our Collections ---------- --}}
             font-family: 'Playfair Display', Georgia, serif;
             font-size: 12.5px;
             font-weight: 500;

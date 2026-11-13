@@ -32,7 +32,7 @@
         @auth('web')
             <form action="{{ route('account.wishlist.toggle', $product) }}" method="POST" class="product-card__wishlist-form">
                 @csrf
-                <button type="submit" class="product-card__wishlist" data-wishlist-id="{{ $product->id }}" aria-label="{{ $saved ? 'Remove' : 'Add' }} {{ $product->name }} from wishlist" aria-pressed="{{ $saved ? 'true' : 'false' }}">
+                <button type="submit" class="product-card__wishlist" data-wishlist-id="{{ $product->id }}" aria-label="{{ $saved ? 'Remove from wishlist' : 'Add to wishlist' }}" aria-pressed="{{ $saved ? 'true' : 'false' }}">
                     <i class="{{ $saved ? 'fa-solid fa-heart' : 'fa-regular fa-heart' }}"></i>
                 </button>
             </form>

@@ -22,7 +22,34 @@
 
         <div class="navbar__actions">
             <button class="navbar__icon-btn" type="button" data-search-toggle aria-label="Search">
+</div>
+
+            <a href="{{ route('cart.index') }}" class="navbar__icon-btn">
+                <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+                <span class="sr-only">Cart</span>
+<button class="navbar__icon-btn" type="button" data-account-toggle aria-label="Account menu">
+                        <span class="navbar__avatar" role="img" aria-label="{{ auth('web')->user()->name }}" style="display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--rose-dark);font-weight:700;">
+                <span class="navbar__cart-count" aria-hidden="true">{{ $cartCount ?? 0 }}</span>
+            </a>
+
+            @auth('web')
+                <div class="navbar__account" style="position:relative;">
+                    <button class="navbar__icon-btn" type="button" data-account-toggle aria-label="Account menu">
+<span class="navbar__cart-count" aria-hidden="true">{{ $cartCount ?? 0 }}</span>
+
+            @auth('web')
+                <div class="navbar__account" style="position:relative;">
+                    <button class="navbar__icon-btn" type="button" data-account-toggle aria-label="Account menu">
+                        <span class="navbar__avatar" role="img" aria-label="{{ auth('web')->user()->name }}" style="display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--rose-dark);font-weight:700;">
+                            {{ strtoupper(substr(auth('web')->user()->name, 0, 1)) }}
+                        </span>
+                    </button>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+@else
+                <a href="{{ route('login') }}" class="navbar__icon-btn" aria-label="Login" title="Login / Register">
+                    <i class="fa-solid fa-user" style="font-size:1.1rem;color:var(--espresso);"></i>
+                </a>
+            @endauth
             </button>
 
             <a href="{{ route('cart.index') }}" class="navbar__icon-btn">
