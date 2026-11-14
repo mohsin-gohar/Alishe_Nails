@@ -295,6 +295,15 @@ class Product extends Model
                     'name' => $name,
                 ];
             }
+            // Also check storage public path directly (symlink may be missing/broken)
+            $storageFile = storage_path('app/public/'.$sub.'/'.$name);
+            if (is_file($storageFile) && (int) @filesize($storageFile) > 0) {
+                return [
+                    'file' => $storageFile,
+                    'url' => $this->mediaFileUrl($storageFile),
+                    'name' => $name,
+                ];
+            }
         }
 
         return null;
