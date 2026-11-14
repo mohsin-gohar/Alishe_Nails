@@ -71,9 +71,24 @@ longer on the server. The tool cannot invent them; use **one** of these:
    or archive automatically.
 2. **Original photos:** put the WhatsApp originals in one ZIP (any folder
    structure) and upload it with the **Upload images ZIP** form on the Status
-   page. Matching is by filename, with WhatsApp/upload suffixes normalized.
+   page. Matching is by filename first; a photo named after the product (for
+   example `rosy-quartz-ombre.jpg`) is linked to that product automatically.
 3. **Re-upload via admin:** `https://alishenails.website/admin` →
    *Products* → *Edit* → *Add Image* for each product (works, but is manual).
+
+Themes and older hosts sometimes keep the same files in a different folder.
+The site now resolves product media from every realistic location and
+extension without a database change:
+
+- `public/images/products/` (canonical)
+- `public/images/`, `public/storage/products/`, `public/storage/images/products/`
+- `storage/app/public/products/`, `storage/app/public/images/products/`
+- legacy project-root `images/products/` and `images/`
+- a `.jpg`/`.jpeg` database value falls back to the `.webp` derivative (and
+  vice versa) when only one of the two survived
+
+Naming the file exactly `<product-slug>.<ext>` is the simplest manual fix: it
+shows up even when the media records still point at deleted filenames.
 
 ### 0.5 Verify and clean up
 
@@ -309,7 +324,7 @@ Then open the site and check:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| **Images show "Image unavailable"** | The products have no image record in the database | Run `php artisan images:doctor` — it says exactly which of the three causes applies. Then re-attach the image in the admin, or run `php artisan images:doctor --repair` if the file is already on disk |
+| **Images show "Image unavailable"** | The referenced files were deleted, or they live in a folder/extension the old code did not check | Run `php artisan images:doctor` — it says exactly which of the three causes applies. The site now also searches legacy folders and the `<product-slug>.<ext>` fallback, so dropping a correctly named photo into `public/images/products` is enough. Then re-attach the image in the admin, or run `php artisan images:doctor --repair` if the file is already on disk |
 | Images 404 after deploying | The new `.webp` files were never uploaded (they are new, untracked files) | Deploy the whole `public/` folder, and make sure you `git add -A` before pushing so the new binary assets are included |
 | Images 404 but the DB points at `.jpg` | The files are not on the server at all | Upload `public/images/` as part of the deploy |
 | Site returns 500 on every page | `.htaccess` has an unmatched `<IfModule>` tag | The root `.htaccess` in this project is balanced — re-upload it |

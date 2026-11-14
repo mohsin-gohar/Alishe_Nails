@@ -302,6 +302,79 @@ function media_references(PDO $pdo): array
 }
 
 /**
+ * Folders (relative to the project root) that may hold product media.
+ * Mirrors App\Models\Product::mediaSearchDirectories().
+ *
+ * @return list<string>
+ */
+function media_search_directories(string $type): array
+{
+    if ($type === 'video') {
+        return [
+            'public/videos/products',
+            'videos/products',
+            'public/storage/products',
+            'storage/app/public/products',
+        ];
+    }
+
+    return [
+        'public/images/products',
+        'images/products',
+        'public/images',
+        'images',
+        'public/storage/products',
+        'public/storage/images/products',
+        'storage/app/public/products',
+        'storage/app/public/images/products',
+    ];
+}
+
+/**
+ * The stored filename plus the interchangeable derivatives an upload can
+ * produce (e.g. the database points at `.jpg` but only `.webp` survives).
+ *
+ * @return list<string>
+ */
+function media_name_candidates(string $path, string $type = 'image'): array
+{
+    $path = basename(str_replace('\\', '/', $path));
+    if ($path === '') {
+        return [];
+    }
+
+    $stem = pathinfo($path, PATHINFO_FILENAME);
+    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $extensions = $type === 'video'
+        ? ['mp4', 'webm', 'mov', 'm4v']
+        : ['webp', 'jpg', 'jpeg', 'png'];
+
+    $names = [$path];
+    foreach ($extensions as $candidate) {
+        if ($extension !== $candidate) {
+            $names[] = $stem.'.'.$candidate;
+        }
+    }
+
+    return $names;
+}
+
+/** Locate a referenced media file anywhere the site is allowed to look. */
+function find_media_file(string $root, string $type, string $path): ?string
+{
+    foreach (media_search_directories($type) as $directory) {
+        foreach (media_name_candidates($path, $type) as $name) {
+            $file = $root.'/'.$directory.'/'.$name;
+            if (is_file($file) && (int) @filesize($file) > 0) {
+                return $file;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
  * @param array<string, array{product_id:int, product:string, path:string, type:string}> $references
  * @return array<string, array{product_id:int, product:string, path:string, type:string, file:string, dir:string}>
  */
@@ -310,10 +383,13 @@ function missing_media(string $root, array $references): array
     $missing = [];
     foreach ($references as $base => $reference) {
         $dir = $reference['type'] === 'video' ? 'videos/products' : 'images/products';
-        $file = $root.'/public/'.$dir.'/'.$base;
-        if (! is_file($file) || filesize($file) === 0) {
-            $missing[$base] = $reference + ['file' => $file, 'dir' => $dir];
+
+        if (find_media_file($root, $reference['type'], $base) !== null) {
+            continue;
         }
+
+        $file = $root.'/public/'.$dir.'/'.$base;
+        $missing[$base] = $reference + ['file' => $file, 'dir' => $dir];
     }
 
     return $missing;
@@ -914,6 +990,8 @@ if ($action === 'status') {
     $checks[] = ['GD (WebP)', function_exists('imagewebp') ? 'available' : 'missing', function_exists('imagewebp') ? 'ok' : 'warn'];
     $checks[] = ['DEPLOY_TOKEN', $token !== '' ? 'set' : 'empty (tool disabled)', $token !== '' ? 'ok' : 'bad'];
     $checks[] = ['public/images/products writable', is_writable($root.'/public/images/products') ? 'yes' : 'no', is_writable($root.'/public/images/products') ? 'ok' : 'bad'];
+    $checks[] = ['public/images/products files', (string) count(glob($root.'/public/images/products/*') ?: []), 'ok'];
+    $checks[] = ['legacy ./images/products folder', is_dir($root.'/images/products') ? count(glob($root.'/images/products/*') ?: []).' file(s)' : 'not present', is_dir($root.'/images/products') ? 'warn' : 'ok'];
     $checks[] = ['storage writable', is_writable($root.'/storage') ? 'yes' : 'no', is_writable($root.'/storage') ? 'ok' : 'bad'];
     $checks[] = ['bootstrap/cache writable', is_writable($root.'/bootstrap/cache') ? 'yes' : 'no', is_writable($root.'/bootstrap/cache') ? 'ok' : 'bad'];
 
@@ -971,7 +1049,7 @@ if ($action === 'status') {
         .'<p><strong>1.</strong> Update the code from GitHub (a backup ZIP is created first).</p>'
         .'<p><strong>2.</strong> Recover missing images from backup folders/archives on the server.</p>'
         .'<p><strong>3.</strong> Run migrations and clear caches.</p>'
-        .'<p class="warn">If images are still missing, upload the original photos as a ZIP below (the tool matches WhatsApp filenames automatically), or restore <code>public/images/products</code> from the hosting backup.</p>'
+        .'<p class="warn">If images are still missing, upload the original photos as a ZIP below (the tool matches WhatsApp filenames automatically, or names the photo after the product), or restore <code>public/images/products</code> from the hosting backup.</p>'
         .'<p>'.$link('update', '1 · Update code').' '.$link('recover', '2 · Recover images').' '.$link('run', '3 · Run migrations & caches').'</p>'
         .'<form method="post" enctype="multipart/form-data" action="'.h($self.'?'.http_build_query(['token' => $token, 'action' => 'upload_media'])).'">'
         .'<input type="hidden" name="token" value="'.h($token).'">'
@@ -1131,11 +1209,26 @@ if ($action === 'upload_media') {
         }
 
         $restored = 0;
+        $linked = 0;
         $unmatched = [];
         $normalizedMissing = [];
         foreach ($missing as $base => $reference) {
             $normalizedMissing[normalize_media_name($base)][] = $base;
         }
+
+        // Photos dropped in without their database filename can still be
+        // linked when they are named after the product (slug or title).
+        $products = $pdo->query('SELECT id, name, slug FROM products ORDER BY id')->fetchAll();
+        $productKeys = [];
+        foreach ($products as $product) {
+            foreach ([$product['slug'], $product['name']] as $value) {
+                $key = normalize_media_name((string) $value);
+                if ($key !== '' && ! isset($productKeys[$key])) {
+                    $productKeys[$key] = $product;
+                }
+            }
+        }
+        $linkedSlugs = [];
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = (string) $zip->getNameIndex($i);
@@ -1153,6 +1246,44 @@ if ($action === 'upload_media') {
             }
 
             if ($matchedBase === null || ! isset($missing[$matchedBase])) {
+                $contents = $zip->getFromIndex($i);
+                $entryKey = normalize_media_name($base);
+                $product = null;
+
+                if ($entryKey !== '' && isset($productKeys[$entryKey])) {
+                    $product = $productKeys[$entryKey];
+                } else {
+                    foreach ($productKeys as $key => $candidate) {
+                        if ($key === '' || strlen($key) < 10 || $entryKey === '') {
+                            continue;
+                        }
+                        if (str_contains($entryKey, $key) || (strlen($entryKey) >= 10 && str_contains($key, $entryKey))) {
+                            $product = $candidate;
+                            break;
+                        }
+                    }
+                }
+
+                $extension = media_extension($base);
+                if (
+                    $product !== null
+                    && ! isset($linkedSlugs[$product['slug']])
+                    && in_array($extension, ['webp', 'jpg', 'jpeg', 'png'], true)
+                    && is_string($contents) && $contents !== ''
+                ) {
+                    $target = $root.'/public/images/products/'.$product['slug'].'.'.$extension;
+                    if (! is_dir(dirname($target)) && ! @mkdir(dirname($target), 0755, true) && ! is_dir(dirname($target))) {
+                        $target = null;
+                    }
+                    if ($target !== null && @file_put_contents($target, $contents) !== false && filesize($target) > 0) {
+                        @chmod($target, 0644);
+                        $linkedSlugs[$product['slug']] = true;
+                        $linked++;
+                        $log[] = 'LINKED    #'.$product['id'].' '.$product['name'].' → '.$product['slug'].'.'.$extension.'  (from '.$entry.')';
+                        continue;
+                    }
+                }
+
                 if (count($unmatched) < 15) {
                     $unmatched[] = $entry;
                 }
@@ -1178,7 +1309,7 @@ if ($action === 'upload_media') {
         $zip->close();
 
         $log[] = '';
-        $log[] = 'Restored '.$restored.' file(s). Still missing: '.count($missing).'.';
+        $log[] = 'Restored '.$restored.' exact file(s); linked '.$linked.' product-name photo(s). Still missing: '.count($missing).'.';
         if ($unmatched !== []) {
             $log[] = 'Unmatched entries (first 15):';
             foreach ($unmatched as $entry) {

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -152,6 +153,154 @@ class Product extends Model
         return $this->approvedReviews()->count();
     }
 
+    /* ------------------------------------------------------------------
+     |  Media path resolution
+     |
+     |  Product files are stored in public/images/products (the canonical
+     |  location). Shared hosts sometimes serve the project root directly
+     |  or restore files into a legacy folder, so lookups also check the
+     |  other places these files realistically end up. Extensions are
+     |  interchangeable too: the uploader converts JPEG to WebP but the
+     |  database keeps the original filename.
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Folders (relative to the project root) that may hold product media.
+     * The canonical Laravel location always comes first.
+     *
+     * @return list<string>
+     */
+    protected static function mediaSearchDirectories(string $type): array
+    {
+        if ($type === 'video') {
+            return [
+                'public/videos/products',
+                'videos/products',
+                'public/storage/products',
+                'storage/app/public/products',
+            ];
+        }
+
+        return [
+            'public/images/products',
+            'images/products',
+            'public/images',
+            'images',
+            'public/storage/products',
+            'public/storage/images/products',
+            'storage/app/public/products',
+            'storage/app/public/images/products',
+        ];
+    }
+
+    /**
+     * Locate a media file on disk and build the URL that serves it.
+     *
+     * Only the basename of the database value is used, so a malformed or
+     * malicious `../` path can never escape the media folders.
+     *
+     * @return array{file:string,url:string,name:string}|null
+     */
+    protected function resolveMediaFile(string $type, string $path): ?array
+    {
+        $type = $type === 'video' ? 'video' : 'image';
+
+        $path = trim(str_replace('\\', '/', (string) $path));
+        if ($path === '') {
+            return null;
+        }
+
+        foreach (['public/storage/', 'storage/app/public/', 'public/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+                break;
+            }
+        }
+
+        $path = basename($path);
+        if ($path === '' || $path === '.' || $path === '..') {
+            return null;
+        }
+
+        $stem = pathinfo($path, PATHINFO_FILENAME);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        // Prefer the stored name, then the WebP derivative, then the
+        // raster fallbacks. One upload can legitimately produce both a
+        // `.webp` and a `.jpg`, and old rows may point at either.
+        $names = [$path];
+        $extensions = $type === 'video'
+            ? ['mp4', 'webm', 'mov', 'm4v']
+            : ['webp', 'jpg', 'jpeg', 'png'];
+
+        foreach ($extensions as $candidate) {
+            if ($extension !== $candidate) {
+                $names[] = $stem.'.'.$candidate;
+            }
+        }
+
+        foreach (self::mediaSearchDirectories($type) as $directory) {
+            foreach ($names as $name) {
+                $file = base_path($directory.'/'.$name);
+                if (is_file($file) && (int) @filesize($file) > 0) {
+                    return [
+                        'file' => $file,
+                        'url' => $this->mediaFileUrl($file),
+                        'name' => $name,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** Turn an absolute media file path into a browser-facing URL. */
+    protected function mediaFileUrl(string $file): string
+    {
+        $file = str_replace('\\', '/', $file);
+        $public = rtrim(str_replace('\\', '/', public_path()), '/');
+
+        if (str_starts_with($file, $public.'/')) {
+            return asset(substr($file, strlen($public) + 1));
+        }
+
+        $base = rtrim(str_replace('\\', '/', base_path()), '/');
+        $relative = str_starts_with($file, $base.'/')
+            ? substr($file, strlen($base) + 1)
+            : basename($file);
+
+        if (str_starts_with($relative, 'storage/app/public/')) {
+            $relative = 'storage/'.substr($relative, strlen('storage/app/public/'));
+        }
+
+        return asset($relative);
+    }
+
+    /**
+     * Last-resort image named after the product itself
+     * (`<slug>.webp`, `<slug>.jpg`, ...). This lets an admin drop a photo
+     * into public/images/products without touching the media records.
+     *
+     * @return array{file:string,url:string,name:string}|null
+     */
+    protected function resolveFallbackImage(): ?array
+    {
+        $stems = array_filter(array_unique([
+            (string) $this->slug,
+            Str::slug((string) $this->name),
+        ]));
+
+        foreach ($stems as $stem) {
+            $resolved = $this->resolveMediaFile('image', $stem.'.webp');
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Absolute public URL to the primary product image.
      * Returns null (not a fake path) when no image has been set,
@@ -159,20 +308,19 @@ class Product extends Model
      */
     public function getImageUrlAttribute(): ?string
     {
-        if (! $this->image) {
-            return null;
+        $resolved = $this->resolveMediaFile('image', (string) $this->image);
+        if ($resolved !== null) {
+            return $resolved['url'];
         }
 
-        return file_exists(public_path('images/products/'.$this->image))
-            ? asset('images/products/'.$this->image)
-            : null;
+        return $this->resolveFallbackImage()['url'] ?? null;
     }
 
     public function getGalleryUrlsAttribute(): array
     {
         return collect($this->gallery ?? [])
-            ->filter(fn ($file) => file_exists(public_path('images/products/'.$file)))
-            ->map(fn ($file) => asset('images/products/'.$file))
+            ->map(fn ($file) => $this->resolveMediaFile('image', (string) $file)['url'] ?? null)
+            ->filter()
             ->values()
             ->all();
     }
@@ -219,33 +367,50 @@ class Product extends Model
 
     public function mediaUrl(string $type, string $path): string
     {
+        $resolved = $this->resolveMediaFile($type, $path);
+        if ($resolved !== null) {
+            return $resolved['url'];
+        }
+
         $folder = $type === 'video' ? 'videos/products' : 'images/products';
 
-        return asset($folder.'/'.$path);
+        return asset($folder.'/'.basename($path));
     }
 
     public function mediaExists(string $type, string $path): bool
     {
-        $folder = $type === 'video' ? 'videos/products' : 'images/products';
-
-        return file_exists(public_path($folder.'/'.$path));
+        return $this->resolveMediaFile($type, $path) !== null;
     }
 
     /**
      * Render-ready media list: only items whose file actually exists, as
      * ['type', 'url']. Views render one slot per entry — a product with a
      * single image gets exactly one slot and never an empty placeholder.
+     * When every stored file is gone, a slug-named fallback image is used.
      */
     public function getMediaUrlsAttribute(): array
     {
-        return collect($this->media_items)
-            ->filter(fn (array $item) => $this->mediaExists($item['type'], $item['path']))
-            ->map(fn (array $item) => [
-                'type' => $item['type'],
-                'url' => $this->mediaUrl($item['type'], $item['path']),
-            ])
+        $urls = collect($this->media_items)
+            ->map(function (array $item): ?array {
+                $resolved = $this->resolveMediaFile($item['type'], $item['path']);
+
+                return $resolved === null ? null : [
+                    'type' => $item['type'],
+                    'url' => $resolved['url'],
+                ];
+            })
+            ->filter()
             ->values()
             ->all();
+
+        if ($urls === []) {
+            $fallback = $this->resolveFallbackImage();
+            if ($fallback !== null) {
+                $urls[] = ['type' => 'image', 'url' => $fallback['url']];
+            }
+        }
+
+        return $urls;
     }
 
     /** First media item in the gallery (image or video). */
@@ -261,24 +426,34 @@ class Product extends Model
     public function getCoverImageUrlAttribute(): ?string
     {
         foreach ($this->media_items as $item) {
-            if ($item['type'] === 'image' && $this->mediaExists($item['type'], $item['path'])) {
-                return $this->mediaUrl($item['type'], $item['path']);
+            if ($item['type'] !== 'image') {
+                continue;
+            }
+
+            $resolved = $this->resolveMediaFile('image', $item['path']);
+            if ($resolved !== null) {
+                return $resolved['url'];
             }
         }
 
-        return null;
+        return $this->resolveFallbackImage()['url'] ?? null;
     }
 
     /** Filename of the first IMAGE in the gallery (stored in cart rows). */
     public function getCoverImagePathAttribute(): ?string
     {
         foreach ($this->media_items as $item) {
-            if ($item['type'] === 'image' && $this->mediaExists($item['type'], $item['path'])) {
-                return $item['path'];
+            if ($item['type'] !== 'image') {
+                continue;
+            }
+
+            $resolved = $this->resolveMediaFile('image', $item['path']);
+            if ($resolved !== null) {
+                return $resolved['name'];
             }
         }
 
-        return null;
+        return $this->resolveFallbackImage()['name'] ?? null;
     }
 
     public function getRouteKeyName(): string
