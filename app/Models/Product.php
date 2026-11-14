@@ -392,19 +392,26 @@ class Product extends Model
     }
 
     /**
-     * Last-resort image named after the product itself
-     * (`<slug>.webp`, `<slug>.jpg`, ...). This lets an admin drop a photo
-     * into public/images/products without touching the media records.
+     * Last-resort image discovery when DB media records are empty or all
+     * point at missing files. Tries:
+     *  1. Exact slug-named file (<slug>.webp/.jpg/...)
+     *  2. Any file in the product image directories whose normalized name
+     *     starts with or contains the product slug/name (handles admin
+     *     uploads with timestamp suffixes, or manually placed files).
      *
      * @return array{file:string,url:string,name:string}|null
      */
     protected function resolveFallbackImage(): ?array
     {
-        $stems = array_filter(array_unique([
+        $stems = array_values(array_filter(array_unique([
             (string) $this->slug,
             Str::slug((string) $this->name),
-        ]));
+            // Also try without common suffixes like "with-application-kit"
+            preg_replace('/-with-application-kit$/', '', (string) $this->slug),
+            preg_replace('/-with-application-kit$/', '', Str::slug((string) $this->name)),
+        ])));
 
+        // 1) Exact slug-named file
         foreach ($stems as $stem) {
             $resolved = $this->resolveMediaFile('image', $stem.'.webp');
             if ($resolved !== null) {
@@ -412,7 +419,143 @@ class Product extends Model
             }
         }
 
+        // 2) Scan product image directories for best fuzzy match
+        $candidates = $this->collectProductImageFiles();
+        if ($candidates === []) {
+            return null;
+        }
+
+        $bestFile = null;
+        $bestScore = -1;
+
+        foreach ($candidates as $file) {
+            $basename = basename($file);
+            $fileKey = Str::slug(pathinfo($basename, PATHINFO_FILENAME));
+
+            foreach ($stems as $stem) {
+                $stemKey = Str::slug($stem);
+                if ($stemKey === '' || strlen($stemKey) < 3) {
+                    continue;
+                }
+
+                $score = -1;
+                if ($fileKey === $stemKey) {
+                    $score = 100;
+                } elseif (str_starts_with($fileKey, $stemKey.'-') || str_starts_with($fileKey, $stemKey.'_')) {
+                    $score = 90;
+                } elseif (str_starts_with($stemKey, $fileKey.'-') || str_starts_with($stemKey, $fileKey.'_')) {
+                    $score = 80;
+                } elseif (strlen($stemKey) >= 6 && str_contains($fileKey, $stemKey)) {
+                    $score = 70;
+                } elseif (strlen($stemKey) >= 10 && str_contains($stemKey, $fileKey) && strlen($fileKey) >= 6) {
+                    $score = 60;
+                }
+
+                // Prefer webp over jpg for same score
+                if ($score >= 0) {
+                    $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
+                    $extBonus = match ($ext) {
+                        'webp' => 3, 'jpg', 'jpeg' => 2, 'png' => 1, default => 0,
+                    };
+                    $total = $score * 10 + $extBonus;
+                    if ($total > $bestScore) {
+                        $bestScore = $total;
+                        $bestFile = $file;
+                    }
+                }
+            }
+        }
+
+        if ($bestFile !== null) {
+            $name = basename($bestFile);
+
+            return [
+                'file' => $bestFile,
+                'url' => $this->mediaFileUrl($bestFile),
+                'name' => $name,
+            ];
+        }
+
         return null;
+    }
+
+    /**
+     * Collect all image files from known product image directories.
+     * Cached per-request via static to avoid repeated filesystem scans.
+     *
+     * @return list<string>
+     */
+    protected function collectProductImageFiles(): array
+    {
+        static $cache = null;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $files = [];
+        $seen = [];
+
+        foreach (self::mediaSearchDirectories('image') as $directory) {
+            $dir = base_path($directory);
+            if (! is_dir($dir)) {
+                continue;
+            }
+            $entries = @scandir($dir);
+            if ($entries === false) {
+                continue;
+            }
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                $full = $dir.'/'.$entry;
+                if (! is_file($full) || (int) @filesize($full) <= 0) {
+                    continue;
+                }
+                $ext = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
+                if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                    continue;
+                }
+                $key = strtolower($entry);
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $files[] = $full;
+            }
+        }
+
+        // Also check public_path() subdirectory directly
+        $pubDir = public_path('images/products');
+        if (is_dir($pubDir)) {
+            $entries = @scandir($pubDir);
+            if ($entries !== false) {
+                foreach ($entries as $entry) {
+                    if ($entry === '.' || $entry === '..') {
+                        continue;
+                    }
+                    $full = $pubDir.'/'.$entry;
+                    if (! is_file($full) || (int) @filesize($full) <= 0) {
+                        continue;
+                    }
+                    $ext = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
+                    if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                        continue;
+                    }
+                    $key = strtolower($entry);
+                    if (isset($seen[$key])) {
+                        continue;
+                    }
+                    $seen[$key] = true;
+                    $files[] = $full;
+                }
+            }
+        }
+
+        $cache = $files;
+
+        return $cache;
     }
 
     /**

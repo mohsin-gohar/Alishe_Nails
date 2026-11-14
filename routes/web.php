@@ -140,7 +140,7 @@ Route::get('/check-db-products', function (Request $request) {
 // ---------------------------------------------------------------------
 // Temporary image-repair endpoint (no terminal required).
 // Visit:  https://yourdomain.com/fix-images?token=YOUR_DEPLOY_TOKEN
-// Scans public/images/products/ and links matching files to products
+// Scans all known image directories and links matching files to products
 // whose image/media links are missing or point at absent files.
 // Remove together with /_deploy once deployment is complete.
 // ---------------------------------------------------------------------
@@ -151,20 +151,43 @@ Route::get('/fix-images', function (Request $request) {
         abort(404);
     }
 
-    $directory = public_path('images/products');
-    if (! is_dir($directory)) {
-        return response('Directory not found: public/images/products', 500);
+    $scanDirs = array_values(array_unique(array_filter([
+        public_path('images/products'),
+        base_path('public/images/products'),
+        base_path('images/products'),
+        public_path('storage/products'),
+        base_path('storage/app/public/products'),
+    ], 'is_dir')));
+
+    if ($scanDirs === []) {
+        return response('No image directories found. Expected public/images/products/', 500);
     }
 
-    $files = collect(@scandir($directory) ?: [])
-        ->filter(fn ($file) => $file !== '.' && $file !== '..' && is_file($directory.'/'.$file))
-        ->filter(fn ($file) => preg_match('/\.(jpe?g|png|webp|gif)$/i', $file) === 1)
-        ->map(fn ($file) => [
-            'file' => $file,
-            'stem' => pathinfo($file, PATHINFO_FILENAME),
-            'key' => Str::slug(pathinfo($file, PATHINFO_FILENAME)),
-        ])
-        ->values();
+    $files = collect();
+    foreach ($scanDirs as $dir) {
+        foreach (@scandir($dir) ?: [] as $file) {
+            $full = $dir.'/'.$file;
+            if ($file === '.' || $file === '..' || ! is_file($full)) {
+                continue;
+            }
+            if (preg_match('/\.(jpe?g|png|webp|gif)$/i', $file) !== 1) {
+                continue;
+            }
+            $stem = pathinfo($file, PATHINFO_FILENAME);
+            $key = Str::slug($stem);
+            // Strip admin-upload timestamp suffix: slug-1700000000-abc123 -> slug
+            $keyStripped = preg_replace('/-\d{10}-[a-z0-9]{6}$/i', '', $stem);
+            $keyStripped = Str::slug((string) $keyStripped);
+            $files->push([
+                'file' => $file,
+                'stem' => $stem,
+                'key' => $key,
+                'key_stripped' => $keyStripped,
+                'dir' => $dir,
+            ]);
+        }
+    }
+    $files = $files->unique('file')->values();
 
     $fixed = 0;
     $skipped = 0;
@@ -173,40 +196,73 @@ Route::get('/fix-images', function (Request $request) {
 
     Product::query()->orderBy('id')->chunkById(100, function ($products) use ($files, &$fixed, &$skipped, &$unmatched, &$log): void {
         foreach ($products as $product) {
+            // Check if product already has any resolvable media
             $hasResolvable = collect($product->media_urls)->isNotEmpty();
-
             if ($hasResolvable) {
                 $skipped++;
 
                 continue;
             }
 
-            $match = null;
             $slugKeys = collect([
                 Str::slug((string) $product->slug),
                 Str::slug((string) $product->name),
+                preg_replace('/-with-application-kit$/', '', Str::slug((string) $product->slug)),
+                preg_replace('/-with-application-kit$/', '', Str::slug((string) $product->name)),
             ])->filter()->unique()->values()->all();
 
-            foreach ($slugKeys as $slugKey) {
-                $match = $files->first(fn (array $item) => $item['key'] === $slugKey
-                    || str_starts_with($item['key'], $slugKey.'-')
-                    || str_starts_with($item['key'], $slugKey.'_')
-                    || (strlen($slugKey) >= 6 && str_contains($item['key'], $slugKey))
-                );
+            // Score-based matching: find best file for this product
+            $bestMatch = null;
+            $bestScore = -1;
 
-                if ($match !== null) {
-                    break;
+            foreach ($files as $item) {
+                foreach ($slugKeys as $slugKey) {
+                    if ($slugKey === '' || strlen($slugKey) < 3) {
+                        continue;
+                    }
+                    $score = -1;
+                    $fk = $item['key'];
+                    $fks = $item['key_stripped'];
+
+                    foreach ([$fk, $fks] as $fileKey) {
+                        if ($fileKey === '') {
+                            continue;
+                        }
+                        if ($fileKey === $slugKey) {
+                            $score = max($score, 100);
+                        } elseif (str_starts_with($fileKey, $slugKey.'-') || str_starts_with($fileKey, $slugKey.'_')) {
+                            $score = max($score, 90);
+                        } elseif (str_starts_with($slugKey, $fileKey.'-')) {
+                            $score = max($score, 80);
+                        } elseif (strlen($slugKey) >= 8 && str_contains($fileKey, $slugKey)) {
+                            $score = max($score, 70);
+                        } elseif (strlen($slugKey) >= 12 && strlen($fileKey) >= 8 && str_contains($slugKey, $fileKey)) {
+                            $score = max($score, 60);
+                        }
+                    }
+
+                    if ($score > 0) {
+                        $ext = strtolower(pathinfo($item['file'], PATHINFO_EXTENSION));
+                        $extBonus = match ($ext) {
+                            'webp' => 3, 'jpg', 'jpeg' => 2, 'png' => 1, default => 0,
+                        };
+                        $total = $score * 10 + $extBonus;
+                        if ($total > $bestScore) {
+                            $bestScore = $total;
+                            $bestMatch = $item;
+                        }
+                    }
                 }
             }
 
-            if ($match === null) {
+            if ($bestMatch === null) {
                 $unmatched++;
                 $log[] = "unmatched #{$product->id} {$product->slug}";
 
                 continue;
             }
 
-            $target = $match['file'];
+            $target = $bestMatch['file'];
             $product->forceFill([
                 'image' => $target,
                 'gallery' => [$target],
@@ -220,13 +276,17 @@ Route::get('/fix-images', function (Request $request) {
             ])->save();
 
             $fixed++;
-            $log[] = "fixed #{$product->id} {$product->slug} -> {$target}";
+            $log[] = "fixed #{$product->id} {$product->slug} -> {$target} (dir: {$bestMatch['dir']})";
         }
     });
 
-    return response(implode("\n", $log)."\n\nFixed: {$fixed}, Skipped: {$skipped}, Unmatched: {$unmatched}", 200, [
-        'Content-Type' => 'text/plain; charset=UTF-8',
-    ]);
+    $dirList = implode(', ', $scanDirs);
+
+    return response(
+        implode("\n", $log)."\n\nScanned dirs: {$dirList}\nFiles found: {$files->count()}\nFixed: {$fixed}, Skipped: {$skipped}, Unmatched: {$unmatched}",
+        200,
+        ['Content-Type' => 'text/plain; charset=UTF-8']
+    );
 })->name('fix.images');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
