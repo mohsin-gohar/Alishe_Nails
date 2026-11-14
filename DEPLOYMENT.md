@@ -3,6 +3,90 @@
 This guide takes the project from your machine to `https://alishenails.com` on
 Hostinger shared hosting.
 
+> **Alif Host / cPanel with no SSH?** Skip to
+> [section 0](#0-no-terminal-deploy-alif-host--cpanel--recommended). A single
+> file, `public/deploy.php`, does the update, the image repair and the caches
+> from the browser.
+
+---
+
+## 0. No-terminal deploy (Alif Host / cPanel — recommended)
+
+Use this when the host gives you cPanel File Manager but **no SSH/terminal**.
+`public/deploy.php` is a temporary, token-protected tool; delete it when done.
+
+### 0.1 One-time preparation
+
+1. Open **cPanel → File Manager** and go to the Laravel project root (the folder
+   that contains `artisan`, `app/`, `public/`).
+2. Edit `.env` (create it from `.env.example` if missing) and set a long random
+   token — this is the only password protecting the tool:
+
+   ```dotenv
+   DEPLOY_TOKEN=change-this-to-a-long-random-string
+   APP_ENV=production
+   DB_CONNECTION=mysql
+   CACHE_STORE=file
+   ```
+
+3. Upload `deploy.php` from the repository root to `public/deploy.php`.
+   (If you prefer, upload the root `deploy.php` loader too — it simply forwards
+   to `public/deploy.php`, which helps on hosts that serve the project root.)
+
+### 0.2 Open the tool
+
+Visit either URL (both are the same tool):
+
+- `https://alishenails.website/deploy.php?token=YOUR_TOKEN`
+- if that 404s: `https://alishenails.website/public/deploy.php?token=YOUR_TOKEN`
+
+The **Status** page shows PHP version, ZipArchive/cURL/GD/PDO, folder
+permissions, database connection, product count and the exact list of product
+images the database references but that are missing from disk.
+
+> A wrong/empty token returns 404 on purpose. `DEPLOY_TOKEN=` (empty) disables
+> the tool completely.
+
+### 0.3 The three steps
+
+| Step | Button | What it does |
+|---|---|---|
+| 1 | **Update code** | Creates a backup ZIP in `~/.alishe-deploy-backups/`, downloads `main` from GitHub, copies the files in (uploads, `.env` and `vendor/` are never touched), then runs `migrate`, seeds only if the products table is empty, rebuilds caches |
+| 2 | **Recover images** | Scans the home directory (depth 6) and backup archives (`.zip`, `.tar`, `.tar.gz`) for the missing product photos and copies them back under the exact filenames the database expects. WhatsApp names like `WhatsApp Image 2026-11-08 at 9.23.42 PM.jpeg` are normalized to `whatsapp-image-2026-11-08-at-92342-pm-*.jpg` |
+| 3 | **Run migrations & caches** | Re-runs `optimize:clear`, `migrate --force`, `db:seed` guard, `config:cache`, `view:cache` (route caching is skipped because the temporary helper routes are closures) |
+
+If the server blocks the GitHub download, the page offers a **manual ZIP
+upload** form — download
+`https://github.com/mohsin-gohar/Alishe_Nails/archive/refs/heads/main.zip`
+and upload it there.
+
+### 0.4 Restoring the missing product photos
+
+The live catalogue references 30+ photos uploaded on 2026-11-08/09 that are no
+longer on the server. The tool cannot invent them; use **one** of these:
+
+1. **Hosting backup (best):** cPanel → *Backup* (or Alif Host support) → restore
+   the home directory / `public_html` backup from before the files disappeared.
+   Then run **Recover images** — it finds the files inside the restored folder
+   or archive automatically.
+2. **Original photos:** put the WhatsApp originals in one ZIP (any folder
+   structure) and upload it with the **Upload images ZIP** form on the Status
+   page. Matching is by filename, with WhatsApp/upload suffixes normalized.
+3. **Re-upload via admin:** `https://alishenails.website/admin` →
+   *Products* → *Edit* → *Add Image* for each product (works, but is manual).
+
+### 0.5 Verify and clean up
+
+- Home page: new hero video (`public/vedios/headervedio.mp4`) plays, no
+  “Custom Design”/“Prep Kit” sections.
+- A product page shows its gallery instead of “Image unavailable”.
+- `https://alishenails.website/sitemap.xml` and `/robots.txt` respond.
+- Admin login at `/admin` works.
+- Click **Delete this tool** in the deploy page (or delete
+  `public/deploy.php` and root `deploy.php` in File Manager) and blank
+  `DEPLOY_TOKEN` in `.env`.
+- **Rollback** restores the newest `pre-deploy-*.zip` if an update goes wrong.
+
 ---
 
 ## 1. Requirements on the server
