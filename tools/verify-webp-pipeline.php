@@ -6,7 +6,6 @@
  * Logs into the admin panel over real HTTP, creates a product with a large
  * JPEG upload, and then checks what actually landed on disk.
  */
-
 $base = 'http://127.0.0.1:8080';
 $jar = tempnam(sys_get_temp_dir(), 'cookies');
 $upload = 'C:/Users/mohsi/AppData/Local/Temp/opencode/test-upload.jpg';

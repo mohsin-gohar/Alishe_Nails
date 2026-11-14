@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Services\ImageOptimizer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Converts the existing catalogue imagery to WebP.

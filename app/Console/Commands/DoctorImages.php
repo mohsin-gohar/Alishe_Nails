@@ -125,10 +125,10 @@ class DoctorImages extends Command
             }
         }
 
-        $this->line("   Products .................. ".$products->count());
-        $this->line("   With an image record ...... ".$withMedia);
-        $this->line("   Without any image ......... ".count($withoutMedia));
-        $this->line("   Records pointing at a missing file ... ".count($missingFiles));
+        $this->line('   Products .................. '.$products->count());
+        $this->line('   With an image record ...... '.$withMedia);
+        $this->line('   Without any image ......... '.count($withoutMedia));
+        $this->line('   Records pointing at a missing file ... '.count($missingFiles));
 
         // ---------- 4. Problems ----------
         if ($withoutMedia !== []) {

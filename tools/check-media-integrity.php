@@ -1,13 +1,17 @@
 <?php
 
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Contracts\Console\Kernel;
+
 $root = dirname(__DIR__);
 
 require $root.'/vendor/autoload.php';
 $app = require $root.'/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Kernel::class)->bootstrap();
 
 $missing = [];
-$products = App\Models\Product::all();
+$products = Product::all();
 
 foreach ($products as $product) {
     foreach ($product->media_items as $item) {
@@ -29,7 +33,7 @@ foreach ($missing as $line) {
 
 echo PHP_EOL.'--- categories ---'.PHP_EOL;
 $missingCategories = 0;
-foreach (App\Models\Category::whereNotNull('image')->get() as $category) {
+foreach (Category::whereNotNull('image')->get() as $category) {
     if (! is_file(public_path('images/categories/'.$category->image))) {
         echo '  category '.$category->slug.': '.$category->image.PHP_EOL;
         $missingCategories++;

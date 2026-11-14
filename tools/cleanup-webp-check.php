@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Product;
+use Illuminate\Contracts\Console\Kernel;
+
 /**
  * Removes the products created by verify-webp-pipeline.php and reports the
  * before/after size of the most recent upload.
@@ -8,9 +11,9 @@ $root = dirname(__DIR__);
 
 require $root.'/vendor/autoload.php';
 $app = require $root.'/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Kernel::class)->bootstrap();
 
-$products = App\Models\Product::where('name', 'QA WebP Pipeline Check')->get();
+$products = Product::where('name', 'QA WebP Pipeline Check')->get();
 
 foreach ($products as $product) {
     echo 'Product #'.$product->id.' media: '.json_encode($product->media).PHP_EOL;
@@ -37,4 +40,4 @@ foreach ($products as $product) {
     $product->delete();
 }
 
-echo PHP_EOL.'Remaining test products: '.App\Models\Product::where('name', 'QA WebP Pipeline Check')->count().PHP_EOL;
+echo PHP_EOL.'Remaining test products: '.Product::where('name', 'QA WebP Pipeline Check')->count().PHP_EOL;

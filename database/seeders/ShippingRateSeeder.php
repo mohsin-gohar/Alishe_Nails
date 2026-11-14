@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace Database\Seeders;
 
@@ -47,4 +47,3 @@ class ShippingRateSeeder extends Seeder
         }
     }
 }
-

@@ -9,7 +9,6 @@
  *
  * Run:  php tools/generate-favicon.php
  */
-
 $root = __DIR__.'/..';
 $source = $root.'/public/images/logo.jpeg';
 

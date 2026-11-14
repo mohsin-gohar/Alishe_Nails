@@ -8,7 +8,6 @@
  *
  * Run:  php tools/generate-og-image.php
  */
-
 $root = __DIR__.'/..';
 $fontDir = 'C:/Users/mohsi/AppData/Local/Temp/opencode/fonts_ttf';
 

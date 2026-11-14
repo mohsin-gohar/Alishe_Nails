@@ -25,6 +25,9 @@
  */
 
 declare(strict_types=1);
+use App\Console\Commands\DoctorImages;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Facades\DB;
 
 @ini_set('display_errors', '0');
 @ini_set('log_errors', '0');
@@ -129,8 +132,7 @@ function render_page(string $title, string $body, array $log = [], string $token
 
     $nav = '';
     if ($token !== '' && $self !== '') {
-        $link = static fn (string $action, string $label, string $class = 'btn'): string =>
-            '<a class="'.$class.'" href="'.h($self.'?'.http_build_query(['token' => $token, 'action' => $action])).'">'.h($label).'</a>';
+        $link = static fn (string $action, string $label, string $class = 'btn'): string => '<a class="'.$class.'" href="'.h($self.'?'.http_build_query(['token' => $token, 'action' => $action])).'">'.h($label).'</a>';
 
         $nav = '<div class="nav">'
             .$link('status', 'Status')
@@ -196,8 +198,7 @@ if (! is_string($self) || $self === '') {
 
 $action = (string) ($_GET['action'] ?? $_POST['action'] ?? 'status');
 $log = [];
-$link = static fn (string $a, string $label, string $class = 'btn'): string =>
-    '<a class="'.$class.'" href="'.h($self.'?'.http_build_query(['token' => $token, 'action' => $a])).'">'.h($label).'</a>';
+$link = static fn (string $a, string $label, string $class = 'btn'): string => '<a class="'.$class.'" href="'.h($self.'?'.http_build_query(['token' => $token, 'action' => $a])).'">'.h($label).'</a>';
 
 /* -------------------------------------------------------------------------
  *  Database
@@ -375,7 +376,7 @@ function find_media_file(string $root, string $type, string $path): ?string
 }
 
 /**
- * @param array<string, array{product_id:int, product:string, path:string, type:string}> $references
+ * @param  array<string, array{product_id:int, product:string, path:string, type:string}>  $references
  * @return array<string, array{product_id:int, product:string, path:string, type:string, file:string, dir:string}>
  */
 function missing_media(string $root, array $references): array
@@ -402,8 +403,8 @@ function missing_media(string $root, array $references): array
 /**
  * Breadth-first scan of a directory, with depth and skip controls.
  *
- * @param list<string> $skipExact
- * @param callable(string):void $onFile
+ * @param  list<string>  $skipExact
+ * @param  callable(string):void  $onFile
  */
 function scan_tree(string $base, int $maxDepth, array $skipExact, callable $onFile, int $maxFiles = 250000): void
 {
@@ -440,6 +441,7 @@ function scan_tree(string $base, int $maxDepth, array $skipExact, callable $onFi
                 if (! is_link($path)) {
                     $queue[] = [$path, $depth + 1];
                 }
+
                 continue;
             }
 
@@ -476,7 +478,7 @@ function install_media(string $source, string $target): bool
  * Recover missing media from loose files and backup archives in the home
  * directory. Returns a list of log lines.
  *
- * @param array<string, array{product_id:int, product:string, path:string, type:string, file:string, dir:string}> $missing
+ * @param  array<string, array{product_id:int, product:string, path:string, type:string, file:string, dir:string}>  $missing
  * @return array{restored:int, log:list<string>}
  */
 function recover_media(string $root, array $missing): array
@@ -593,9 +595,10 @@ function recover_media(string $root, array $missing): array
 
             try {
                 if (str_ends_with($lower, '.zip')) {
-                    $zip = new ZipArchive();
+                    $zip = new ZipArchive;
                     if ($zip->open($archive) !== true) {
                         $log[] = '  could not open ZIP';
+
                         continue;
                     }
                     for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -709,7 +712,7 @@ function backup_root(string $root): string
     }
 
     $file = $dir.'/pre-deploy-'.date('Ymd-His').'.zip';
-    $zip = new ZipArchive();
+    $zip = new ZipArchive;
     if ($zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
         throw new RuntimeException('Cannot create the backup ZIP.');
     }
@@ -720,7 +723,7 @@ function backup_root(string $root): string
         'resources/views', 'routes', '.htaccess', 'artisan', 'composer.json', 'composer.lock',
     ];
 
-    $add = static function (string $path, string $relative) use (&$add, $zip, $root): void {
+    $add = static function (string $path, string $relative) use (&$add, $zip): void {
         if (is_dir($path)) {
             foreach (@scandir($path) ?: [] as $entry) {
                 if ($entry === '.' || $entry === '..') {
@@ -817,7 +820,7 @@ function install_code_zip(string $zipFile, string $root): array
         throw new RuntimeException('Cannot create an extraction directory.');
     }
 
-    $zip = new ZipArchive();
+    $zip = new ZipArchive;
     if ($zip->open($zipFile) !== true) {
         throw new RuntimeException('The ZIP could not be opened (is it a valid GitHub ZIP?).');
     }
@@ -861,6 +864,7 @@ function install_code_zip(string $zipFile, string $root): array
             if (! is_dir($target) && ! @mkdir($target, 0755, true) && ! is_dir($target)) {
                 throw new RuntimeException('Cannot create directory: '.$relative);
             }
+
             continue;
         }
 
@@ -899,7 +903,7 @@ function run_post_update(string $root): array
     try {
         require_once $root.'/vendor/autoload.php';
         $app = require $root.'/bootstrap/app.php';
-        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+        $kernel = $app->make(Kernel::class);
         $kernel->bootstrap();
     } catch (Throwable $e) {
         $log[] = 'ERROR: Laravel could not boot after the update: '.$e->getMessage();
@@ -922,7 +926,7 @@ function run_post_update(string $root): array
     $call('migrate', ['--force' => true]);
 
     try {
-        $count = (int) Illuminate\Support\Facades\DB::table('products')->count();
+        $count = (int) DB::table('products')->count();
         $log[] = 'Products in database: '.$count;
         if ($count === 0) {
             $call('db:seed', ['--force' => true]);
@@ -933,7 +937,7 @@ function run_post_update(string $root): array
         $log[] = 'Could not count products: '.$e->getMessage();
     }
 
-    if (class_exists(App\Console\Commands\DoctorImages::class)) {
+    if (class_exists(DoctorImages::class)) {
         $call('images:doctor', ['--from' => $root.'/public/images/products']);
     } else {
         $log[] = '[images:doctor] command not present in this code version';
@@ -1203,7 +1207,7 @@ if ($action === 'upload_media') {
         $references = media_references($pdo);
         $missing = missing_media($root, $references);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($file['tmp_name']) !== true) {
             throw new RuntimeException('The uploaded file is not a valid ZIP.');
         }
@@ -1280,6 +1284,7 @@ if ($action === 'upload_media') {
                         $linkedSlugs[$product['slug']] = true;
                         $linked++;
                         $log[] = 'LINKED    #'.$product['id'].' '.$product['name'].' → '.$product['slug'].'.'.$extension.'  (from '.$entry.')';
+
                         continue;
                     }
                 }
@@ -1287,6 +1292,7 @@ if ($action === 'upload_media') {
                 if (count($unmatched) < 15) {
                     $unmatched[] = $entry;
                 }
+
                 continue;
             }
 
@@ -1355,7 +1361,7 @@ if ($action === 'rollback') {
             $log[] = 'Restoring '.$latest.'…';
             $temp = rtrim(sys_get_temp_dir(), '/\\').'/alishe-rollback-'.bin2hex(random_bytes(4));
             @mkdir($temp, 0775, true);
-            $zip = new ZipArchive();
+            $zip = new ZipArchive;
             if ($zip->open($latest) !== true) {
                 throw new RuntimeException('Cannot open the backup ZIP.');
             }
@@ -1374,6 +1380,7 @@ if ($action === 'rollback') {
                     if (! is_dir($target)) {
                         @mkdir($target, 0755, true);
                     }
+
                     continue;
                 }
                 if (! is_dir(dirname($target))) {

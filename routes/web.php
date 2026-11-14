@@ -33,15 +33,19 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SellerAuthController;
 use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\SellerSubscriptionController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
-use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\TrackOrderController;
 use App\Http\Controllers\WishlistController;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,7 +62,7 @@ Route::get('/robots.txt', RobotsController::class)->name('robots');
 // Visit:  https://yourdomain.com/_deploy?token=YOUR_DEPLOY_TOKEN
 // Remove this route (and DEPLOY_TOKEN) once deployment is complete.
 // ---------------------------------------------------------------------
-Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
+Route::get('/_deploy', function (Request $request) {
     $token = (string) config('app.deploy_token', env('DEPLOY_TOKEN'));
 
     if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
@@ -68,10 +72,10 @@ Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
     $log = [];
     $run = function (string $command, array $parameters = []) use (&$log): void {
         try {
-            \Illuminate\Support\Facades\Artisan::call($command, $parameters);
-            $output = trim(\Illuminate\Support\Facades\Artisan::output());
+            Artisan::call($command, $parameters);
+            $output = trim(Artisan::output());
             $log[] = "[$command] OK".($output !== '' ? "\n".$output : '');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $log[] = "[$command] FAILED: ".$e->getMessage();
         }
     };
@@ -82,12 +86,12 @@ Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
     // catalogue, admin user and shipping zones automatically. Guarded so
     // an already-populated database is never duplicated.
     try {
-        if (\App\Models\Product::count() === 0) {
+        if (Product::count() === 0) {
             $run('db:seed', ['--force' => true]);
         } else {
-            $log[] = '[db:seed] skipped (products already exist: '.\App\Models\Product::count().')';
+            $log[] = '[db:seed] skipped (products already exist: '.Product::count().')';
         }
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         $log[] = '[db:seed] FAILED: '.$e->getMessage();
     }
 
@@ -104,7 +108,7 @@ Route::get('/_deploy', function (\Illuminate\Http\Request $request) {
 // Reports the live product count so an empty DB is obvious. Runs migrate.
 // Remove together with /_deploy once deployment is complete.
 // ---------------------------------------------------------------------
-Route::get('/check-db-products', function (\Illuminate\Http\Request $request) {
+Route::get('/check-db-products', function (Request $request) {
     $token = (string) config('app.deploy_token', '');
 
     if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
@@ -112,20 +116,20 @@ Route::get('/check-db-products', function (\Illuminate\Http\Request $request) {
     }
 
     try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $migrateOutput = trim(\Illuminate\Support\Facades\Artisan::output());
-    } catch (\Throwable $e) {
+        Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = trim(Artisan::output());
+    } catch (Throwable $e) {
         return response()->json(['database_connected' => false, 'error' => $e->getMessage()], 500);
     }
 
-    $total = \App\Models\Product::count();
-    $active = \App\Models\Product::where('is_active', true)->count();
+    $total = Product::count();
+    $active = Product::where('is_active', true)->count();
 
     return response()->json([
         'database_connected' => true,
         'total_products_in_db' => $total,
         'active_products' => $active,
-        'sample_products' => \App\Models\Product::take(3)->get(['id', 'name', 'slug', 'is_active']),
+        'sample_products' => Product::take(3)->get(['id', 'name', 'slug', 'is_active']),
         'migrate_output' => $migrateOutput,
         'hint' => $total === 0
             ? 'DB is empty. Run /_deploy?token=... to auto-seed, or import SQL via phpMyAdmin.'
@@ -140,7 +144,7 @@ Route::get('/check-db-products', function (\Illuminate\Http\Request $request) {
 // whose image/media links are missing or point at absent files.
 // Remove together with /_deploy once deployment is complete.
 // ---------------------------------------------------------------------
-Route::get('/fix-images', function (\Illuminate\Http\Request $request) {
+Route::get('/fix-images', function (Request $request) {
     $token = (string) config('app.deploy_token', '');
 
     if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
@@ -158,7 +162,7 @@ Route::get('/fix-images', function (\Illuminate\Http\Request $request) {
         ->map(fn ($file) => [
             'file' => $file,
             'stem' => pathinfo($file, PATHINFO_FILENAME),
-            'key' => \Illuminate\Support\Str::slug(pathinfo($file, PATHINFO_FILENAME)),
+            'key' => Str::slug(pathinfo($file, PATHINFO_FILENAME)),
         ])
         ->values();
 
@@ -167,24 +171,24 @@ Route::get('/fix-images', function (\Illuminate\Http\Request $request) {
     $unmatched = 0;
     $log = [];
 
-    \App\Models\Product::query()->orderBy('id')->chunkById(100, function ($products) use ($files, &$fixed, &$skipped, &$unmatched, &$log): void {
+    Product::query()->orderBy('id')->chunkById(100, function ($products) use ($files, &$fixed, &$skipped, &$unmatched, &$log): void {
         foreach ($products as $product) {
             $hasResolvable = collect($product->media_urls)->isNotEmpty();
 
             if ($hasResolvable) {
                 $skipped++;
+
                 continue;
             }
 
             $match = null;
             $slugKeys = collect([
-                \Illuminate\Support\Str::slug((string) $product->slug),
-                \Illuminate\Support\Str::slug((string) $product->name),
+                Str::slug((string) $product->slug),
+                Str::slug((string) $product->name),
             ])->filter()->unique()->values()->all();
 
             foreach ($slugKeys as $slugKey) {
-                $match = $files->first(fn (array $item) =>
-                    $item['key'] === $slugKey
+                $match = $files->first(fn (array $item) => $item['key'] === $slugKey
                     || str_starts_with($item['key'], $slugKey.'-')
                     || str_starts_with($item['key'], $slugKey.'_')
                     || (strlen($slugKey) >= 6 && str_contains($item['key'], $slugKey))
@@ -198,6 +202,7 @@ Route::get('/fix-images', function (\Illuminate\Http\Request $request) {
             if ($match === null) {
                 $unmatched++;
                 $log[] = "unmatched #{$product->id} {$product->slug}";
+
                 continue;
             }
 
