@@ -165,32 +165,52 @@ class Product extends Model
      * ------------------------------------------------------------------ */
 
     /**
-     * Folders (relative to the project root) that may hold product media.
-     * The canonical Laravel location always comes first.
+     * Folders (relative to the project root or public path) that may hold
+     * product media. Covers both standard Laravel layout (public/ inside
+     * project root) and cPanel layouts where public files sit in the
+     * document root directly (e.g. public_html/images/products).
      *
      * @return list<string>
      */
     protected static function mediaSearchDirectories(string $type): array
     {
-        if ($type === 'video') {
-            return [
+        $dirs = $type === 'video'
+            ? [
                 'public/videos/products',
                 'videos/products',
                 'public/storage/products',
                 'storage/app/public/products',
+            ]
+            : [
+                'public/images/products',
+                'images/products',
+                'public/images',
+                'images',
+                'public/storage/products',
+                'public/storage/images/products',
+                'storage/app/public/products',
+                'storage/app/public/images/products',
             ];
+
+        // Also search relative to public_path() for cPanel setups where
+        // public/ contents are placed directly in the web root.
+        $publicBase = rtrim(str_replace('\\', '/', public_path()), '/');
+        $appBase = rtrim(str_replace('\\', '/', base_path()), '/');
+        if ($publicBase !== $appBase && str_starts_with($publicBase, $appBase.'/')) {
+            $publicRel = substr($publicBase, strlen($appBase) + 1);
+            $sub = $type === 'video' ? 'videos/products' : 'images/products';
+            array_unshift($dirs, $publicRel.'/'.$sub);
         }
 
-        return [
-            'public/images/products',
-            'images/products',
-            'public/images',
-            'images',
-            'public/storage/products',
-            'public/storage/images/products',
-            'storage/app/public/products',
-            'storage/app/public/images/products',
-        ];
+        // If public_path() is different from base_path()/public (e.g. symlinked
+        // or custom), add its subdirectories directly.
+        $sub = $type === 'video' ? 'videos/products' : 'images/products';
+        $pubSub = $publicBase.'/'.$sub;
+        if (is_dir($pubSub)) {
+            // Will be handled via absolute path check below
+        }
+
+        return array_values(array_unique($dirs));
     }
 
     /**
@@ -241,6 +261,7 @@ class Product extends Model
 
         foreach (self::mediaSearchDirectories($type) as $directory) {
             foreach ($names as $name) {
+                // Try base_path + relative directory
                 $file = base_path($directory.'/'.$name);
                 if (is_file($file) && (int) @filesize($file) > 0) {
                     return [
@@ -249,6 +270,30 @@ class Product extends Model
                         'name' => $name,
                     ];
                 }
+                // Also try as absolute path (for custom public_path layouts)
+                $absFile = $directory.'/'.$name;
+                if (str_starts_with($directory, '/') || (strlen($directory) > 1 && $directory[1] === ':')) {
+                    if (is_file($absFile) && (int) @filesize($absFile) > 0) {
+                        return [
+                            'file' => $absFile,
+                            'url' => $this->mediaFileUrl($absFile),
+                            'name' => $name,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Direct check in public_path() subdirectory as last resort
+        $sub = $type === 'video' ? 'videos/products' : 'images/products';
+        foreach ($names as $name) {
+            $file = public_path($sub.'/'.$name);
+            if (is_file($file) && (int) @filesize($file) > 0) {
+                return [
+                    'file' => $file,
+                    'url' => $this->mediaFileUrl($file),
+                    'name' => $name,
+                ];
             }
         }
 
@@ -278,20 +323,72 @@ class Product extends Model
     }
 
     /**
-     * Root-relative URL ("/images/products/foo.webp") instead of an absolute
-     * one. A root-relative path is ALWAYS same-origin, so a mismatched
-     * APP_URL (http vs https, www vs non-www) can never make the browser
-     * treat a product image as cross-origin and block it via CSP / mixed
-     * content. That mismatch is exactly why images were rendering as
-     * "Image unavailable" on the live server.
+     * Root-relative URL ("/images/products/foo.webp") computed from the
+     * actual filesystem location. Works for both root-domain deployments
+     * and subdirectory installs (e.g. localhost/alishe-nails/public/).
+     * Avoids APP_URL mismatches that break image loading.
      */
     protected function rootRelativeUrl(string $path): string
     {
-        $path = '/'.ltrim(str_replace('\\', '/', $path), '/');
-        $absolute = asset($path);
-        $pathOnly = parse_url($absolute, PHP_URL_PATH);
+        $path = str_replace('\\', '/', $path);
+        $public = rtrim(str_replace('\\', '/', public_path()), '/');
+        $base = rtrim(str_replace('\\', '/', base_path()), '/');
+        $docRoot = rtrim(str_replace('\\', '/', (string) ($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
 
-        return (is_string($pathOnly) && $pathOnly !== '') ? $pathOnly : $path;
+        // If it's an absolute filesystem path, compute web path from it
+        if (str_starts_with($path, $public.'/')) {
+            $relative = substr($path, strlen($public));
+            // If document root is the public folder, serve from /
+            if ($docRoot !== '' && $public === $docRoot) {
+                return $relative;
+            }
+            // If document root is the base folder and public/ exists inside it
+            if ($docRoot !== '' && $base === $docRoot && str_starts_with($public, $docRoot.'/')) {
+                $publicRel = substr($public, strlen($docRoot));
+
+                return $publicRel.$relative;
+            }
+            // Try using asset() path extraction as fallback
+            $assetUrl = asset(ltrim($relative, '/'));
+            $assetPath = parse_url($assetUrl, PHP_URL_PATH);
+            if (is_string($assetPath) && $assetPath !== '') {
+                return $assetPath;
+            }
+
+            return $relative;
+        }
+
+        if (str_starts_with($path, $base.'/')) {
+            $relative = substr($path, strlen($base));
+            if ($docRoot !== '' && $base === $docRoot) {
+                return $relative;
+            }
+            $assetUrl = asset(ltrim($relative, '/'));
+            $assetPath = parse_url($assetUrl, PHP_URL_PATH);
+            if (is_string($assetPath) && $assetPath !== '') {
+                return $assetPath;
+            }
+
+            return $relative;
+        }
+
+        // Already a relative/web path
+        if (str_starts_with($path, 'public/')) {
+            $path = substr($path, 7);
+        }
+        if (str_starts_with($path, 'storage/app/public/')) {
+            $path = 'storage/'.substr($path, 19);
+        }
+
+        $clean = '/'.ltrim($path, '/');
+        // Use asset() to respect subdirectory base path
+        $assetUrl = asset(ltrim($clean, '/'));
+        $assetPath = parse_url($assetUrl, PHP_URL_PATH);
+        if (is_string($assetPath) && $assetPath !== '') {
+            return $assetPath;
+        }
+
+        return $clean;
     }
 
     /**

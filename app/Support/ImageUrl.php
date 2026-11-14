@@ -47,20 +47,60 @@ class ImageUrl
     }
 
     /**
-     * Root-relative URL ("/images/products/foo.webp") instead of an absolute
-     * one. Root-relative paths are ALWAYS same-origin, so an APP_URL that does
-     * not exactly match the live domain (http vs https, www vs non-www) can
-     * never make the browser treat an image as cross-origin — which is what
-     * the strict `img-src 'self'` CSP then blocked, rendering the image as a
-     * broken "Image unavailable" placeholder.
+     * Root-relative URL ("/images/products/foo.webp"). Uses asset() path
+     * extraction to respect subdirectory installs while staying same-origin.
+     * Falls back to doc-root-relative computation for CLI contexts.
      */
     public static function relativeUrl(string $path): string
     {
-        $path = '/'.ltrim(str_replace('\\', '/', $path), '/');
-        $absolute = asset($path);
-        $pathOnly = parse_url($absolute, PHP_URL_PATH);
+        $path = str_replace('\\', '/', $path);
+        $public = rtrim(str_replace('\\', '/', public_path()), '/');
+        $base = rtrim(str_replace('\\', '/', base_path()), '/');
+        $docRoot = rtrim(str_replace('\\', '/', (string) ($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
 
-        return (is_string($pathOnly) && $pathOnly !== '') ? $pathOnly : $path;
+        if (str_starts_with($path, $public.'/')) {
+            $relative = substr($path, strlen($public));
+            if ($docRoot !== '' && $public === $docRoot) {
+                return $relative;
+            }
+            if ($docRoot !== '' && $base === $docRoot && str_starts_with($public, $docRoot.'/')) {
+                return substr($public, strlen($docRoot)).$relative;
+            }
+            $assetPath = parse_url(asset(ltrim($relative, '/')), PHP_URL_PATH);
+            if (is_string($assetPath) && $assetPath !== '') {
+                return $assetPath;
+            }
+
+            return $relative;
+        }
+
+        if (str_starts_with($path, $base.'/')) {
+            $relative = substr($path, strlen($base));
+            if ($docRoot !== '' && $base === $docRoot) {
+                return $relative;
+            }
+            $assetPath = parse_url(asset(ltrim($relative, '/')), PHP_URL_PATH);
+            if (is_string($assetPath) && $assetPath !== '') {
+                return $assetPath;
+            }
+
+            return $relative;
+        }
+
+        if (str_starts_with($path, 'public/')) {
+            $path = substr($path, 7);
+        }
+        if (str_starts_with($path, 'storage/app/public/')) {
+            $path = 'storage/'.substr($path, 19);
+        }
+
+        $clean = '/'.ltrim($path, '/');
+        $assetPath = parse_url(asset(ltrim($clean, '/')), PHP_URL_PATH);
+        if (is_string($assetPath) && $assetPath !== '') {
+            return $assetPath;
+        }
+
+        return $clean;
     }
 
     /**
