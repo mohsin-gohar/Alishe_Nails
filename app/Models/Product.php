@@ -386,7 +386,8 @@ class Product extends Model
      * Render-ready media list: only items whose file actually exists, as
      * ['type', 'url']. Views render one slot per entry — a product with a
      * single image gets exactly one slot and never an empty placeholder.
-     * When every stored file is gone, a slug-named fallback image is used.
+     * When DB media items point at missing files, falls back to any
+     * slug-named image found on disk (<slug>.webp / <slug>.jpg / …).
      */
     public function getMediaUrlsAttribute(): array
     {

@@ -129,9 +129,100 @@ Route::get('/check-db-products', function (\Illuminate\Http\Request $request) {
         'migrate_output' => $migrateOutput,
         'hint' => $total === 0
             ? 'DB is empty. Run /_deploy?token=... to auto-seed, or import SQL via phpMyAdmin.'
-            : ($active === 0 ? 'Products exist but none are active. Check is_active flags.' : 'Products OK. Run /_deploy to fix images.'),
+            : ($active === 0 ? 'Products exist but none are active. Check is_active flags.' : 'Products OK. Run /fix-images?token=... to repair image links.'),
     ]);
 })->name('check.db.products');
+
+// ---------------------------------------------------------------------
+// Temporary image-repair endpoint (no terminal required).
+// Visit:  https://yourdomain.com/fix-images?token=YOUR_DEPLOY_TOKEN
+// Scans public/images/products/ and links matching files to products
+// whose image/media links are missing or point at absent files.
+// Remove together with /_deploy once deployment is complete.
+// ---------------------------------------------------------------------
+Route::get('/fix-images', function (\Illuminate\Http\Request $request) {
+    $token = (string) config('app.deploy_token', '');
+
+    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
+        abort(404);
+    }
+
+    $directory = public_path('images/products');
+    if (! is_dir($directory)) {
+        return response('Directory not found: public/images/products', 500);
+    }
+
+    $files = collect(@scandir($directory) ?: [])
+        ->filter(fn ($file) => $file !== '.' && $file !== '..' && is_file($directory.'/'.$file))
+        ->filter(fn ($file) => preg_match('/\.(jpe?g|png|webp|gif)$/i', $file) === 1)
+        ->map(fn ($file) => [
+            'file' => $file,
+            'stem' => pathinfo($file, PATHINFO_FILENAME),
+            'key' => \Illuminate\Support\Str::slug(pathinfo($file, PATHINFO_FILENAME)),
+        ])
+        ->values();
+
+    $fixed = 0;
+    $skipped = 0;
+    $unmatched = 0;
+    $log = [];
+
+    \App\Models\Product::query()->orderBy('id')->chunkById(100, function ($products) use ($files, &$fixed, &$skipped, &$unmatched, &$log): void {
+        foreach ($products as $product) {
+            $hasResolvable = collect($product->media_urls)->isNotEmpty();
+
+            if ($hasResolvable) {
+                $skipped++;
+                continue;
+            }
+
+            $match = null;
+            $slugKeys = collect([
+                \Illuminate\Support\Str::slug((string) $product->slug),
+                \Illuminate\Support\Str::slug((string) $product->name),
+            ])->filter()->unique()->values()->all();
+
+            foreach ($slugKeys as $slugKey) {
+                $match = $files->first(fn (array $item) =>
+                    $item['key'] === $slugKey
+                    || str_starts_with($item['key'], $slugKey.'-')
+                    || str_starts_with($item['key'], $slugKey.'_')
+                    || (strlen($slugKey) >= 6 && str_contains($item['key'], $slugKey))
+                );
+
+                if ($match !== null) {
+                    break;
+                }
+            }
+
+            if ($match === null) {
+                $unmatched++;
+                $log[] = "unmatched #{$product->id} {$product->slug}";
+                continue;
+            }
+
+            $target = $match['file'];
+            $product->forceFill([
+                'image' => $target,
+                'gallery' => [$target],
+                'media' => [
+                    [
+                        'type' => 'image',
+                        'path' => $target,
+                        'order' => 0,
+                    ],
+                ],
+            ])->save();
+
+            $fixed++;
+            $log[] = "fixed #{$product->id} {$product->slug} -> {$target}";
+        }
+    });
+
+    return response(implode("\n", $log)."\n\nFixed: {$fixed}, Skipped: {$skipped}, Unmatched: {$unmatched}", 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+    ]);
+})->name('fix.images');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
