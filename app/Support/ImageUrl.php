@@ -47,6 +47,23 @@ class ImageUrl
     }
 
     /**
+     * Root-relative URL ("/images/products/foo.webp") instead of an absolute
+     * one. Root-relative paths are ALWAYS same-origin, so an APP_URL that does
+     * not exactly match the live domain (http vs https, www vs non-www) can
+     * never make the browser treat an image as cross-origin — which is what
+     * the strict `img-src 'self'` CSP then blocked, rendering the image as a
+     * broken "Image unavailable" placeholder.
+     */
+    public static function relativeUrl(string $path): string
+    {
+        $path = '/'.ltrim(str_replace('\\', '/', $path), '/');
+        $absolute = asset($path);
+        $pathOnly = parse_url($absolute, PHP_URL_PATH);
+
+        return (is_string($pathOnly) && $pathOnly !== '') ? $pathOnly : $path;
+    }
+
+    /**
      * The WebP variant of the given image, when one exists on disk.
      *
      * When the stored file already IS a WebP the file itself is returned, so
@@ -63,14 +80,14 @@ class ImageUrl
         $extension = strtolower(pathinfo($relative, PATHINFO_EXTENSION));
 
         if ($extension === 'webp') {
-            return is_file(public_path($relative)) ? asset($relative) : null;
+            return is_file(public_path($relative)) ? self::relativeUrl($relative) : null;
         }
 
         $candidate = pathinfo($relative, PATHINFO_DIRNAME).'/'.pathinfo($relative, PATHINFO_FILENAME).'.webp';
         $candidate = ltrim($candidate, './');
 
         if (is_file(public_path($candidate))) {
-            return asset($candidate);
+            return self::relativeUrl($candidate);
         }
 
         return null;
@@ -95,11 +112,11 @@ class ImageUrl
             $sibling = ltrim($sibling, './');
 
             if (is_file(public_path($sibling))) {
-                return asset($sibling);
+                return self::relativeUrl($sibling);
             }
         }
 
-        return asset($relative);
+        return self::relativeUrl($relative);
     }
 
     /**

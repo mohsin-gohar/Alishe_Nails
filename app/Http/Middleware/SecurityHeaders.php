@@ -26,7 +26,11 @@ class SecurityHeaders
 
         $scriptSrc = "'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://connect.facebook.net";
         $styleSrc = "'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com";
-        $imgSrc = "'self' data: blob: https://*.fbcdn.net https://*.cdninstagram.com https://lookaside.fbsbx.com https://www.facebook.com https://www.google-analytics.com https://www.googletagmanager.com https://*.clarity.ms https://c.bing.com";
+        // Images: allow any https source (plus data/blob) so product photos,
+        // Instagram CDN and analytics pixels always render. The previous
+        // 'self'-only list silently blocked images whenever the APP_URL origin
+        // differed from the page origin (http vs https, www vs non-www).
+        $imgSrc = "'self' data: blob: https:";
         $connectSrc = "'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.clarity.ms https://c.bing.com https://www.facebook.com https://connect.facebook.net https://graph.facebook.com https://graph.instagram.com";
 
         $csp = implode('; ', [
@@ -35,7 +39,7 @@ class SecurityHeaders
             "style-src {$styleSrc}",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
             "img-src {$imgSrc}",
-            "media-src 'self' blob:",
+            "media-src 'self' blob: https:",
             "connect-src {$connectSrc}",
             "frame-src 'self' https://www.googletagmanager.com",
             "frame-ancestors 'self'",
@@ -47,7 +51,6 @@ class SecurityHeaders
         }
 
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
-        $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
 
         return $response;
     }

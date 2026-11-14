@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ImageUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -56,7 +57,7 @@ class Category extends Model
         }
 
         return file_exists(public_path('images/categories/'.$this->image))
-            ? asset('images/categories/'.$this->image)
+            ? ImageUrl::relativeUrl('images/categories/'.$this->image)
             : null;
     }
 }

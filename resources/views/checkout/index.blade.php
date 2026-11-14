@@ -248,7 +248,7 @@
                                 <div class="order-summary-item__image-wrap">
                                     <div class="order-summary-item__image">
                                         @php
-                                            $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? asset('images/products/'.$item['image']) : null;
+                                            $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? \App\Support\ImageUrl::relativeUrl('images/products/'.$item['image']) : null;
                                         @endphp
                                         @if ($url)
                                             <x-optimized-image :src="$url" :alt="$item['name']" :fallback="true" />

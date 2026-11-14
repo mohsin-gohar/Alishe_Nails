@@ -262,7 +262,7 @@ class Product extends Model
         $public = rtrim(str_replace('\\', '/', public_path()), '/');
 
         if (str_starts_with($file, $public.'/')) {
-            return asset(substr($file, strlen($public) + 1));
+            return $this->rootRelativeUrl(substr($file, strlen($public) + 1));
         }
 
         $base = rtrim(str_replace('\\', '/', base_path()), '/');
@@ -274,7 +274,24 @@ class Product extends Model
             $relative = 'storage/'.substr($relative, strlen('storage/app/public/'));
         }
 
-        return asset($relative);
+        return $this->rootRelativeUrl($relative);
+    }
+
+    /**
+     * Root-relative URL ("/images/products/foo.webp") instead of an absolute
+     * one. A root-relative path is ALWAYS same-origin, so a mismatched
+     * APP_URL (http vs https, www vs non-www) can never make the browser
+     * treat a product image as cross-origin and block it via CSP / mixed
+     * content. That mismatch is exactly why images were rendering as
+     * "Image unavailable" on the live server.
+     */
+    protected function rootRelativeUrl(string $path): string
+    {
+        $path = '/'.ltrim(str_replace('\\', '/', $path), '/');
+        $absolute = asset($path);
+        $pathOnly = parse_url($absolute, PHP_URL_PATH);
+
+        return (is_string($pathOnly) && $pathOnly !== '') ? $pathOnly : $path;
     }
 
     /**
@@ -374,7 +391,7 @@ class Product extends Model
 
         $folder = $type === 'video' ? 'videos/products' : 'images/products';
 
-        return asset($folder.'/'.basename($path));
+        return $this->rootRelativeUrl($folder.'/'.basename($path));
     }
 
     public function mediaExists(string $type, string $path): bool

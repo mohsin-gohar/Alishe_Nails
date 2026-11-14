@@ -191,8 +191,8 @@
                                 $slug = strtolower(trim($slug, '-'));
                                 $file = 'images/collections/' . $slug . '.jpg';
                                 $fallback = file_exists(public_path($file))
-                                    ? asset($file)
-                                    : asset('images/collections/everyday-elegance.jpg');
+                                    ? \App\Support\ImageUrl::relativeUrl($file)
+                                    : \App\Support\ImageUrl::relativeUrl('images/collections/everyday-elegance.jpg');
                                 $imgSrc = $collection->image_url ?: $fallback;
                             @endphp
                             <x-optimized-image :src="$imgSrc" :alt="$collection->name" loading="lazy" />
