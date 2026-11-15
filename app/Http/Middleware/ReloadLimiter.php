@@ -28,7 +28,7 @@ class ReloadLimiter
             return $next($request);
         }
 
-        $limit = max(1, (int) env('RELOAD_LIMIT_PER_MINUTE', 30));
+        $limit = max(1, (int) config('reload.limit_per_minute', 30));
 
         // Count each distinct URL separately (path + query string) so
         // navigating between filter/sort links is not mistaken for reload

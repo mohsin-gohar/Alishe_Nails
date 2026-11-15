@@ -179,6 +179,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Catalogue image doctor: re-attach photos that are already on the
         // server to the products whose records lost their image reference.
         Route::get('/images', [AdminImageController::class, 'index'])->name('images.index');
+        Route::post('/images/attach', [AdminImageController::class, 'attachAny'])->name('images.attachAny');
         Route::post('/images/{product}/attach', [AdminImageController::class, 'attach'])->name('images.attach');
 
         Route::resource('shipping', AdminShippingController::class)->names('shipping')->except(['show']);

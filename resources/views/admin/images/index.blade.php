@@ -23,6 +23,53 @@
         </p>
     </div>
 
+    <div class="admin-card" style="margin-bottom:24px;">
+        <h2 style="margin:0 0 4px;font-size:1.05rem;">Photos on this server</h2>
+        <p style="margin:0 0 16px;color:rgba(43,29,29,.7);font-size:.85rem;">
+            Look at the photo, pick the product it belongs to, press <em>Attach</em>.
+        </p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;">
+            @foreach ($files as $file)
+                <div style="border:1px solid rgba(43,29,29,.14);border-radius:10px;overflow:hidden;background:#fff;">
+                    <img src="{{ $file['url'] }}" alt="" loading="lazy"
+                         style="display:block;width:100%;height:150px;object-fit:cover;background:#f4eeee;">
+
+                    <div style="padding:8px 10px 10px;font-size:.72rem;">
+                        <div style="word-break:break-all;color:rgba(43,29,29,.75);" title="{{ $file['name'] }}">
+                            {{ \Illuminate\Support\Str::limit($file['name'], 32) }}
+                        </div>
+                        <div style="margin-top:2px;color:rgba(43,29,29,.55);">
+                            {{ number_format($file['size'] / 1024, 0) }} KB
+                            @if ($file['tiny'])
+                                · <strong style="color:#B3261E;">placeholder</strong>
+                            @endif
+                            @if ($file['used_by'] !== [])
+                                · used by {{ \Illuminate\Support\Str::limit(implode(', ', $file['used_by']), 40) }}
+                            @endif
+                        </div>
+
+                        @unless ($file['tiny'])
+                            <form action="{{ route('admin.images.attachAny') }}" method="POST" style="display:flex;gap:6px;margin-top:8px;">
+                                @csrf
+                                <input type="hidden" name="file" value="{{ $file['name'] }}">
+                                <select name="product" required style="flex:1;min-width:0;font-size:.72rem;">
+                                    <option value="">Product…</option>
+                                    @foreach ($rows as $row)
+                                        <option value="{{ $row['product']->id }}">{{ \Illuminate\Support\Str::limit($row['product']->name, 28) }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">Attach</button>
+                            </form>
+                        @else
+                            <div style="margin-top:8px;color:#B3261E;">Not a usable photo.</div>
+                        @endunless
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     <div class="admin-card">
         <table class="data-table">
             <thead>

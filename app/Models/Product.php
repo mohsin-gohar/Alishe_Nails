@@ -63,6 +63,10 @@ class Product extends Model
     /** @var array{byLower: array<string,string>, byKey: array<string,list<string>>}|null */
     protected static ?array $videoMediaIndex = null;
 
+    protected static ?string $imageMediaIndexSignature = null;
+
+    protected static ?string $videoMediaIndexSignature = null;
+
     protected static function booted(): void
     {
         static::saved(function () {
@@ -308,17 +312,33 @@ class Product extends Model
         $key = self::mediaFileKey($stem);
 
         if ($key !== '' && isset($index['byKey'][$key])) {
-            $matches = $index['byKey'][$key];
+            $photos = self::groupByPhoto($index['byKey'][$key]);
 
-            if (count($matches) === 1) {
-                return $this->foundMediaFile($matches[0]);
+            // Several files share the stem: usually the WebP plus its JPEG
+            // fallback of one upload. Only then is picking one safe — two
+            // different photos with the same normalised name must never be
+            // guessed.
+            if (count($photos) === 1) {
+                return $this->foundMediaFile(self::bestOfPhoto(array_values($photos)[0]));
             }
+        }
 
-            // Several files share the stem (usually the WebP plus its JPEG
-            // fallback). Take the best-ranked one — still the same photo.
-            usort($matches, fn (string $a, string $b) => self::mediaExtensionRank($a) <=> self::mediaExtensionRank($b));
+        // 4. Punctuation-insensitive match. Rows saved by the old uploader
+        //    keep the client filename ("WhatsApp Image 2026-09-06 at
+        //    12.26.28 PM.jpeg") while the file on disk is the slugged,
+        //    de-duplicated name ("whatsapp-image-2026-09-06-at-122628-pm-1-
+        //    1788693359-w5NXXQ.jpeg"). Dropping every separator makes both
+        //    sides comparable. A match is only accepted when exactly one file
+        //    (or one photo's WebP/JPEG pair) carries that key, so a product
+        //    can never inherit another product's photo.
+        $alpha = self::mediaAlphaKey($stem);
 
-            return $this->foundMediaFile($matches[0]);
+        if ($alpha !== '' && strlen($alpha) >= 6 && isset($index['byAlpha'][$alpha])) {
+            $photos = self::groupByPhoto($index['byAlpha'][$alpha]);
+
+            if (count($photos) === 1) {
+                return $this->foundMediaFile(self::bestOfPhoto(array_values($photos)[0]));
+            }
         }
 
         return null;
@@ -350,6 +370,34 @@ class Product extends Model
     }
 
     /**
+     * Groups matched files by the photo they belong to (extension stripped),
+     * so a WebP + JPEG pair of one upload counts as a single candidate.
+     *
+     * @param  list<string>  $files
+     * @return array<string, list<string>>
+     */
+    protected static function groupByPhoto(array $files): array
+    {
+        $groups = [];
+
+        foreach ($files as $file) {
+            $groups[pathinfo($file, PATHINFO_FILENAME)][] = $file;
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param  list<string>  $files
+     */
+    protected static function bestOfPhoto(array $files): string
+    {
+        usort($files, fn (string $a, string $b) => self::mediaExtensionRank($a) <=> self::mediaExtensionRank($b));
+
+        return $files[0];
+    }
+
+    /**
      * Extensions that may hold the media for the given type, best first.
      *
      * @return list<string>
@@ -378,7 +426,29 @@ class Product extends Model
 
     protected static function isUsableMediaFile(string $file): bool
     {
-        return is_file($file) && (int) @filesize($file) > 0;
+        if (! is_file($file)) {
+            return false;
+        }
+
+        $size = (int) @filesize($file);
+
+        if ($size <= 0) {
+            return false;
+        }
+
+        // Reject the 1×1 "cover" stubs an interrupted resize used to leave
+        // behind: they render as a blank white card, which looks exactly like
+        // a missing photo but is far more confusing. Only tiny files are
+        // opened, so the normal path stays a single stat() call.
+        if ($size < 4096) {
+            $info = @getimagesize($file);
+
+            if (is_array($info) && ((int) $info[0] < 16 || (int) $info[1] < 16)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected static function mediaExtensionRank(string $file): int
@@ -399,9 +469,36 @@ class Product extends Model
      */
     protected static function mediaFileKey(string $stem): string
     {
-        $stem = preg_replace('/-\d{10}-[a-z0-9]{6}$/i', '', $stem) ?? $stem;
+        // Strip the uploader's "-<unix time>-<random>" suffix, slugify, then
+        // drop the "-2" style de-duplication counter, e.g.
+        // "blush-aura-1-1788693359-w5NXXQ" -> "blush-aura".
+        $stem = preg_replace('/-\d{10}-[a-z0-9]{5,8}$/i', '', $stem) ?? $stem;
+        $stem = Str::slug($stem);
+        $stem = preg_replace('/-\d{1,4}$/', '', $stem) ?? $stem;
 
-        return Str::slug($stem);
+        return $stem;
+    }
+
+    /**
+     * A punctuation-insensitive key: lowercase alphanumerics only.
+     *
+     * "WhatsApp Image 2026-09-06 at 12.26.28 PM (1)" and
+     * "whatsapp-image-2026-09-06-at-12-26-28-pm-1-1788693359-w5NXXQ" collapse
+     * to the same value, which lets a record saved with the original client
+     * filename still find the file the uploader actually wrote.
+     */
+    protected static function mediaAlphaKey(string $stem): string
+    {
+        $stem = strtolower(trim($stem));
+
+        // Uploader suffix: "-<10 digit unix time>-<5-8 random chars>".
+        $stem = preg_replace('/[-_ ]*\d{10}[-_ ]*[a-z0-9]{5,8}$/', '', $stem) ?? $stem;
+
+        // De-duplication counter the operating system or uploader added:
+        // "photo (1)", "photo-1", "photo_2".
+        $stem = preg_replace('/[-_ ]*\(?\s*\d{1,4}\)?\s*$/', '', $stem) ?? $stem;
+
+        return preg_replace('/[^a-z0-9]+/', '', $stem) ?? '';
     }
 
     /**
@@ -409,21 +506,42 @@ class Product extends Model
      * normalised stem. Built once per request — a catalogue page resolves
      * dozens of images and must not scan the directory each time.
      *
-     * @return array{byLower: array<string,string>, byKey: array<string,list<string>>}
+     * @return array{byLower: array<string,string>, byKey: array<string,list<string>>, byAlpha: array<string,list<string>>}
      */
     protected static function mediaIndex(string $type): array
     {
         $cache = $type === 'video' ? 'videoMediaIndex' : 'imageMediaIndex';
 
-        if (static::$$cache !== null) {
-            return static::$$cache;
-        }
-
         $directories = self::mediaSearchDirectories($type);
         $directories[] = public_path($type === 'video' ? 'videos/products' : 'images/products');
 
+        // The index lives on a static property, so it survives a long-running
+        // worker (Octane) and a test run that creates fixtures mid-process.
+        // Rebuild when a media folder's contents change. File count is part
+        // of the signature because a modification time only has one-second
+        // resolution: two uploads in the same second must still be seen.
+        $signature = [];
+
+        foreach (array_unique($directories) as $directory) {
+            $dir = self::absoluteMediaDirectory($directory);
+            $entries = is_dir($dir) ? @scandir($dir) : false;
+            $count = $entries === false ? -1 : max(0, count($entries) - 2);
+
+            $signature[] = $dir.'@'.
+                ($entries === false ? '-' : (string) @filemtime($dir)).'#'.
+                $count;
+        }
+
+        $signature = implode('|', $signature);
+        $signatureCache = $cache.'Signature';
+
+        if (static::$$cache !== null && static::$$signatureCache === $signature) {
+            return static::$$cache;
+        }
+
         $byLower = [];
         $byKey = [];
+        $byAlpha = [];
         $seen = [];
 
         foreach (array_unique($directories) as $directory) {
@@ -465,15 +583,24 @@ class Product extends Model
                 $seen[$real] = true;
 
                 $byLower[strtolower($entry)] ??= $full;
-                $key = self::mediaFileKey(pathinfo($entry, PATHINFO_FILENAME));
+                $entryStem = pathinfo($entry, PATHINFO_FILENAME);
+                $key = self::mediaFileKey($entryStem);
 
                 if ($key !== '') {
                     $byKey[$key][] = $full;
                 }
+
+                $alpha = self::mediaAlphaKey($entryStem);
+
+                if ($alpha !== '') {
+                    $byAlpha[$alpha][] = $full;
+                }
             }
         }
 
-        return static::$$cache = ['byLower' => $byLower, 'byKey' => $byKey];
+        static::$$signatureCache = $signature;
+
+        return static::$$cache = ['byLower' => $byLower, 'byKey' => $byKey, 'byAlpha' => $byAlpha];
     }
 
     /**

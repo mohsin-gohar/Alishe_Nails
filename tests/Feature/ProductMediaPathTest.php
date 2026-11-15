@@ -16,7 +16,14 @@ class ProductMediaPathTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** A real 32×32 PNG, so the "not a 1×1 stub" guard accepts the fixture. */
     private function pngBytes(): string
+    {
+        return base64_decode('iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAK0lEQVR42mM4sWUVTRHDqAWjFoxaMGrBqAWjFoxaMGrBqAWjFoxaMFQsAAAR05h5YZPaPgAAAABJRU5ErkJggg==');
+    }
+
+    /** The 1×1 placeholder the old resize left behind on the server. */
+    private function onePixelPngBytes(): string
     {
         return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
     }
@@ -153,6 +160,59 @@ class ProductMediaPathTest extends TestCase
             '/images/products/whatsapp-image-2026-09-06-at-122628-pm.jpg',
             (string) $product->image_url,
         );
+    }
+
+    public function test_original_upload_name_finds_the_slugged_and_deduplicated_file(): void
+    {
+        // Exactly the shape the live server holds: the record kept the client
+        // filename, the uploader wrote the slugged name plus a "-1" counter
+        // and its own timestamp/random suffix.
+        $this->putPublicImage('whatsapp-image-2026-09-06-at-122628-pm-1-1788693359-w5NXXQ.jpeg');
+
+        $product = $this->product([
+            'image' => 'WhatsApp Image 2026-09-06 at 12.26.28 PM (1).jpeg',
+        ]);
+
+        $this->assertStringEndsWith(
+            '/images/products/whatsapp-image-2026-09-06-at-122628-pm-1-1788693359-w5NXXQ.jpeg',
+            (string) $product->image_url,
+        );
+    }
+
+    public function test_an_ambiguous_name_match_is_never_guessed(): void
+    {
+        // Two different uploads normalise to the same key. Guessing either one
+        // could put the wrong set of nails on a product page, so the record
+        // stays empty instead.
+        $this->putPublicImage('blush-aura-test-1-1700000000-Ab12Cd.jpeg');
+        $this->putPublicImage('blush-aura-test (1).jpeg');
+
+        $product = $this->product([
+            'slug' => 'something-else',
+            'image' => 'Blush Aura Test (1).jpeg',
+        ]);
+
+        $this->assertNull($product->image_url);
+    }
+
+    public function test_a_one_pixel_placeholder_is_not_used_as_a_product_photo(): void
+    {
+        $dir = public_path('images/products');
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $file = $dir.'/cover-1788807665-8nQCvl.png';
+        file_put_contents($file, $this->onePixelPngBytes());
+
+        try {
+            $product = $this->product(['image' => 'cover-1788807665-8nQCvl.png']);
+
+            $this->assertNull($product->image_url);
+        } finally {
+            @unlink($file);
+        }
     }
 
     public function test_a_record_keeps_working_when_only_the_extension_changed(): void

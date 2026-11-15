@@ -352,16 +352,87 @@ class DoctorImages extends Command
      */
     private function repair(array $productsWithoutMedia, array $files): int
     {
-        $repaired = 0;
+        if ($productsWithoutMedia === []) {
+            return 0;
+        }
+
+        // Only unclaimed photos are candidates: a file another product still
+        // points at must never be moved onto a second listing, and a 1×1 stub
+        // is not a photo at all.
+        $claimed = $this->claimedStems();
+
+        $candidates = array_values(array_filter($files, function (string $file) use ($claimed): bool {
+            $stem = pathinfo($file, PATHINFO_FILENAME);
+
+            if (isset($claimed[$stem])) {
+                return false;
+            }
+
+            $info = @getimagesize($file);
+
+            return ! (is_array($info) && ((int) $info[0] < 16 || (int) $info[1] < 16));
+        }));
+
+        if ($candidates === []) {
+            return 0;
+        }
+
+        // Build every product ⇄ file pair first, then keep only pairs that are
+        // unambiguous in BOTH directions. A photo named after two products, or
+        // a product with two similarly named photos, is left for the admin to
+        // attach by hand in the Image Doctor.
+        $byFile = [];
 
         foreach ($productsWithoutMedia as $product) {
-            $match = $this->matchFile($product, $files);
+            $slugKey = $this->alphaKey((string) $product->slug);
+            $nameKey = $this->alphaKey((string) $product->name);
 
-            if ($match === null) {
+            if ($slugKey === '' && $nameKey === '') {
                 continue;
             }
 
-            $basename = basename($match);
+            foreach ($candidates as $file) {
+                $fileKey = $this->alphaKey(pathinfo(basename($file), PATHINFO_FILENAME));
+
+                if ($fileKey === '') {
+                    continue;
+                }
+
+                $slugHit = $slugKey !== '' && strlen($slugKey) >= 6
+                    && ($fileKey === $slugKey || str_starts_with($fileKey, $slugKey));
+                $nameHit = $nameKey !== '' && strlen($nameKey) >= 6 && $fileKey === $nameKey;
+
+                if ($slugHit || $nameHit) {
+                    $byFile[$file][$product->id] = $product;
+                }
+            }
+        }
+
+        // A file claimed by more than one product is ambiguous.
+        $byFile = array_filter($byFile, fn (array $products): bool => count($products) === 1);
+
+        // A product that would receive more than one file is ambiguous too.
+        $perProduct = [];
+        foreach ($byFile as $file => $products) {
+            $perProduct[array_key_first($products)][] = $file;
+        }
+
+        $repaired = 0;
+
+        foreach ($perProduct as $productId => $matches) {
+            if (count($matches) !== 1) {
+                $this->line('   … skipped an ambiguous match for product #'.$productId);
+
+                continue;
+            }
+
+            $product = Product::find($productId);
+
+            if ($product === null) {
+                continue;
+            }
+
+            $basename = basename($matches[0]);
 
             $product->update([
                 'image' => $basename,
@@ -381,6 +452,58 @@ class DoctorImages extends Command
         }
 
         return $repaired;
+    }
+
+    /**
+     * Filename stems every product already points at, so a repair never
+     * steals a photo that is still in use.
+     *
+     * @return array<string, true>
+     */
+    private function claimedStems(): array
+    {
+        $claimed = [];
+
+        foreach (Product::query()->get(['image', 'gallery', 'media']) as $product) {
+            $paths = [];
+
+            if ($product->image) {
+                $paths[] = (string) $product->image;
+            }
+
+            foreach ((array) ($product->gallery ?? []) as $path) {
+                if (is_string($path) && $path !== '') {
+                    $paths[] = $path;
+                }
+            }
+
+            foreach ((array) ($product->media ?? []) as $item) {
+                if (is_array($item) && ! empty($item['path'])) {
+                    $paths[] = (string) $item['path'];
+                }
+            }
+
+            foreach ($paths as $path) {
+                $claimed[pathinfo(basename($path), PATHINFO_FILENAME)] = true;
+            }
+        }
+
+        return $claimed;
+    }
+
+    /**
+     * Lowercase alphanumerics only, with the uploader's timestamp/random
+     * suffix and a "-2" duplicate counter removed — the same normalisation the
+     * Product model uses, so a repair agrees with what the storefront can
+     * already resolve.
+     */
+    private function alphaKey(string $stem): string
+    {
+        $stem = strtolower(trim($stem));
+        $stem = preg_replace('/[-_ ]*\d{10}[-_ ]*[a-z0-9]{5,8}$/', '', $stem) ?? $stem;
+        $stem = preg_replace('/[-_ ]*\(?\s*\d{1,4}\)?\s*$/', '', $stem) ?? $stem;
+
+        return preg_replace('/[^a-z0-9]+/', '', $stem) ?? '';
     }
 
     private function formatBytes(int $bytes): string

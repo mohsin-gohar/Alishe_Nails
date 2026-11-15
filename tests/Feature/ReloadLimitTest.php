@@ -12,9 +12,10 @@ class ReloadLimitTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        putenv('RELOAD_LIMIT_PER_MINUTE=5');
-        $_ENV['RELOAD_LIMIT_PER_MINUTE'] = '5';
-        $_SERVER['RELOAD_LIMIT_PER_MINUTE'] = '5';
+
+        // The limiter reads config('reload.limit_per_minute'), so the test
+        // lowers the limit there instead of relying on a runtime env() call.
+        config(['reload.limit_per_minute' => 5]);
     }
 
     public function test_homepage_blocks_reload_spam_after_configured_limit(): void

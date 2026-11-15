@@ -47,12 +47,42 @@ class AdminImageController extends Controller
             'file' => ['required', 'string', 'max:255'],
         ]);
 
-        $name = basename(str_replace('\\', '/', $validated['file']));
+        return $this->attachFile($product, $validated['file']);
+    }
+
+    /**
+     * Same repair, chosen from the thumbnail gallery instead of the
+     * per-product dropdown: the admin picks the product for a photo they
+     * can actually see.
+     */
+    public function attachAny(Request $request)
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'string', 'max:255'],
+            'product' => ['required', 'integer', 'exists:products,id'],
+        ]);
+
+        return $this->attachFile(Product::findOrFail((int) $validated['product']), $validated['file']);
+    }
+
+    private function attachFile(Product $product, string $file)
+    {
+        $name = basename(str_replace('\\', '/', $file));
         $path = public_path('images/products/'.$name);
 
         if ($name === '' || ! is_file($path) || (int) @filesize($path) <= 0) {
             return back()->withErrors([
                 'file' => 'That image file does not exist in images/products on this server any more.',
+            ]);
+        }
+
+        // Refuse the 1×1 stubs an interrupted resize left behind: attaching one
+        // would swap "Image unavailable" for a blank white card.
+        [$width, $height] = $this->dimensionsOf($path);
+
+        if ($width !== null && $height !== null && ($width < 16 || $height < 16)) {
+            return back()->withErrors([
+                'file' => 'That file is a '.$width.'×'.$height.' placeholder, not a product photo.',
             ]);
         }
 
@@ -113,6 +143,24 @@ class AdminImageController extends Controller
     }
 
     /**
+     * Pixel size of a file on disk, or [null, null] when it is not a readable
+     * image. Works on the absolute path, so it is right for files that live
+     * outside the public folder too.
+     *
+     * @return array{0:int|null,1:int|null}
+     */
+    private function dimensionsOf(string $absolutePath): array
+    {
+        $size = @getimagesize($absolutePath);
+
+        if ($size === false) {
+            return [null, null];
+        }
+
+        return [(int) $size[0], (int) $size[1]];
+    }
+
+    /**
      * Every image file available on the server, with the products already
      * pointing at it.
      *
@@ -161,7 +209,7 @@ class AdminImageController extends Controller
                     continue;
                 }
 
-                [$width, $height] = ImageUrl::dimensions($path);
+                [$width, $height] = $this->dimensionsOf($path);
 
                 $files->put($entry, [
                     'name' => $entry,
