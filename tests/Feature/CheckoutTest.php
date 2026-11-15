@@ -659,6 +659,80 @@ class CheckoutTest extends TestCase
         $this->assertNotEmpty(Cart::content(), 'The cart must survive a failed order.');
     }
 
+    public function test_checkout_is_blocked_when_a_product_becomes_inactive(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $product->update(['is_active' => false]);
+
+        $this->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertSame(5, (int) $product->fresh()->stock, 'Stock must not change when checkout is rejected.');
+    }
+
+    public function test_checkout_is_blocked_when_a_product_is_deleted(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $product->delete();
+
+        $this->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_coupon_and_shipping_are_calculated_from_the_locked_live_subtotal(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 10]);
+
+        Coupon::create([
+            'code' => 'LOCKED10',
+            'type' => 'percent',
+            'value' => 10,
+            'usage_limit' => 10,
+            'used_count' => 0,
+            'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // The price doubles AFTER the coupon was applied in the session.
+        // Discount and shipping must both derive from the one locked subtotal.
+        $product->update(['price' => 2000]);
+
+        $this->withSession(['applied_coupon' => ['code' => 'LOCKED10']])
+            ->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect();
+
+        $order = Order::where('email', 'sana@example.com')->firstOrFail();
+        $item = $order->items()->firstOrFail();
+
+        $this->assertSame(4000.0, (float) $order->subtotal, '2 x 2000 at the locked live price.');
+        $this->assertSame(400.0, (float) $order->discount_amount, '10% of the SAME locked subtotal.');
+        $this->assertSame(300.0, (float) $order->shipping, 'Flat delivery on the locked subtotal.');
+        $this->assertSame(3900.0, (float) $order->total, '4000 + 300 - 400.');
+        $this->assertSame(4000.0, (float) $item->line_total, 'Item total must match the header subtotal.');
+        $this->assertSame(
+            round((float) $order->subtotal - (float) $order->discount_amount + (float) $order->shipping, 2),
+            round((float) $order->total, 2)
+        );
+    }
+
     private function cartRow(Product $product, int $qty): array
     {
         return [
