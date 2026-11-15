@@ -4,105 +4,71 @@ This guide takes the project from your machine to `https://alishenails.com` on
 Hostinger shared hosting.
 
 > **Alif Host / cPanel with no SSH?** Skip to
-> [section 0](#0-no-terminal-deploy-alif-host--cpanel--recommended). A single
-> file, `public/deploy.php`, does the update, the image repair and the caches
-> from the browser.
+> [section 0](#0-quick-update-on-alif-host--cpanel-no-ssh). It uses cPanel's
+> Git™ Version Control (or a source ZIP) plus a few `artisan` commands — the
+> old browser deploy helper no longer ships with the project.
 
 ---
 
-## 0. No-terminal deploy (Alif Host / cPanel — recommended)
+## 0. Quick update on Alif Host / cPanel (no SSH)
 
-Use this when the host gives you cPanel File Manager but **no SSH/terminal**.
-`public/deploy.php` is a temporary, token-protected tool; delete it when done.
+The old token-protected `deploy.php` helper has been **removed** from the
+project (it was a public code-execution endpoint). Use cPanel's own tools
+instead — File Manager + the *Terminal* feature, or **cPanel → Git™ Version
+Control** if your plan offers it.
 
-### 0.1 One-time preparation
+### 0.1 Pull the new code
 
-1. Open **cPanel → File Manager** and go to the Laravel project root (the folder
-   that contains `artisan`, `app/`, `public/`).
-2. Edit `.env` (create it from `.env.example` if missing) and set a long random
-   token — this is the only password protecting the tool:
+**With cPanel → Git™ Version Control:** create/pull the repository for
+`https://github.com/mohsin-gohar/Alishe_Nails`, branch `main`, then press
+*Update from Remote* + *Deploy HEAD Commit*.
 
-   ```dotenv
-   DEPLOY_TOKEN=change-this-to-a-long-random-string
-   APP_ENV=production
-   DB_CONNECTION=mysql
-   CACHE_STORE=file
-   ```
+**Without Git:** download
+`https://github.com/mohsin-gohar/Alishe_Nails/archive/refs/heads/main.zip`,
+upload it with File Manager, extract it, then copy the contents over the
+project (keep the existing `.env`, `vendor/` and every image folder).
 
-3. Upload `deploy.php` from the repository root to `public/deploy.php`.
-   (If you prefer, upload the root `deploy.php` loader too — it simply forwards
-   to `public/deploy.php`, which helps on hosts that serve the project root.)
+Never overwrite: `.env`, `vendor/`, `storage/app/**`, `public/images/**`,
+`public/videos/**`.
 
-### 0.2 Open the tool
+### 0.2 Repair the product photos (this is the important step)
 
-Visit either URL (both are the same tool):
+```bash
+cd ~/public_html            # or wherever artisan lives
+php artisan optimize:clear
+php artisan config:cache
+php artisan view:cache
 
-- `https://alishenails.website/deploy.php?token=YOUR_TOKEN`
-- if that 404s: `https://alishenails.website/public/deploy.php?token=YOUR_TOKEN`
+php artisan images:doctor            # read-only diagnosis
+php artisan images:doctor --repair   # re-link files that are on disk
+```
 
-The **Status** page shows PHP version, ZipArchive/cURL/GD/PDO, folder
-permissions, database connection, product count and the exact list of product
-images the database references but that are missing from disk.
+`--repair` only links a photo when the match is one-to-one (one product, one
+file) and never reuses a file another product already points at.
 
-> A wrong/empty token returns 404 on purpose. `DEPLOY_TOKEN=` (empty) disables
-> the tool completely.
+Whatever cannot be matched by name — typically photos saved as
+`WhatsApp Image 2026-11-08 at 9.23.42 PM.jpeg` — must be attached by eye:
 
-### 0.3 The three steps
+1. Open `https://alishenails.website/admin` → **Image Doctor**.
+2. The page lists every photo on the server as a **thumbnail**.
+3. Pick the product from the dropdown under the right photo → **Attach**.
 
-| Step | Button | What it does |
-|---|---|---|
-| 1 | **Update code** | Creates a backup ZIP in `~/.alishe-deploy-backups/`, downloads `main` from GitHub, copies the files in (uploads, `.env` and `vendor/` are never touched), then runs `migrate`, seeds only if the products table is empty, rebuilds caches |
-| 2 | **Recover images** | Scans the home directory (depth 6) and backup archives (`.zip`, `.tar`, `.tar.gz`) for the missing product photos and copies them back under the exact filenames the database expects. WhatsApp names like `WhatsApp Image 2026-11-08 at 9.23.42 PM.jpeg` are normalized to `whatsapp-image-2026-11-08-at-92342-pm-*.jpg` |
-| 3 | **Run migrations & caches** | Re-runs `optimize:clear`, `migrate --force`, `db:seed` guard, `config:cache`, `view:cache` (route caching is skipped because the temporary helper routes are closures) |
+Nothing is renamed or deleted, and 1×1 placeholder files are refused.
+Then run `php artisan optimize:clear` once more.
 
-If the server blocks the GitHub download, the page offers a **manual ZIP
-upload** form — download
-`https://github.com/mohsin-gohar/Alishe_Nails/archive/refs/heads/main.zip`
-and upload it there.
+### 0.3 Verify
 
-### 0.4 Restoring the missing product photos
+- `/shop` — every card shows a photo, no "Image unavailable".
+- `/sitemap.xml` — returns XML (it used to be an empty 0-byte response).
+- Home page — no "Custom Design" banner.
+- `/admin` — login works, Image Doctor reachable from the sidebar.
+- `php artisan images:doctor` — "Without any image" is 0.
 
-The live catalogue references 30+ photos uploaded on 2026-11-08/09 that are no
-longer on the server. The tool cannot invent them; use **one** of these:
+### 0.4 Rollback
 
-1. **Hosting backup (best):** cPanel → *Backup* (or Alif Host support) → restore
-   the home directory / `public_html` backup from before the files disappeared.
-   Then run **Recover images** — it finds the files inside the restored folder
-   or archive automatically.
-2. **Original photos:** put the WhatsApp originals in one ZIP (any folder
-   structure) and upload it with the **Upload images ZIP** form on the Status
-   page. Matching is by filename first; a photo named after the product (for
-   example `rosy-quartz-ombre.jpg`) is linked to that product automatically.
-3. **Re-upload via admin:** `https://alishenails.website/admin` →
-   *Products* → *Edit* → *Add Image* for each product (works, but is manual).
-
-Themes and older hosts sometimes keep the same files in a different folder.
-The site now resolves product media from every realistic location and
-extension without a database change:
-
-- `public/images/products/` (canonical)
-- `public/images/`, `public/storage/products/`, `public/storage/images/products/`
-- `storage/app/public/products/`, `storage/app/public/images/products/`
-- legacy project-root `images/products/` and `images/`
-- a `.jpg`/`.jpeg` database value falls back to the `.webp` derivative (and
-  vice versa) when only one of the two survived
-
-Naming the file exactly `<product-slug>.<ext>` is the simplest manual fix: it
-shows up even when the media records still point at deleted filenames.
-
-### 0.5 Verify and clean up
-
-- Home page: new hero video (`public/vedios/headervedio.mp4`) plays, no
-  “Custom Design”/“Prep Kit” sections.
-- A product page shows its gallery instead of “Image unavailable”.
-- `https://alishenails.website/sitemap.xml` and `/robots.txt` respond.
-- Admin login at `/admin` works.
-- Click **Delete this tool** in the deploy page (or delete
-  `public/deploy.php` and root `deploy.php` in File Manager) and blank
-  `DEPLOY_TOKEN` in `.env`.
-- **Rollback** restores the newest `pre-deploy-*.zip` if an update goes wrong.
-
----
+cPanel → *Backup* / your host's file backup, or re-deploy the previous commit
+from Git™ Version Control. Nothing in this release changes the database
+schema, so a code rollback needs no SQL step.
 
 ## 1. Requirements on the server
 
@@ -145,10 +111,15 @@ Upload the whole project **except**:
 - `storage/framework/views/*`
 - `storage/logs/*`
 
-**IMPORTANT:** the `public/` folder must be the one Apache serves. In hPanel
-set the domain's document root to `<project-root>/public`. The root
-`.htaccess` then forwards internal requests into `public/`, and
-`public/.htaccess` handles the front controller.
+**IMPORTANT:** two layouts work, pick one and stay with it.
+
+- **Document root = `<project-root>/public`** (Hostinger hPanel lets you set
+  this). Cleanest: only the public folder is web-reachable.
+- **Document root = project root** (what `alishenails.website` currently
+  uses — `public_html` holds the whole project). The root `.htaccess`
+  forwards every request into `public/`, blocks `.env`, `vendor`, `database`,
+  `tests`, `storage` and friends, and `public/.htaccess` runs the front
+  controller. Never delete or rename either `.htaccess`.
 
 ---
 
