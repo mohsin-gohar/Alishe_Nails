@@ -46,8 +46,86 @@ jobs:
         run: php -d error_reporting=E_ALL vendor/bin/phpunit
 
   mysql-suite:
-    name: PHPUnit + concurrency harness (MySQL, real row locks)
+    name: PHPUnit + concurrency harness (MariaDB, real row locks)
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: alishe_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb-optimized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:CI-dummy-key-will-be-generated
+      BCRYPT_ROUNDS: '4'
+      CACHE_STORE: array
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: alishe_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      MAIL_MAILER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      APP_MAINTENANCE_DRIVER: file
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          extensions: pdo_mysql
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Verify database connection
+        run: php -r "new PDO('mysql:host=127.0.0.1;port=3306;dbname=alishe_test','root','root'); echo 'DB connection OK'.PHP_EOL;"
+
+      - name: Migrate (MariaDB)
+        run: php artisan migrate:fresh --force
+
+      - name: PHPUnit (MariaDB)
+        run: |
+          set -o pipefail
+          php -d error_reporting=E_ALL vendor/bin/phpunit 2>&1 | tee phpunit-mariadb.log
+
+      - name: Concurrency harness (real MariaDB row locks)
+        run: |
+          set -o pipefail
+          php tests/Concurrency/run.php 2>&1 | tee concurrency-harness.log
+
+      - name: Upload MariaDB test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mariadb-test-logs
+          path: |
+            phpunit-mariadb.log
+            concurrency-harness.log
+          if-no-files-found: ignore
+
+  mysql8-compat:
+    name: MySQL 8 compatibility (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
     services:
       mysql:
         image: mysql:8.0
@@ -99,25 +177,18 @@ jobs:
       - name: Verify database connection
         run: php -r "new PDO('mysql:host=127.0.0.1;port=3306;dbname=alishe_test','root','root'); echo 'DB connection OK'.PHP_EOL;"
 
-      - name: Migrate (MySQL)
+      - name: Migrate (MySQL 8)
         run: php artisan migrate:fresh --force
 
-      - name: PHPUnit (MySQL)
+      - name: PHPUnit (MySQL 8, informational)
         run: |
           set -o pipefail
-          php -d error_reporting=E_ALL vendor/bin/phpunit 2>&1 | tee phpunit-mysql.log
+          php -d error_reporting=E_ALL vendor/bin/phpunit 2>&1 | tee phpunit-mysql8.log
 
-      - name: Concurrency harness (real MySQL row locks)
-        run: |
-          set -o pipefail
-          php tests/Concurrency/run.php 2>&1 | tee concurrency-harness.log
-
-      - name: Upload MySQL test logs
+      - name: Upload MySQL 8 logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mysql-test-logs
-          path: |
-            phpunit-mysql.log
-            concurrency-harness.log
+          name: mysql8-compat-logs
+          path: phpunit-mysql8.log
           if-no-files-found: ignore
