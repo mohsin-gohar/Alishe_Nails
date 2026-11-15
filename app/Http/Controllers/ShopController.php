@@ -47,9 +47,12 @@ class ShopController extends Controller
         }
 
         match ($request->string('sort')->toString()) {
+            // "popular" is the legacy value used by the footer's Best Sellers
+            // link; treat it as best-selling instead of silently falling back
+            // to newest-first.
             'price_low' => $query->orderBy('price', 'asc'),
             'price_high' => $query->orderBy('price', 'desc'),
-            'best_selling' => $query->orderByDesc('is_best_seller'),
+            'best_selling', 'popular' => $query->orderByDesc('is_best_seller')->orderByDesc('is_featured')->latest(),
             default => $query->latest(),
         };
 

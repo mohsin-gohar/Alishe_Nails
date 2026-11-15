@@ -23,3 +23,4 @@ yarn-error.log
 # Local database dumps (contain customer data and password hashes)
 /database/*.sql
 /database/*.sqlite
+.env.local

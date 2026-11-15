@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seller;
+use App\Models\SellerSubscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AdminSellerController extends Controller
 {
@@ -27,6 +30,71 @@ class AdminSellerController extends Controller
         $seller->load('products');
         $items = $seller->orderItems()->with('order')->latest()->paginate(20);
 
-        return view('admin.marketplace.seller-show', compact('seller', 'items'));
+        // Subscription verification lives on the seller's own page: the old
+        // standalone Subscriptions screen was removed, so the pending payment
+        // is surfaced here together with the seller it belongs to.
+        $subscriptions = $seller->subscriptions()
+            ->with('plan')
+            ->latest()
+            ->get();
+
+        return view('admin.marketplace.seller-show', compact('seller', 'items', 'subscriptions'));
+    }
+
+    /**
+     * Approve a seller's subscription payment.
+     *
+     * Only one subscription can be active at a time, so any existing active
+     * row for the same seller is expired first. The seller's products become
+     * visible in the shop immediately.
+     */
+    public function activateSubscription(Request $request, Seller $seller)
+    {
+        $subscription = $seller->subscriptions()
+            ->where('status', 'pending')
+            ->latest()
+            ->firstOrFail();
+
+        DB::transaction(function () use ($request, $seller, $subscription) {
+            SellerSubscription::where('seller_id', $seller->id)
+                ->where('status', 'active')
+                ->update(['status' => 'expired']);
+
+            $startsAt = now();
+
+            $subscription->update([
+                'status' => 'active',
+                'starts_at' => $startsAt,
+                'expires_at' => $startsAt->copy()->addDays($subscription->duration_days),
+                'reviewed_at' => now(),
+                'reviewed_by' => $request->user('admin')->id,
+            ]);
+
+            $seller->products()->update(['is_active' => true]);
+        });
+
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
+
+        return back()->with('success', 'Subscription activated and seller products made visible.');
+    }
+
+    public function rejectSubscription(Request $request, Seller $seller)
+    {
+        $subscription = $seller->subscriptions()
+            ->where('status', 'pending')
+            ->latest()
+            ->firstOrFail();
+
+        $subscription->update([
+            'status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => $request->user('admin')->id,
+        ]);
+
+        Cache::forget('home_collections_and_bestsellers');
+        Cache::forget('shop_sidebar_facets');
+
+        return back()->with('success', 'Subscription payment rejected.');
     }
 }

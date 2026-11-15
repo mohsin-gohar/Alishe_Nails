@@ -195,6 +195,39 @@ class ProductMediaPathTest extends TestCase
         $this->assertNull($product->image_url);
     }
 
+    public function test_an_ambiguous_slug_fallback_is_never_guessed(): void
+    {
+        // No database reference at all, but two different photos normalise to
+        // the same slug key. The fallback must refuse both rather than put an
+        // unrelated set of nails on the page.
+        $this->putPublicImage('ambiguous-slug-photo-1-1700000000-Ab12Cd.jpeg');
+        $this->putPublicImage('ambiguous-slug-photo-2-1700000001-Ef34Gh.jpeg');
+
+        $product = $this->product([
+            'slug' => 'ambiguous-slug-photo',
+            'image' => null,
+        ]);
+
+        $this->assertNull($product->image_url);
+    }
+
+    public function test_an_unambiguous_slug_fallback_still_works(): void
+    {
+        // One photo stored as both WebP and JPEG is a single upload, not an
+        // ambiguity: the fallback should still find it.
+        $this->putPublicImage('unique-slug-photo-1700000002-Ab12Cd.jpeg');
+
+        $product = $this->product([
+            'slug' => 'unique-slug-photo',
+            'image' => null,
+        ]);
+
+        $this->assertStringEndsWith(
+            '/images/products/unique-slug-photo-1700000002-Ab12Cd.jpeg',
+            (string) $product->image_url,
+        );
+    }
+
     public function test_a_one_pixel_placeholder_is_not_used_as_a_product_photo(): void
     {
         $dir = public_path('images/products');

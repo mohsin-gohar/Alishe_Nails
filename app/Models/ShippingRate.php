@@ -24,52 +24,47 @@ class ShippingRate extends Model
     ];
 
     /**
-     * Calculates the exact location-based shipping fee and free shipping threshold.
+     * Alishe Nails delivers exclusively inside Karachi at one flat rate.
+     *
+     * The rate used to be looked up per area and could fall back to "free"
+     * above a cart threshold, which made the checkout show "Coordinated
+     * directly" instead of a price. Delivery is now always this amount, so the
+     * cart, the checkout summary, the Place Order button and the stored order
+     * can never disagree.
+     */
+    public const FLAT_FEE = 300.00;
+
+    /**
+     * The flat delivery fee, with the zone label for display.
+     *
+     * @return array{fee: float, standard_fee: float, threshold: null, is_free: false, zone_label: string}
      */
     public static function calculateFee(string $city, ?string $area, float $subtotal): array
     {
         $city = trim($city);
         $area = $area ? trim($area) : null;
 
-        $rate = null;
-        if ($area) {
-            // Exact match (not LIKE) — the city/area come from user input and
-            // LIKE wildcards (% / _) could otherwise match unintended rows.
+        // Keep the label accurate even though the fee no longer depends on the
+        // row: "Karachi (DHA)" reads better than a bare city name.
+        $zoneLabel = $city === '' ? 'Karachi' : $city;
+
+        if ($area !== null && $area !== '') {
             $rate = self::where('is_active', true)
                 ->where('city', $city)
                 ->where('area', $area)
                 ->first();
+
+            if ($rate) {
+                $zoneLabel = $city.' ('.$area.')';
+            }
         }
-
-        if (! $rate) {
-            $rate = self::where('is_active', true)
-                ->where('city', $city)
-                ->where(function ($q) {
-                    $q->whereNull('area')->orWhere('area', '');
-                })
-                ->first();
-        }
-
-        if (! $rate) {
-            $rate = self::where('is_active', true)
-                ->where('city', 'Other Cities')
-                ->first();
-        }
-
-        $standardFee = $rate ? (float) $rate->delivery_fee : 300.00;
-        $threshold = ($rate && $rate->free_shipping_threshold !== null)
-            ? (float) $rate->free_shipping_threshold
-            : null;
-
-        $isFree = $threshold !== null && $subtotal > 0 && $subtotal >= $threshold;
-        $finalFee = $isFree ? 0.00 : $standardFee;
 
         return [
-            'fee' => $finalFee,
-            'standard_fee' => $standardFee,
-            'threshold' => $threshold,
-            'is_free' => $isFree,
-            'zone_label' => $rate ? ($rate->area ? "{$rate->city} ({$rate->area})" : $rate->city) : $city,
+            'fee' => self::FLAT_FEE,
+            'standard_fee' => self::FLAT_FEE,
+            'threshold' => null,
+            'is_free' => false,
+            'zone_label' => $zoneLabel,
         ];
     }
 }

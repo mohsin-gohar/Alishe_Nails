@@ -1,15 +1,15 @@
 @extends('layouts.admin')
-@section('title', 'Shipping Rates — Alishe Nails Admin')
+@section('title', 'Delivery Zones — Alishe Nails Admin')
 
 @section('content')
 
     <div class="admin-page-head">
         <div>
-            <h1>Shipping Rates &amp; Zones</h1>
-            <p>Location-based delivery fees and free shipping thresholds</p>
+            <h1>Delivery Zones</h1>
+            <p>Flat PKR {{ number_format(\App\Models\ShippingRate::FLAT_FEE, 0) }} delivery across Karachi — zones only label the customer's area.</p>
         </div>
         <a href="{{ route('admin.shipping.create') }}" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> Add Shipping Rate
+            <i class="fa-solid fa-plus"></i> Add Zone
         </a>
     </div>
 
@@ -25,7 +25,6 @@
                     <th>City</th>
                     <th>Area / Location</th>
                     <th>Delivery Fee</th>
-                    <th>Free Shipping Above</th>
                     <th>Status</th>
                     <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
@@ -36,13 +35,6 @@
                         <td><strong>{{ $rate->city }}</strong></td>
                         <td>{{ $rate->area ?: 'All Areas (City Default)' }}</td>
                         <td>PKR {{ number_format($rate->delivery_fee, 0) }}</td>
-                        <td>
-                            @if ($rate->free_shipping_threshold !== null)
-                                PKR {{ number_format($rate->free_shipping_threshold, 0) }}
-                            @else
-                                &mdash;
-                            @endif
-                        </td>
                         <td>
                             @if ($rate->is_active)
                                 <span class="status-pill status-completed">Active</span>
@@ -61,7 +53,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align:center;padding:30px;">No shipping rates configured.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;padding:30px;">No delivery zones configured.</td></tr>
                 @endforelse
             </tbody>
         </table>

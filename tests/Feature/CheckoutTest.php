@@ -141,7 +141,7 @@ class CheckoutTest extends TestCase
         $this->assertEquals(9999, (float) $order->subtotal, 'The order must charge the live DB price, never a stale cart price.');
     }
 
-    public function test_order_shipping_uses_the_selected_city_and_area_rate(): void
+    public function test_order_charges_the_flat_delivery_fee_regardless_of_zone(): void
     {
         $product = $this->makeProduct(['price' => 2000, 'stock' => 5]);
         ShippingRate::create([
@@ -163,27 +163,21 @@ class CheckoutTest extends TestCase
         $this->post(route('checkout.store'), $payload);
 
         $order = Order::where('email', 'sana@example.com')->first();
-        $expected = ShippingRate::calculateFee('Lahore', 'Gulberg', (float) $order->subtotal)['fee'];
 
-        $this->assertSame($expected, (float) $order->shipping);
+        // A row that says 175 must never change what the customer pays.
+        $this->assertSame(ShippingRate::FLAT_FEE, (float) $order->shipping);
+        $this->assertSame(2000 + ShippingRate::FLAT_FEE, (float) $order->total);
         $this->assertSame('54660', $order->postal_code);
         $this->assertStringContainsString('BANK-REF-123', $order->transaction_reference);
     }
 
-    public function test_unknown_city_uses_the_other_cities_shipping_rate(): void
+    public function test_delivery_fee_is_flat_even_when_no_zone_matches(): void
     {
-        ShippingRate::create([
-            'city' => 'Other Cities',
-            'area' => null,
-            'delivery_fee' => 275,
-            'free_shipping_threshold' => 5000,
-            'is_active' => true,
-        ]);
-
         $shipping = ShippingRate::calculateFee('Multan', null, 2000);
 
-        $this->assertSame(275.0, $shipping['fee']);
-        $this->assertSame('Other Cities', $shipping['zone_label']);
+        $this->assertSame(ShippingRate::FLAT_FEE, $shipping['fee']);
+        $this->assertFalse($shipping['is_free']);
+        $this->assertSame('Multan', $shipping['zone_label']);
     }
 
     public function test_checkout_can_be_completed_without_transaction_reference(): void
@@ -216,7 +210,7 @@ class CheckoutTest extends TestCase
             ->assertOk();
     }
 
-    public function test_checkout_shipping_fee_endpoint_calculates_karachi_area_rates(): void
+    public function test_checkout_shipping_fee_endpoint_returns_the_flat_fee(): void
     {
         ShippingRate::create([
             'city' => 'Karachi',
@@ -237,13 +231,13 @@ class CheckoutTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'subtotal' => 2500,
-                'shipping' => 200,
+                'shipping' => 300,
                 'is_free' => false,
-                'total' => 2700,
+                'total' => 2800,
             ]);
     }
 
-    public function test_checkout_shipping_fee_is_free_over_threshold_for_karachi(): void
+    public function test_delivery_is_never_free_even_for_a_large_cart(): void
     {
         ShippingRate::create([
             'city' => 'Karachi',
@@ -254,7 +248,7 @@ class CheckoutTest extends TestCase
         ]);
 
         $product = $this->makeProduct(['price' => 3000]);
-        $this->post(route('cart.add', $product), ['qty' => 2]); // total 6000 >= 5000
+        $this->post(route('cart.add', $product), ['qty' => 2]); // total 6000
 
         $response = $this->getJson(route('checkout.shippingFee', [
             'city' => 'Karachi',
@@ -264,10 +258,23 @@ class CheckoutTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'subtotal' => 6000,
-                'shipping' => 0,
-                'is_free' => true,
-                'total' => 6000,
+                'shipping' => 300,
+                'is_free' => false,
+                'total' => 6300,
             ]);
+    }
+
+    public function test_checkout_summary_never_shows_coordinated_directly(): void
+    {
+        ShippingRate::query()->delete();
+
+        $product = $this->makeProduct(['price' => 2500]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $this->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('PKR 300')
+            ->assertDontSee('Coordinated directly');
     }
 
     public function test_shipping_falls_back_to_the_flat_karachi_fee_when_no_rate_matches(): void

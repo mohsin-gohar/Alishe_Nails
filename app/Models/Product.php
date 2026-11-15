@@ -746,9 +746,17 @@ class Product extends Model
                 continue;
             }
 
-            usort($matches, fn (string $a, string $b) => self::mediaExtensionRank($a) <=> self::mediaExtensionRank($b));
+            // A WebP + JPEG pair from one upload collapses to a single photo,
+            // but two genuinely different photos sharing a key do not. Picking
+            // the first of those would put the wrong product's picture on this
+            // page, which is worse than an empty slot.
+            $photos = self::groupByPhoto($matches);
 
-            return $this->foundMediaFile($matches[0]);
+            if (count($photos) !== 1) {
+                continue;
+            }
+
+            return $this->foundMediaFile(self::bestOfPhoto(array_values($photos)[0]));
         }
 
         return null;

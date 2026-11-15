@@ -39,7 +39,7 @@
 
             <div style="margin-top:20px;max-width:280px;margin-left:auto;">
                 <div class="summary-row"><span>Subtotal</span><span>PKR {{ number_format($order->subtotal, 0) }}</span></div>
-                <div class="summary-row"><span>Shipping</span><span>{{ $order->shipping > 0 ? 'PKR '.number_format($order->shipping, 0) : 'Coordinated directly' }}</span></div>
+                <div class="summary-row"><span>Shipping</span><span>PKR {{ number_format((float) $order->shipping, 0) }}</span></div>
                 <div class="summary-row total"><span>Total</span><span>PKR {{ number_format($order->total, 0) }}</span></div>
             </div>
         </div>

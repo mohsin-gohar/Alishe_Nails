@@ -42,8 +42,9 @@
                         </div>
                     @empty
                         <div class="img-placeholder">
-                            Alishe Nails<br>Image unavailable
-                        </div>
+                        <span class="img-placeholder__mark">A</span>
+                        <small>Photo coming soon</small>
+                    </div>
                     @endforelse
                 </div>
 
@@ -297,7 +298,7 @@
                     <summary>Shipping &amp; Returns (Karachi Delivery &amp; Policies) <i class="fa-solid fa-chevron-down chevron"></i></summary>
                     <ul>
                         <li><i class="fa-solid fa-truck-fast"></i> Exclusively delivering across Karachi (48&ndash;96 hrs doorstep delivery).</li>
-                        <li><i class="fa-solid fa-check"></i> Delivery charges are coordinated directly upon order confirmation.</li>
+                        <li><i class="fa-solid fa-check"></i> Flat PKR 300 delivery anywhere in Karachi, added at checkout.</li>
                         <li><i class="fa-solid fa-wallet"></i> 100% Advance Payment via <strong>JazzCash</strong> &amp; <strong>SadaPay</strong> (No COD).</li>
                         <li><i class="fa-solid fa-ban"></i> Orders are non-returnable due to custom handcrafted hygiene standards.</li>
                         <li><a href="{{ route('policies.index') }}" style="text-decoration:underline;">Read our Karachi Shipping &amp; Privacy Policy</a></li>

@@ -3,9 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\AdminCampaignPitchController;
 use App\Http\Controllers\Admin\AdminCategoryController;
-use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminHomepageController;
@@ -18,7 +16,6 @@ use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSellerController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminShippingController;
-use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -198,10 +195,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
 
         // Creator & influencer campaign pitches submitted via /work-with-us.
-        Route::get('/campaign-pitches', [AdminCampaignPitchController::class, 'index'])->name('campaign-pitches.index');
-        Route::patch('/campaign-pitches/{pitch}/status', [AdminCampaignPitchController::class, 'updateStatus'])->name('campaign-pitches.status');
-        Route::delete('/campaign-pitches/{pitch}', [AdminCampaignPitchController::class, 'destroy'])->name('campaign-pitches.destroy');
-
+        // (The admin screen for these was removed — they are read from the
+        // database directly if ever needed again.)
         Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics.index');
 
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
@@ -218,14 +213,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/marketplace/sellers', [AdminSellerController::class, 'index'])->name('marketplace.sellers.index');
         Route::get('/marketplace/sellers/{seller}', [AdminSellerController::class, 'show'])->name('marketplace.sellers.show');
 
-        Route::get('/subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
-        Route::post('/subscriptions/plans', [AdminSubscriptionController::class, 'storePlan'])->name('subscriptions.plans.store');
-        Route::patch('/subscriptions/plans/{plan}', [AdminSubscriptionController::class, 'updatePlan'])->name('subscriptions.plans.update');
-        Route::post('/subscriptions/{subscription}/activate', [AdminSubscriptionController::class, 'activate'])->name('subscriptions.activate');
-        Route::post('/subscriptions/{subscription}/reject', [AdminSubscriptionController::class, 'reject'])->name('subscriptions.reject');
-
-        Route::get('/coupons', [AdminCouponController::class, 'index'])->name('coupons.index');
-        Route::post('/coupons', [AdminCouponController::class, 'store'])->name('coupons.store');
-        Route::delete('/coupons/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy');
+        // Seller subscription verification lives on the seller's own page now;
+        // the standalone Subscriptions screen was removed.
+        Route::post('/marketplace/sellers/{seller}/subscription/activate', [AdminSellerController::class, 'activateSubscription'])
+            ->name('marketplace.sellers.subscription.activate');
+        Route::post('/marketplace/sellers/{seller}/subscription/reject', [AdminSellerController::class, 'rejectSubscription'])
+            ->name('marketplace.sellers.subscription.reject');
     });
 });

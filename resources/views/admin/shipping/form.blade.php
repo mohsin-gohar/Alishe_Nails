@@ -1,15 +1,15 @@
 @extends('layouts.admin')
-@section('title', ($shipping->exists ? 'Edit' : 'Add').' Shipping Rate — Alishe Nails Admin')
+@section('title', ($shipping->exists ? 'Edit' : 'Add').' Delivery Zone — Alishe Nails Admin')
 
 @section('content')
 
     <div class="admin-page-head">
         <div>
-            <h1>{{ $shipping->exists ? 'Edit Shipping Rate' : 'Add Shipping Rate' }}</h1>
-            <p>Configure delivery fees and free shipping conditions for specific areas</p>
+            <h1>{{ $shipping->exists ? 'Edit Delivery Zone' : 'Add Delivery Zone' }}</h1>
+            <p>Delivery is a flat PKR {{ number_format(\App\Models\ShippingRate::FLAT_FEE, 0) }} anywhere in Karachi. Zones below exist so the checkout can label the customer's area correctly.</p>
         </div>
         <a href="{{ route('admin.shipping.index') }}" class="btn btn-outline">
-            <i class="fa-solid fa-arrow-left"></i> Back to Shipping Rates
+            <i class="fa-solid fa-arrow-left"></i> Back to Delivery Zones
         </a>
     </div>
 
@@ -22,39 +22,33 @@
 
             <div class="form-field" style="margin-bottom:16px;">
                 <label for="city">City *</label>
-                <input type="text" id="city" name="city" value="{{ old('city', $shipping->city ?? 'Karachi') }}" placeholder="e.g. Karachi, Lahore" required>
+                <input type="text" id="city" name="city" value="{{ old('city', $shipping->city ?? 'Karachi') }}" placeholder="e.g. Karachi" required>
                 @error('city') <div class="error">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-field" style="margin-bottom:16px;">
-                <label for="area">Area / Location (Optional)</label>
-                <input type="text" id="area" name="area" value="{{ old('area', $shipping->area) }}" placeholder="e.g. Korangi 2 1/2, DHA, PECHS (leave blank for City default)">
-                <small style="color:rgba(43,29,29,.75);font-size:.78rem;">Leave empty if this applies to all unlisted areas in the city.</small>
+                <label for="area">Area / Location *</label>
+                <input type="text" id="area" name="area" value="{{ old('area', $shipping->area) }}" placeholder="e.g. DHA (Defence), Clifton, Gulshan-e-Iqbal" required>
+                <small style="color:rgba(43,29,29,.75);font-size:.78rem;">This is what the customer picks at checkout; it only changes the label, never the price.</small>
                 @error('area') <div class="error">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-field" style="margin-bottom:16px;">
-                <label for="delivery_fee">Delivery Fee (PKR) *</label>
-                <input type="number" step="0.01" min="0" id="delivery_fee" name="delivery_fee" value="{{ old('delivery_fee', $shipping->delivery_fee ?? 200) }}" required>
-                @error('delivery_fee') <div class="error">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="form-field" style="margin-bottom:16px;">
-                <label for="free_shipping_threshold">Free Shipping Threshold (PKR)</label>
-                <input type="number" step="0.01" min="0" id="free_shipping_threshold" name="free_shipping_threshold" value="{{ old('free_shipping_threshold', $shipping->free_shipping_threshold ?? 5000) }}" placeholder="e.g. 5000">
-                <small style="color:rgba(43,29,29,.75);font-size:.78rem;">Orders with subtotal at or above this amount will get FREE delivery.</small>
-                @error('free_shipping_threshold') <div class="error">{{ $message }}</div> @enderror
+                <label>Delivery Fee</label>
+                <input type="text" value="PKR {{ number_format(\App\Models\ShippingRate::FLAT_FEE, 0) }} (flat, not editable)" disabled
+                       style="background:rgba(43,29,29,.05);cursor:not-allowed;">
+                <small style="color:rgba(43,29,29,.75);font-size:.78rem;">Charged once per order. It is added to the product total automatically.</small>
             </div>
 
             <div class="form-field" style="margin-bottom:24px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', $shipping->is_active ?? true) ? 'checked' : '' }}>
-                    <span>Active Shipping Rate</span>
+                    <span>Active (shown at checkout)</span>
                 </label>
             </div>
 
             <button type="submit" class="btn btn-primary">
-                {{ $shipping->exists ? 'Update Rate' : 'Create Rate' }}
+                {{ $shipping->exists ? 'Update Zone' : 'Create Zone' }}
             </button>
         </form>
     </div>

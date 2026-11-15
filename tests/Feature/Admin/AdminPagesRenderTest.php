@@ -35,16 +35,35 @@ class AdminPagesRenderTest extends TestCase
             route('admin.orders.index'),
             route('admin.customers.index'),
             route('admin.reviews.index'),
-            route('admin.campaign-pitches.index'),
             route('admin.analytics.index'),
-            route('admin.coupons.index'),
             route('admin.marketplace.sellers.index'),
-            route('admin.subscriptions.index'),
             route('admin.settings.index'),
         ];
 
         foreach ($pages as $url) {
             $this->actingAs($admin, 'admin')->get($url)->assertOk();
+        }
+
+        // The bare /admin/marketplace URL is a convenience redirect to Sellers.
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.marketplace.index'))
+            ->assertRedirect(route('admin.marketplace.sellers.index'));
+    }
+
+    /**
+     * The admin screens for Coupons, Subscriptions and Campaign Pitches were
+     * removed. Their URLs must 404, not silently render something else.
+     */
+    public function test_removed_admin_screens_are_gone(): void
+    {
+        $admin = Admin::create([
+            'name' => 'Store Admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('AdminPass123'),
+        ]);
+
+        foreach (['/admin/coupons', '/admin/subscriptions', '/admin/campaign-pitches'] as $url) {
+            $this->actingAs($admin, 'admin')->get($url)->assertNotFound();
         }
     }
 

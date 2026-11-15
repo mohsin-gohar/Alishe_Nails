@@ -16,8 +16,9 @@
                 @endif
             @else
                 <div class="img-placeholder">
-                    Alishe Nails<br>Image unavailable
-                </div>
+                <span class="img-placeholder__mark">A</span>
+                <small>Photo coming soon</small>
+            </div>
             @endif
         </a>
 

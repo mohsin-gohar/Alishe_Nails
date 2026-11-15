@@ -31,19 +31,11 @@ class AdminShippingController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'city' => ['required', 'string', 'max:100'],
-            'area' => ['nullable', 'string', 'max:150'],
-            'delivery_fee' => ['required', 'numeric', 'min:0', 'max:99999'],
-            'free_shipping_threshold' => ['nullable', 'numeric', 'min:0', 'max:999999'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated = $this->validateZone($request);
 
         ShippingRate::create($validated);
 
-        return redirect()->route('admin.shipping.index')->with('success', 'Shipping rate created.');
+        return redirect()->route('admin.shipping.index')->with('success', 'Delivery zone created.');
     }
 
     public function edit(ShippingRate $shipping)
@@ -53,19 +45,33 @@ class AdminShippingController extends Controller
 
     public function update(Request $request, ShippingRate $shipping)
     {
-        $validated = $request->validate([
-            'city' => ['required', 'string', 'max:100'],
-            'area' => ['nullable', 'string', 'max:150'],
-            'delivery_fee' => ['required', 'numeric', 'min:0', 'max:99999'],
-            'free_shipping_threshold' => ['nullable', 'numeric', 'min:0', 'max:999999'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $validated['is_active'] = $request->boolean('is_active');
+        $validated = $this->validateZone($request);
 
         $shipping->update($validated);
 
-        return redirect()->route('admin.shipping.index')->with('success', 'Shipping rate updated.');
+        return redirect()->route('admin.shipping.index')->with('success', 'Delivery zone updated.');
+    }
+
+    /**
+     * Delivery is a flat PKR 300, so the zone only carries a label. The fee is
+     * taken from ShippingRate::FLAT_FEE rather than the request, which means a
+     * tampered form can never change what a customer pays.
+     *
+     * @return array<string, mixed>
+     */
+    private function validateZone(Request $request): array
+    {
+        $validated = $request->validate([
+            'city' => ['required', 'string', 'max:100'],
+            'area' => ['required', 'string', 'max:150'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $validated['delivery_fee'] = ShippingRate::FLAT_FEE;
+        $validated['free_shipping_threshold'] = null;
+        $validated['is_active'] = $request->boolean('is_active', true);
+
+        return $validated;
     }
 
     public function destroy(ShippingRate $shipping)

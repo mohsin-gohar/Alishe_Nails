@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Admin;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class WishlistCouponTrackingTest extends TestCase
@@ -54,30 +53,23 @@ class WishlistCouponTrackingTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_create_a_coupon_and_customer_can_apply_it(): void
+    public function test_a_coupon_can_be_applied_at_checkout(): void
     {
-        $admin = Admin::create([
-            'name' => 'Store Admin',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('AdminPass123'),
+        Coupon::create([
+            'code' => 'SAVE10',
+            'type' => 'percent',
+            'value' => 10,
+            'expires_at' => now()->addDays(10),
+            'usage_limit' => 5,
+            'used_count' => 0,
+            'is_active' => true,
         ]);
-
-        $this->actingAs($admin, 'admin')
-            ->post(route('admin.coupons.store'), [
-                'code' => 'SAVE10',
-                'type' => 'percent',
-                'value' => 10,
-                'expires_at' => now()->addDays(10)->format('Y-m-d'),
-                'usage_limit' => 5,
-            ])
-            ->assertRedirect(route('admin.coupons.index'));
 
         $this->assertDatabaseHas('coupons', ['code' => 'SAVE10']);
 
         $user = User::factory()->create();
 
         $this->actingAs($user, 'web')
-            ->withSession(['applied_coupon' => ['code' => 'SAVE10']])
             ->post(route('checkout.coupon.apply'), ['code' => 'SAVE10'])
             ->assertRedirect(route('checkout.index'));
 

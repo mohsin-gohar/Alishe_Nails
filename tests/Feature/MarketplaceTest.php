@@ -165,7 +165,9 @@ class MarketplaceTest extends TestCase
         $product->update(['is_active' => false]);
         $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin@example.com', 'password' => Hash::make('AdminPass123')]);
 
-        $this->actingAs($admin, 'admin')->post(route('admin.subscriptions.activate', $subscription))->assertRedirect();
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller))
+            ->assertRedirect();
 
         $this->assertDatabaseHas('seller_subscriptions', ['id' => $subscription->id, 'status' => 'active']);
         $this->assertTrue((bool) $product->fresh()->is_active);

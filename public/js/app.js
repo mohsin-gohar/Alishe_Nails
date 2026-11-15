@@ -455,9 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (response) { return response.json(); })
       .then(function (data) {
         var fee = Number(data.shipping);
-        shippingAmount.textContent = data.is_free
-          ? 'Free Delivery'
-          : (fee <= 0 ? 'Coordinated directly' : 'PKR ' + fee.toLocaleString());
+        shippingAmount.textContent = 'PKR ' + fee.toLocaleString();
         totalAmount.textContent = 'PKR ' + Number(data.total).toLocaleString();
         if (submitBtnTotal) {
           submitBtnTotal.textContent = 'PKR ' + Number(data.total).toLocaleString();

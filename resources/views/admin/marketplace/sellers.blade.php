@@ -6,7 +6,7 @@
         <h1>Sellers</h1>
         <p>All influencer seller applications.</p>
     </div>
-    <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-outline">Subscriptions</a>
+    <a href="{{ route('admin.marketplace.index') }}" class="btn btn-outline">Marketplace</a>
 </div>
 <div class="admin-card" style="overflow-x:auto;">
     <table class="data-table">

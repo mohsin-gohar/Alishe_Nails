@@ -17,6 +17,24 @@ class CartController extends Controller
         $items = Cart::content();
         $subtotal = Cart::subtotal();
 
+        // The session stores the price at the moment an item was added. Show
+        // the CURRENT database price instead, so a product whose price changed
+        // (or that went inactive) never displays a number the order will not
+        // match.
+        $live = Product::whereIn('id', collect($items)->pluck('product_id')->filter()->unique()->all())
+            ->get(['id', 'price', 'stock', 'is_active'])
+            ->keyBy('id');
+
+        $prices = [];
+        $stock = [];
+
+        foreach ($items as $item) {
+            $product = $live->get($item['product_id']);
+
+            $prices[$item['product_id']] = $product ? (float) $product->price : (float) $item['price'];
+            $stock[$item['product_id']] = $product ? (int) $product->stock : 0;
+        }
+
         // A flat Karachi delivery fee is shown before checkout so the customer
         // never reaches the payment step with a surprise charge.
         $shipping = ShippingRate::calculateFee('Karachi', null, $subtotal)['fee'];
@@ -26,6 +44,8 @@ class CartController extends Controller
             'subtotal' => $subtotal,
             'shipping' => $shipping,
             'total' => $subtotal + $shipping,
+            'prices' => $prices,
+            'stock' => $stock,
         ]);
     }
 

@@ -22,14 +22,16 @@
                     <h1 style="font-size:1.6rem;">Shopping Cart</h1>
                     @foreach ($items as $rowId => $item)
                         <div class="cart-item">
+                            @php
+                                $unitPrice = $prices[$item['product_id']] ?? (float) $item['price'];
+                                $maxQty = max(1, min((int) ($stock[$item['product_id']] ?? 20), 20));
+                                $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? \App\Support\ImageUrl::relativeUrl('images/products/'.$item['image']) : null;
+                            @endphp
                             <div class="cart-item__image">
-                                @php
-                                    $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? \App\Support\ImageUrl::relativeUrl('images/products/'.$item['image']) : null;
-                                @endphp
                                 @if ($url)
                                     <x-optimized-image :src="$url" :alt="$item['name']" :fallback="true" />
                                 @else
-                                    <div class="img-placeholder" style="font-size:.6rem;">No image</div>
+                                    <div class="img-placeholder" style="font-size:.6rem;">Photo coming soon</div>
                                 @endif
                             </div>
 
@@ -39,7 +41,7 @@
                                     @if ($item['shape']) Shape: {{ $item['shape'] }} @endif
                                     @if ($item['size']) &middot; Size: {{ $item['size'] }} @endif
                                 </div>
-                                <div class="cart-item__meta">PKR {{ number_format($item['price'], 0) }}</div>
+                                <div class="cart-item__meta">PKR {{ number_format($unitPrice, 0) }}</div>
 
                                 <form action="{{ route('cart.remove', $rowId) }}" method="POST" style="margin-top:8px;">
                                     @csrf
@@ -53,13 +55,13 @@
                                 @method('PATCH')
                                 <div class="qty-selector" data-qty-selector data-auto-submit="true">
                                     <button type="button" data-action="decrease" aria-label="Decrease quantity for {{ $item['name'] }}">&minus;</button>
-                                    <input type="number" name="qty" value="{{ $item['qty'] }}" min="0" max="20" aria-label="Quantity for {{ $item['name'] }}">
+                                    <input type="number" name="qty" value="{{ $item['qty'] }}" min="0" max="{{ $maxQty }}" aria-label="Quantity for {{ $item['name'] }}">
                                     <button type="button" data-action="increase" aria-label="Increase quantity for {{ $item['name'] }}">&plus;</button>
                                 </div>
                             </form>
 
                             <div class="cart-item__price" style="font-weight:600;">
-                                PKR {{ number_format($item['price'] * $item['qty'], 0) }}
+                                PKR {{ number_format($unitPrice * $item['qty'], 0) }}
                             </div>
                         </div>
                     @endforeach

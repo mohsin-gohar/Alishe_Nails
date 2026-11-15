@@ -37,7 +37,8 @@ class AdminMarketplaceController extends Controller
 
     public function updateSettings(Request $request)
     {
-        return redirect()->route('admin.subscriptions.index')->with('error', 'Commission billing has been replaced by seller subscriptions.');
+        return redirect()->route('admin.marketplace.index')
+            ->with('error', 'Commission billing has been replaced by seller subscriptions.');
     }
 
     public function markPaid(Seller $seller)

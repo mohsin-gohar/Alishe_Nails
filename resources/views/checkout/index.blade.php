@@ -312,11 +312,7 @@
                     <div class="summary-row">
                         <span>Delivery (Karachi)</span>
                         <span id="checkout-shipping-amount" style="font-size:0.88rem;color:var(--espresso);font-weight:600;">
-                            @if ($shipping > 0)
-                                PKR {{ number_format($shipping, 0) }}
-                            @else
-                                Coordinated directly
-                            @endif
+                            PKR {{ number_format($shipping, 0) }}
                         </span>
                     </div>
 
@@ -330,7 +326,7 @@
                     <div class="summary-row total">
                         <div>
                             <span>Total Amount</span>
-                            <small>Inclusive of all delivery coordination</small>
+                            <small>Products + PKR {{ number_format($shipping, 0) }} delivery</small>
                         </div>
                         <span id="checkout-total-amount" style="font-family:var(--font-serif);font-size:1.35rem;color:var(--espresso);">
                             PKR {{ number_format($total, 0) }}

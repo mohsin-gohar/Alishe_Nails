@@ -16,7 +16,7 @@ automation is available in this session, so nothing below claims a click.
 | `/checkout` | 200 |
 | `/track-order` | 200 |
 | `/contact` | 200 |
-| `/custom-design` | 200 |
+| `/custom-design` | 200 on the old build; **404 on current `main`** (feature removed) |
 | `/about` | 200 |
 | `/policies` | 200 |
 | `/how-to-apply` | 200 |
