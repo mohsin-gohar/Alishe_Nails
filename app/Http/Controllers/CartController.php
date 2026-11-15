@@ -26,6 +26,7 @@ class CartController extends Controller
 
         $prices = [];
         $stock = [];
+        $remaining = [];
         $subtotal = 0.0;
 
         foreach ($items as $rowId => $item) {
@@ -37,9 +38,24 @@ class CartController extends Controller
             $prices[$item['product_id']] = $available ? (float) $product->price : 0.0;
             $stock[$item['product_id']] = $available ? (int) $product->stock : 0;
 
-            if ($available) {
-                $subtotal += (float) $product->price * (int) $item['qty'];
+            if (! $available) {
+                continue;
             }
+
+            $productId = (int) $product->id;
+
+            // Stock is consumed in cart order so two rows for the same product
+            // can never together be priced for more units than the live stock.
+            // This mirrors Cart::subtotal(), which drives checkout.
+            $remaining[$productId] ??= (int) $product->stock;
+            $qty = min((int) $item['qty'], max(0, $remaining[$productId]));
+
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $remaining[$productId] -= $qty;
+            $subtotal += (float) $product->price * $qty;
         }
 
         // A flat Karachi delivery fee is shown before checkout so the customer

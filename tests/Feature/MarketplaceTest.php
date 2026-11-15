@@ -8,9 +8,12 @@ use App\Models\Product;
 use App\Models\Seller;
 use App\Models\SellerSubscription;
 use App\Models\SubscriptionPlan;
+use App\Services\SellerSubscriptionReviewService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class MarketplaceTest extends TestCase
@@ -315,5 +318,116 @@ class MarketplaceTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertSame('active', $subscription->fresh()->status);
+    }
+
+    public function test_activating_two_different_pending_payments_for_one_seller_leaves_exactly_one_active(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+
+        $first = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-MULTI-1',
+        ]);
+        $second = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-MULTI-2',
+        ]);
+
+        $service = app(SellerSubscriptionReviewService::class);
+
+        // Approving the older payment must not silently approve the other one.
+        $service->activate($seller, null, $first->id);
+        $this->assertSame('active', $first->fresh()->status);
+        $this->assertSame('pending', $second->fresh()->status);
+
+        // Approving the second payment expires the first one instead of leaving
+        // two active rows behind (the race the seller-row lock prevents).
+        $service->activate($seller, null, $second->id);
+
+        $this->assertSame('expired', $first->fresh()->status);
+        $this->assertSame('active', $second->fresh()->status);
+        $this->assertSame(
+            1,
+            SellerSubscription::where('seller_id', $seller->id)->where('status', 'active')->count(),
+            'A seller may never end up with two active subscriptions.'
+        );
+    }
+
+    public function test_rejecting_one_pending_payment_leaves_the_other_pending_payment_reviewable(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+
+        $first = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-MULTI-3',
+        ]);
+        $second = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-MULTI-4',
+        ]);
+
+        app(SellerSubscriptionReviewService::class)->reject($seller, null, $first->id);
+
+        $this->assertSame('rejected', $first->fresh()->status);
+        $this->assertSame('pending', $second->fresh()->status);
+        $this->assertSame(0, SellerSubscription::where('seller_id', $seller->id)->where('status', 'active')->count());
+    }
+
+    public function test_database_failure_during_activation_is_not_disguised_as_a_status_error(): void
+    {
+        $seller = $this->makeSeller();
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'db-fail-admin@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        // Simulate the database dying inside the review transaction. The
+        // controller must not catch a QueryException (it is a RuntimeException
+        // subclass) and turn it into a harmless "payment no longer pending"
+        // session message: the real failure has to surface.
+        $this->mock(SellerSubscriptionReviewService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('activate')
+                ->once()
+                ->andThrow(new QueryException(
+                    'mysql',
+                    'select * from `seller_subscriptions` for update',
+                    [],
+                    new \RuntimeException('database connection lost')
+                ));
+        });
+
+        $this->withoutExceptionHandling();
+        $this->expectException(QueryException::class);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller));
+    }
+
+    public function test_database_failure_during_rejection_is_not_disguised_as_a_status_error(): void
+    {
+        $seller = $this->makeSeller();
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'db-fail-admin-2@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $this->mock(SellerSubscriptionReviewService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('reject')
+                ->once()
+                ->andThrow(new QueryException(
+                    'mysql',
+                    'select * from `seller_subscriptions` for update',
+                    [],
+                    new \RuntimeException('database connection lost')
+                ));
+        });
+
+        $this->withoutExceptionHandling();
+        $this->expectException(QueryException::class);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller));
     }
 }

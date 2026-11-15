@@ -131,8 +131,8 @@ class Cart
 
     /**
      * Rows the customer can no longer buy as stored: the product disappeared,
-     * became inactive, sold out, or the quantity in the session is now higher
-     * than the live stock.
+     * became inactive, sold out, or the requested quantity (summed across
+     * cart rows for the same product) is higher than the live stock.
      *
      * Checkout uses this to stop early with a clear message instead of
      * charging for (or failing on) an item the customer cannot receive.
@@ -151,13 +151,20 @@ class Cart
             ->get(['id', 'name', 'stock', 'is_active'])
             ->keyBy('id');
 
+        $requestedPerProduct = [];
+        foreach ($rows as $row) {
+            $productId = (int) $row['product_id'];
+            $requestedPerProduct[$productId] = ($requestedPerProduct[$productId] ?? 0) + (int) $row['qty'];
+        }
+
         $unavailable = [];
 
         foreach ($rows as $rowId => $row) {
             $product = $products->get($row['product_id']);
             $stock = $product ? (int) $product->stock : 0;
+            $requested = $requestedPerProduct[(int) $row['product_id']] ?? 0;
 
-            if (! $product || ! $product->is_active || $stock <= 0 || (int) $row['qty'] > $stock) {
+            if (! $product || ! $product->is_active || $stock <= 0 || $requested > $stock) {
                 $unavailable[$rowId] = [
                     'product_id' => (int) $row['product_id'],
                     'name' => $product->name ?? (string) $row['name'],
@@ -177,33 +184,49 @@ class Cart
      * from being charged an incorrect amount. Products that no longer exist,
      * became inactive, or are out of stock are skipped, matching what the
      * cart and checkout pages can actually sell.
+     *
+     * Stock is consumed in cart order, so two rows for the same product cannot
+     * together be priced for more units than the live stock.
      */
     public static function subtotal(): float
     {
-        $rows = collect(self::content());
+        $rows = self::content();
 
-        if ($rows->isEmpty()) {
+        if ($rows === []) {
             return 0.0;
         }
 
-        $products = Product::whereIn('id', $rows->pluck('product_id')->unique())
+        $products = Product::whereIn('id', collect($rows)->pluck('product_id')->unique())
             ->where('is_active', true)
             ->where('stock', '>', 0)
             ->get(['id', 'price', 'stock'])
             ->keyBy('id');
 
-        return (float) $rows->sum(function ($row) use ($products) {
+        $remaining = [];
+        $subtotal = 0.0;
+
+        foreach ($rows as $row) {
             $product = $products->get($row['product_id']);
 
             // Skip rows whose product disappeared, became inactive or sold out.
             if ($product === null) {
-                return 0.0;
+                continue;
             }
 
-            // Never price more units than the live stock can satisfy.
-            $qty = min((int) $row['qty'], (int) $product->stock);
+            $productId = (int) $product->id;
+            $remaining[$productId] ??= (int) $product->stock;
 
-            return (float) $product->price * $qty;
-        });
+            // Never price more units than the live stock can satisfy.
+            $qty = min((int) $row['qty'], max(0, $remaining[$productId]));
+
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $remaining[$productId] -= $qty;
+            $subtotal += (float) $product->price * $qty;
+        }
+
+        return round((float) $subtotal, 2);
     }
 }

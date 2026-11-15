@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\CartUnavailableException;
 use App\Http\Requests\StoreCheckoutRequest;
 use App\Jobs\SendOrderEmails;
 use App\Models\Coupon;
@@ -13,9 +14,9 @@ use App\Support\Cart;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
 class CheckoutController extends Controller
 {
@@ -98,7 +99,21 @@ class CheckoutController extends Controller
 
         try {
             [$order, $lineItems] = DB::transaction(function () use ($request, $cartContent) {
-                $subtotal = Cart::subtotal();
+                // Lock every product row FIRST. Everything below — subtotal,
+                // coupon discount, order header and order items — is computed
+                // from these exact locked records, so a price change between
+                // the cart page and checkout can never make the order header
+                // disagree with its own line items.
+                $productIds = collect($cartContent)->pluck('product_id')->unique()->values();
+
+                /** @var Collection<int, Product> $products */
+                $products = Product::with('seller')
+                    ->whereIn('id', $productIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                [$pricedRows, $subtotal] = $this->priceLockedRows($cartContent, $products);
 
                 $shippingRes = ShippingRate::calculateFee(
                     $request->validated('city'),
@@ -146,7 +161,7 @@ class CheckoutController extends Controller
                     'total' => $total,
                 ]);
 
-                return [$order, $this->createOrderItems($order, $cartContent, $coupon, $request)];
+                return [$order, $this->createOrderItems($order, $pricedRows, $products, $coupon, $request)];
             });
 
             // afterCommit: a database-queue worker can pick the job up the
@@ -159,11 +174,15 @@ class CheckoutController extends Controller
             return redirect()
                 ->route('checkout.success', ['order' => $order->order_number, 'signature' => $order->access_token])
                 ->with('success', 'Order placed successfully!');
+        } catch (CartUnavailableException $e) {
+            return redirect()->route('cart.index')
+                ->with('error', $e->getMessage().' Please update or remove the item and try again.');
         } catch (\Throwable $e) {
+            // Never disguise a database/queue failure as a cart problem. Log it
+            // and let Laravel's normal error handling surface the real error.
             Log::error('Checkout order creation failed: '.$e->getMessage());
 
-            return redirect()->route('cart.index')
-                ->with('error', 'We could not complete your order. Please review your cart and try again.');
+            throw $e;
         }
     }
 
@@ -225,27 +244,78 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Create order items with server-side stock locking, price snapshots and
-     * frozen commission values. Throws if any product is unavailable so the
-     * surrounding transaction rolls back cleanly.
+     * Validate the cart rows against the locked product records and freeze the
+     * exact unit price and line total used for both the order header and its
+     * items.
      *
-     * @return array<int, OrderItem>
+     * Quantity is accumulated per product, so two cart rows that together ask
+     * for more units than the locked stock are rejected instead of allowing a
+     * negative stock after both decrements.
+     *
+     * @param  array<string, array<string, mixed>>  $cartContent
+     * @param  Collection<int, Product>  $products
+     * @return array{0: array<int, array<string, mixed>>, 1: float}
      */
-    private function createOrderItems(Order $order, array $cartContent, ?Coupon $coupon, Request $request): array
+    private function priceLockedRows(array $cartContent, Collection $products): array
     {
-        $productIds = collect($cartContent)->pluck('product_id')->unique();
-        $products = Product::with('seller')->whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
-
-        $lineItems = [];
+        $rows = [];
+        $subtotal = 0.0;
+        $requestedPerProduct = [];
 
         foreach ($cartContent as $row) {
             $product = $products->get($row['product_id']);
+            $qty = (int) $row['qty'];
 
-            if (! $product || ! $product->is_active || $product->stock < $row['qty']) {
-                throw new RuntimeException('A product in your cart is no longer available.');
+            if (! $product || ! $product->is_active || $qty < 1) {
+                throw new CartUnavailableException('A product in your cart is no longer available.');
             }
 
-            $lineTotal = round((float) $product->price * $row['qty'], 2);
+            $productId = (int) $product->id;
+            $requestedPerProduct[$productId] = ($requestedPerProduct[$productId] ?? 0) + $qty;
+
+            if ($product->stock < $requestedPerProduct[$productId]) {
+                throw new CartUnavailableException('A product in your cart is no longer available.');
+            }
+
+            $unitPrice = (float) $product->price;
+            $lineTotal = round($unitPrice * $qty, 2);
+            $subtotal += $lineTotal;
+
+            $rows[] = array_merge($row, [
+                'qty' => $qty,
+                'unit_price' => $unitPrice,
+                'line_total' => $lineTotal,
+            ]);
+        }
+
+        return [$rows, round($subtotal, 2)];
+    }
+
+    /**
+     * Create order items from the exact prices frozen in priceLockedRows().
+     * The surrounding transaction already holds the product row locks.
+     *
+     * @param  array<int, array<string, mixed>>  $pricedRows
+     * @param  Collection<int, Product>  $products
+     * @return array<int, OrderItem>
+     */
+    private function createOrderItems(
+        Order $order,
+        array $pricedRows,
+        Collection $products,
+        ?Coupon $coupon,
+        Request $request
+    ): array {
+        $lineItems = [];
+
+        foreach ($pricedRows as $row) {
+            $product = $products->get($row['product_id']);
+
+            if (! $product) {
+                throw new CartUnavailableException('A product in your cart is no longer available.');
+            }
+
+            $lineTotal = (float) $row['line_total'];
 
             $orderItem = $order->items()->create([
                 'product_id' => $product->id,
@@ -253,7 +323,7 @@ class CheckoutController extends Controller
                 'shape' => $row['shape'],
                 'size' => $row['size'],
                 'quantity' => $row['qty'],
-                'price' => $product->price,
+                'price' => $row['unit_price'],
                 'line_total' => $lineTotal,
                 'seller_id' => $product->seller_id,
                 'commission_rate' => 0.00,

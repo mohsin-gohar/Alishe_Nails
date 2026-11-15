@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\SubscriptionNotPendingException;
 use App\Http\Controllers\Controller;
 use App\Models\Seller;
-use App\Models\SellerSubscription;
+use App\Services\SellerSubscriptionReviewService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class AdminSellerController extends Controller
 {
@@ -49,91 +47,35 @@ class AdminSellerController extends Controller
      * row for the same seller is expired first. The seller's products become
      * visible in the shop immediately.
      *
-     * Race-safe: the target row is re-read with a write lock and its status is
-     * revalidated inside the transaction, so two concurrent clicks/retries can
-     * never activate the same payment twice or act on an already-reviewed row.
+     * Race-safe: SellerSubscriptionReviewService locks the seller row before
+     * the pending payment, so concurrent reviews for one seller are serialised
+     * and can never leave two active subscriptions behind.
      */
-    public function activateSubscription(Request $request, Seller $seller)
-    {
+    public function activateSubscription(
+        Request $request,
+        Seller $seller,
+        SellerSubscriptionReviewService $subscriptions
+    ) {
         try {
-            DB::transaction(function () use ($request, $seller) {
-                $subscription = $this->lockLatestPendingSubscription($seller);
-
-                // Lock any currently-active rows so a concurrent activation
-                // cannot race us into two active subscriptions for one seller.
-                SellerSubscription::where('seller_id', $seller->id)
-                    ->where('status', 'active')
-                    ->lockForUpdate()
-                    ->get();
-
-                SellerSubscription::where('seller_id', $seller->id)
-                    ->where('status', 'active')
-                    ->update(['status' => 'expired']);
-
-                $startsAt = now();
-
-                $subscription->update([
-                    'status' => 'active',
-                    'starts_at' => $startsAt,
-                    'expires_at' => $startsAt->copy()->addDays((int) $subscription->duration_days),
-                    'reviewed_at' => now(),
-                    'reviewed_by' => $request->user('admin')?->id,
-                ]);
-
-                $seller->products()->update(['is_active' => true]);
-            });
-        } catch (RuntimeException $e) {
+            $subscriptions->activate($seller, $request->user('admin')?->id);
+        } catch (SubscriptionNotPendingException $e) {
             return back()->with('error', $e->getMessage());
         }
-
-        Cache::forget('home_collections_and_bestsellers');
-        Cache::forget('shop_sidebar_facets');
 
         return back()->with('success', 'Subscription activated and seller products made visible.');
     }
 
-    public function rejectSubscription(Request $request, Seller $seller)
-    {
+    public function rejectSubscription(
+        Request $request,
+        Seller $seller,
+        SellerSubscriptionReviewService $subscriptions
+    ) {
         try {
-            DB::transaction(function () use ($request, $seller) {
-                $subscription = $this->lockLatestPendingSubscription($seller);
-
-                $subscription->update([
-                    'status' => 'rejected',
-                    'reviewed_at' => now(),
-                    'reviewed_by' => $request->user('admin')?->id,
-                ]);
-            });
-        } catch (RuntimeException $e) {
+            $subscriptions->reject($seller, $request->user('admin')?->id);
+        } catch (SubscriptionNotPendingException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        Cache::forget('home_collections_and_bestsellers');
-        Cache::forget('shop_sidebar_facets');
-
         return back()->with('success', 'Subscription payment rejected.');
-    }
-
-    /**
-     * Select and lock the seller's newest pending payment.
-     *
-     * The direct SELECT ... FOR UPDATE is deliberate: on MySQL the lock is
-     * taken on the row as it is read, so a second request that was waiting on
-     * the same row sees the committed `active`/`rejected` status and fails the
-     * revalidation below instead of reviewing the payment twice.
-     */
-    private function lockLatestPendingSubscription(Seller $seller): SellerSubscription
-    {
-        $subscription = SellerSubscription::where('seller_id', $seller->id)
-            ->where('status', 'pending')
-            ->orderByDesc('id')
-            ->lockForUpdate()
-            ->first();
-
-        if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
-            throw new RuntimeException('This subscription payment is no longer pending.');
-        }
-
-        return $subscription;
     }
 }

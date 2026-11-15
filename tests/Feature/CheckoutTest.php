@@ -8,7 +8,9 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingRate;
 use App\Support\Cart;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -525,5 +527,149 @@ class CheckoutTest extends TestCase
 
         $response->assertSessionHasErrors('payment_method');
         $this->assertDatabaseMissing('orders', ['email' => 'sana@example.com']);
+    }
+
+    public function test_order_header_subtotal_always_equals_the_sum_of_its_item_totals(): void
+    {
+        $first = $this->makeProduct(['price' => 1000, 'stock' => 10]);
+        $second = $this->makeProduct(['price' => 500, 'stock' => 10]);
+
+        $this->post(route('cart.add', $first), ['qty' => 2]);
+        $this->post(route('cart.add', $second), ['qty' => 3]);
+
+        // Both prices change after the cart was built.
+        $first->update(['price' => 1200]);
+        $second->update(['price' => 400]);
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())->assertRedirect();
+
+        $order = Order::where('email', 'sana@example.com')->firstOrFail();
+        $items = $order->items()->get();
+
+        $this->assertCount(2, $items);
+        $this->assertSame(3600.0, (float) $order->subtotal, '2 x 1200 + 3 x 400 at the live prices.');
+        $this->assertSame(
+            round((float) $items->sum('line_total'), 2),
+            round((float) $order->subtotal, 2),
+            'The order header must equal the sum of the line items it stores.'
+        );
+        $this->assertSame(3900.0, (float) $order->total, 'subtotal + flat 300 delivery.');
+    }
+
+    public function test_price_changed_during_checkout_cannot_split_the_order_header_from_its_items(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 10]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // Change the price exactly when checkout reads the locked product row.
+        // The rows returned by that SELECT carry the old price, so the whole
+        // order must be built from that same snapshot. Before the fix, the
+        // subtotal was calculated by an earlier query and would disagree with
+        // the line items created from the later locked read.
+        $mutated = false;
+
+        DB::listen(function ($query) use ($product, &$mutated) {
+            if ($mutated) {
+                return;
+            }
+
+            $sql = $query->sql;
+
+            if (! str_contains($sql, 'from "products"') && ! str_contains($sql, 'from `products`')) {
+                return;
+            }
+
+            $selectsPrice = str_contains($sql, '"price"')
+                || str_contains($sql, '`price`')
+                || str_contains($sql, 'select *');
+
+            if (! $selectsPrice) {
+                return;
+            }
+
+            $mutated = true;
+
+            Product::whereKey($product->id)->update(['price' => 9999]);
+        });
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())->assertRedirect();
+
+        $this->assertTrue($mutated, 'The price change must happen during checkout for this test to prove anything.');
+
+        $order = Order::where('email', 'sana@example.com')->firstOrFail();
+        $items = $order->items()->get();
+
+        // The price really changed in the database during the transaction ...
+        $this->assertSame(9999.0, (float) $product->fresh()->price);
+
+        // ... yet header and items stay on the same frozen, locked snapshot.
+        $this->assertSame(2000.0, (float) $order->subtotal);
+        $this->assertSame(2300.0, (float) $order->total);
+        $this->assertSame(1000.0, (float) $items->firstOrFail()->price);
+        $this->assertSame(
+            round((float) $items->sum('line_total'), 2),
+            round((float) $order->subtotal, 2),
+            'A price change mid-checkout must never split the order header from its items.'
+        );
+    }
+
+    public function test_checkout_is_blocked_when_two_rows_for_one_product_exceed_stock(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+
+        $this->withSession(['alishe_cart' => [
+            'row-first' => $this->cartRow($product, 3),
+            'row-second' => $this->cartRow($product, 3),
+        ]]);
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertSame(5, (int) $product->fresh()->stock, 'Stock must not change when checkout is rejected.');
+    }
+
+    public function test_database_failure_during_checkout_rolls_back_and_is_not_disguised_as_a_cart_error(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // Simulate the database failing while the order is being written.
+        Order::creating(function () {
+            throw new QueryException(
+                'sqlite',
+                'insert into "orders" (...) values (...)',
+                [],
+                new \RuntimeException('database unavailable')
+            );
+        });
+
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->post(route('checkout.store'), $this->checkoutPayload());
+            $this->fail('A database failure must not be swallowed as a cart/status message.');
+        } catch (QueryException $e) {
+            // Expected: the real database exception reached the caller.
+        }
+
+        $this->assertSame(5, (int) $product->fresh()->stock, 'The order transaction must roll back stock changes.');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertNotEmpty(Cart::content(), 'The cart must survive a failed order.');
+    }
+
+    private function cartRow(Product $product, int $qty): array
+    {
+        return [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'image' => null,
+            'price' => (float) $product->price,
+            'shape' => null,
+            'size' => null,
+            'qty' => $qty,
+        ];
     }
 }

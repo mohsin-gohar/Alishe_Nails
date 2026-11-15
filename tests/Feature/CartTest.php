@@ -182,6 +182,30 @@ class CartTest extends TestCase
         $this->assertArrayHasKey('row-over-stock', Cart::unavailableRows());
     }
 
+    public function test_two_cart_rows_for_one_product_cannot_be_priced_for_more_than_live_stock(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+
+        // Two separate cart rows for the same product: 3 + 3 requested, only 5
+        // units exist. Stock must be consumed in cart order, never per row.
+        $this->withSession(['alishe_cart' => [
+            'row-first' => $this->cartRow($product, 3),
+            'row-second' => $this->cartRow($product, 3),
+        ]]);
+
+        $this->assertSame(5000.0, Cart::subtotal(), 'Never price more than the five live units.');
+        $this->assertSame(
+            ['row-first', 'row-second'],
+            array_keys(Cart::unavailableRows()),
+            'The combined requested quantity exceeds stock, so both rows block checkout.'
+        );
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('PKR 5,000')
+            ->assertDontSee('PKR 6,000');
+    }
+
     private function cartRow(Product $product, int $qty): array
     {
         return [
