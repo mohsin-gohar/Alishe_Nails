@@ -141,6 +141,67 @@ class CheckoutTest extends TestCase
         $this->assertEquals(9999, (float) $order->subtotal, 'The order must charge the live DB price, never a stale cart price.');
     }
 
+    public function test_price_change_after_cart_is_reflected_in_cart_checkout_and_order_item_totals(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 10]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // Price increases after the cart was built.
+        $product->update(['price' => 1500]);
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('PKR 3,000')  // subtotal at live price (2 x 1500)
+            ->assertSee('PKR 3,300')  // subtotal + flat 300 delivery
+            ->assertDontSee('PKR 2,000') // never the stale session/cart line
+            ->assertDontSee('PKR 2,300');
+
+        $response = $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+        ]));
+
+        $response->assertOk()->assertJson([
+            'subtotal' => 3000,
+            'shipping' => 300,
+            'is_free' => false,
+            'total' => 3300,
+        ]);
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())->assertRedirect();
+
+        $order = Order::where('email', 'sana@example.com')->firstOrFail();
+        $this->assertSame(3000.0, (float) $order->subtotal);
+        $this->assertSame(300.0, (float) $order->shipping);
+        $this->assertSame(3300.0, (float) $order->total);
+
+        $item = $order->items()->firstOrFail();
+        $this->assertSame(1500.0, (float) $item->price);
+        $this->assertSame(2, (int) $item->quantity);
+        $this->assertSame(3000.0, (float) $item->line_total);
+    }
+
+    public function test_shipping_fee_endpoint_is_null_safe_when_threshold_is_absent(): void
+    {
+        // calculateFee() always returns threshold => null for the flat model.
+        // The endpoint must serialise this as JSON null (not a PHP 8.2
+        // "implicit conversion from float null" deprecation / TypeError).
+        $product = $this->makeProduct(['price' => 1200]);
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $response = $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+        ]));
+
+        $response->assertOk();
+        $json = $response->json();
+        $this->assertNull($json['threshold']);
+        $this->assertSame(300, $json['shipping']);
+        $this->assertSame(1500, $json['total']);
+        $this->assertFalse($json['is_free']);
+    }
+
     public function test_order_charges_the_flat_delivery_fee_regardless_of_zone(): void
     {
         $product = $this->makeProduct(['price' => 2000, 'stock' => 5]);

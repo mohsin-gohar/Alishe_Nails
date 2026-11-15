@@ -173,4 +173,47 @@ class MarketplaceTest extends TestCase
         $this->assertTrue((bool) $product->fresh()->is_active);
         $this->assertNotNull($subscription->fresh()->expires_at);
     }
+
+    public function test_reactivating_an_already_active_subscription_is_rejected_and_state_is_unchanged(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'active', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-123', 'starts_at' => now()->subDays(5),
+            'expires_at' => now()->addDays(25), 'reviewed_at' => now()->subDays(5),
+        ]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin2@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller));
+
+        $response->assertRedirect(route('admin.marketplace.sellers.show', $seller));
+        $response->assertSessionHas('error');
+        $this->assertSame('active', $subscription->fresh()->status);
+        $this->assertSame(1, SellerSubscription::where('seller_id', $seller->id)->count());
+    }
+
+    public function test_rejecting_a_non_pending_subscription_is_rejected_and_state_is_unchanged(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'active', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-124', 'starts_at' => now()->subDays(5),
+            'expires_at' => now()->addDays(25),
+        ]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin3@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller));
+
+        $response->assertRedirect(route('admin.marketplace.sellers.show', $seller));
+        $response->assertSessionHas('error');
+        $this->assertSame('active', $subscription->fresh()->status);
+    }
 }

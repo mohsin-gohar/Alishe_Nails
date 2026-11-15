@@ -93,4 +93,56 @@ class CartTest extends TestCase
             ->assertJsonPath('cart_count', 1)
             ->assertJsonStructure(['message', 'cart_count']);
     }
+
+    public function test_zero_stock_cart_item_is_shown_as_unavailable_and_does_not_count_in_totals(): void
+    {
+        $product = $this->makeProduct(['stock' => 3, 'price' => 2000]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // Stock becomes zero after the item was added (e.g. sold out elsewhere).
+        $product->update(['stock' => 0]);
+
+        $response = $this->get(route('cart.index'));
+
+        $response->assertOk();
+        $response->assertSee('Currently unavailable');
+        $response->assertSee('Out of stock');
+        // Quantity controls must be disabled for an unavailable row.
+        $response->assertSee('disabled', false);
+        // Subtotal and estimated total must not include the unavailable item.
+        $response->assertSee('PKR 0');
+        $response->assertSee('PKR 300'); // flat delivery only
+        $response->assertDontSee('PKR 4,000');
+        $response->assertDontSee('PKR 4,300');
+    }
+
+    public function test_cart_update_to_zero_removes_the_item(): void
+    {
+        $product = $this->makeProduct(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        $cart = session('alishe_cart');
+        $rowId = array_key_first($cart);
+
+        $this->patch(route('cart.update', $rowId), ['qty' => 0])
+            ->assertSessionHas('success');
+
+        $this->assertEmpty(session('alishe_cart', []));
+    }
+
+    public function test_updating_a_zero_stock_cart_item_removes_it(): void
+    {
+        $product = $this->makeProduct(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        $cart = session('alishe_cart');
+        $rowId = array_key_first($cart);
+
+        $product->update(['stock' => 0]);
+
+        $this->patch(route('cart.update', $rowId), ['qty' => 1])
+            ->assertSessionHas('error');
+
+        $this->assertEmpty(session('alishe_cart', []));
+    }
 }

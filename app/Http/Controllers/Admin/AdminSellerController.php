@@ -8,6 +8,7 @@ use App\Models\SellerSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class AdminSellerController extends Controller
 {
@@ -47,31 +48,54 @@ class AdminSellerController extends Controller
      * Only one subscription can be active at a time, so any existing active
      * row for the same seller is expired first. The seller's products become
      * visible in the shop immediately.
+     *
+     * Race-safe: the target row is re-read with a write lock and its status is
+     * revalidated inside the transaction, so two concurrent clicks/retries can
+     * never activate the same payment twice or act on an already-reviewed row.
      */
     public function activateSubscription(Request $request, Seller $seller)
     {
-        $subscription = $seller->subscriptions()
-            ->where('status', 'pending')
-            ->latest()
-            ->firstOrFail();
+        try {
+            DB::transaction(function () use ($request, $seller) {
+                $subscription = SellerSubscription::where('id', function ($query) use ($seller) {
+                    $query->select('id')
+                        ->from('seller_subscriptions')
+                        ->where('seller_id', $seller->id)
+                        ->where('status', 'pending')
+                        ->orderByDesc('id')
+                        ->limit(1);
+                })->lockForUpdate()->first();
 
-        DB::transaction(function () use ($request, $seller, $subscription) {
-            SellerSubscription::where('seller_id', $seller->id)
-                ->where('status', 'active')
-                ->update(['status' => 'expired']);
+                if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
+                    throw new RuntimeException('This subscription payment is no longer pending.');
+                }
 
-            $startsAt = now();
+                // Lock any currently-active rows so a concurrent activation
+                // cannot race us into two active subscriptions for one seller.
+                SellerSubscription::where('seller_id', $seller->id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->get();
 
-            $subscription->update([
-                'status' => 'active',
-                'starts_at' => $startsAt,
-                'expires_at' => $startsAt->copy()->addDays($subscription->duration_days),
-                'reviewed_at' => now(),
-                'reviewed_by' => $request->user('admin')->id,
-            ]);
+                SellerSubscription::where('seller_id', $seller->id)
+                    ->where('status', 'active')
+                    ->update(['status' => 'expired']);
 
-            $seller->products()->update(['is_active' => true]);
-        });
+                $startsAt = now();
+
+                $subscription->update([
+                    'status' => 'active',
+                    'starts_at' => $startsAt,
+                    'expires_at' => $startsAt->copy()->addDays($subscription->duration_days),
+                    'reviewed_at' => now(),
+                    'reviewed_by' => $request->user('admin')->id,
+                ]);
+
+                $seller->products()->update(['is_active' => true]);
+            });
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         Cache::forget('home_collections_and_bestsellers');
         Cache::forget('shop_sidebar_facets');
@@ -81,16 +105,30 @@ class AdminSellerController extends Controller
 
     public function rejectSubscription(Request $request, Seller $seller)
     {
-        $subscription = $seller->subscriptions()
-            ->where('status', 'pending')
-            ->latest()
-            ->firstOrFail();
+        try {
+            DB::transaction(function () use ($request, $seller) {
+                $subscription = SellerSubscription::where('id', function ($query) use ($seller) {
+                    $query->select('id')
+                        ->from('seller_subscriptions')
+                        ->where('seller_id', $seller->id)
+                        ->where('status', 'pending')
+                        ->orderByDesc('id')
+                        ->limit(1);
+                })->lockForUpdate()->first();
 
-        $subscription->update([
-            'status' => 'rejected',
-            'reviewed_at' => now(),
-            'reviewed_by' => $request->user('admin')->id,
-        ]);
+                if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
+                    throw new RuntimeException('This subscription payment is no longer pending.');
+                }
+
+                $subscription->update([
+                    'status' => 'rejected',
+                    'reviewed_at' => now(),
+                    'reviewed_by' => $request->user('admin')->id,
+                ]);
+            });
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         Cache::forget('home_collections_and_bestsellers');
         Cache::forget('shop_sidebar_facets');

@@ -67,10 +67,13 @@ class CheckoutController extends Controller
 
         return response()->json([
             'subtotal' => round($subtotal, 2),
-            'shipping' => round($res['fee'], 2),
-            'standard_fee' => round($res['standard_fee'], 2),
-            'threshold' => round($res['threshold'], 2),
-            'is_free' => $res['is_free'],
+            'shipping' => round((float) $res['fee'], 2),
+            'standard_fee' => round((float) $res['standard_fee'], 2),
+            // Delivery is flat with no threshold; keep null-safe handling for
+            // legacy rows or a future threshold-bearing rate without emitting
+            // a PHP 8.2 "implicit conversion from float null" deprecation.
+            'threshold' => $res['threshold'] === null ? null : round((float) $res['threshold'], 2),
+            'is_free' => (bool) $res['is_free'],
             'discount' => round($discount, 2),
             'total' => round($total, 2),
             'zone_label' => $res['zone_label'],

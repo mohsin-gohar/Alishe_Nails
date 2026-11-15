@@ -15,7 +15,6 @@ class CartController extends Controller
     public function index()
     {
         $items = Cart::content();
-        $subtotal = Cart::subtotal();
 
         // The session stores the price at the moment an item was added. Show
         // the CURRENT database price instead, so a product whose price changed
@@ -27,12 +26,20 @@ class CartController extends Controller
 
         $prices = [];
         $stock = [];
+        $subtotal = 0.0;
 
-        foreach ($items as $item) {
+        foreach ($items as $rowId => $item) {
             $product = $live->get($item['product_id']);
+            $available = $product && (bool) $product->is_active && (int) $product->stock > 0;
 
-            $prices[$item['product_id']] = $product ? (float) $product->price : (float) $item['price'];
-            $stock[$item['product_id']] = $product ? (int) $product->stock : 0;
+            // Inactive / missing / zero-stock rows must not advertise a stale
+            // price or a quantity the customer can no longer buy.
+            $prices[$item['product_id']] = $available ? (float) $product->price : 0.0;
+            $stock[$item['product_id']] = $available ? (int) $product->stock : 0;
+
+            if ($available) {
+                $subtotal += (float) $product->price * (int) $item['qty'];
+            }
         }
 
         // A flat Karachi delivery fee is shown before checkout so the customer

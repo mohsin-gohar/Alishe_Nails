@@ -24,7 +24,9 @@
                         <div class="cart-item">
                             @php
                                 $unitPrice = $prices[$item['product_id']] ?? (float) $item['price'];
-                                $maxQty = max(1, min((int) ($stock[$item['product_id']] ?? 20), 20));
+                                $availableStock = max(0, (int) ($stock[$item['product_id']] ?? 0));
+                                $maxQty = max(0, min($availableStock, 20));
+                                $isUnavailable = $availableStock <= 0 || $unitPrice <= 0.0;
                                 $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? \App\Support\ImageUrl::relativeUrl('images/products/'.$item['image']) : null;
                             @endphp
                             <div class="cart-item__image">
@@ -41,7 +43,11 @@
                                     @if ($item['shape']) Shape: {{ $item['shape'] }} @endif
                                     @if ($item['size']) &middot; Size: {{ $item['size'] }} @endif
                                 </div>
-                                <div class="cart-item__meta">PKR {{ number_format($unitPrice, 0) }}</div>
+                                @if ($isUnavailable)
+                                    <div class="cart-item__meta" style="color:#B3261E;font-weight:600;">Currently unavailable — remove or update to proceed.</div>
+                                @else
+                                    <div class="cart-item__meta">PKR {{ number_format($unitPrice, 0) }}</div>
+                                @endif
 
                                 <form action="{{ route('cart.remove', $rowId) }}" method="POST" style="margin-top:8px;">
                                     @csrf
@@ -54,14 +60,17 @@
                                 @csrf
                                 @method('PATCH')
                                 <div class="qty-selector" data-qty-selector data-auto-submit="true">
-                                    <button type="button" data-action="decrease" aria-label="Decrease quantity for {{ $item['name'] }}">&minus;</button>
-                                    <input type="number" name="qty" value="{{ $item['qty'] }}" min="0" max="{{ $maxQty }}" aria-label="Quantity for {{ $item['name'] }}">
-                                    <button type="button" data-action="increase" aria-label="Increase quantity for {{ $item['name'] }}">&plus;</button>
+                                    <button type="button" data-action="decrease" aria-label="Decrease quantity for {{ $item['name'] }}" @if ($isUnavailable) disabled @endif>&minus;</button>
+                                    <input type="number" name="qty" value="{{ $isUnavailable ? 0 : $item['qty'] }}" min="0" max="{{ $maxQty }}" aria-label="Quantity for {{ $item['name'] }}" @if ($isUnavailable) disabled @endif>
+                                    <button type="button" data-action="increase" aria-label="Increase quantity for {{ $item['name'] }}" @if ($isUnavailable) disabled @endif>&plus;</button>
                                 </div>
+                                @if ($isUnavailable)
+                                    <small style="display:block;color:#B3261E;margin-top:4px;">Out of stock</small>
+                                @endif
                             </form>
 
                             <div class="cart-item__price" style="font-weight:600;">
-                                PKR {{ number_format($unitPrice * $item['qty'], 0) }}
+                                PKR {{ number_format($unitPrice * ($isUnavailable ? 0 : $item['qty']), 0) }}
                             </div>
                         </div>
                     @endforeach

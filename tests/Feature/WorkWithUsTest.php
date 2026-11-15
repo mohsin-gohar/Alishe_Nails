@@ -32,4 +32,9 @@ class WorkWithUsTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('>Work with Us<', false);
     }
+
+    public function test_custom_design_route_is_removed_and_returns_404(): void
+    {
+        $this->get('/custom-design')->assertNotFound();
+    }
 }
