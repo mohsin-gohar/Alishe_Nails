@@ -104,9 +104,10 @@ jobs:
 
       - name: PHPUnit (MariaDB)
         run: |
-          set -o pipefail
+          set +e
           php -d error_reporting=E_ALL vendor/bin/phpunit 2>&1 | tee phpunit-mariadb.log
           status=${PIPESTATUS[0]}
+          set -e
           if [ $status -ne 0 ]; then
             echo "=== LAST 40 LINES OF phpunit-mariadb.log ==="
             tail -n 40 phpunit-mariadb.log
