@@ -35,6 +35,30 @@ class OrderAuthorizationTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_success_page_rejects_an_order_that_has_no_access_token(): void
+    {
+        // Rows created before guest tokens existed have access_token = null.
+        // Comparing with hash_equals() must not turn that into a 500.
+        $order = Order::create([
+            'user_id' => null,
+            'first_name' => 'Legacy',
+            'last_name' => 'Order',
+            'email' => 'legacy@example.com',
+            'phone' => '0300',
+            'address' => 'Somewhere',
+            'city' => 'Karachi',
+            'payment_method' => 'cod',
+            'subtotal' => 1000,
+            'shipping' => 0,
+            'total' => 1000,
+        ]);
+
+        $order->forceFill(['access_token' => null])->save();
+
+        $this->get(route('checkout.success', ['order' => $order->order_number, 'signature' => 'anything']))
+            ->assertForbidden();
+    }
+
     public function test_a_customer_can_view_their_own_order(): void
     {
         $owner = User::factory()->create();

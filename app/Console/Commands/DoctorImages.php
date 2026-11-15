@@ -268,10 +268,14 @@ class DoctorImages extends Command
         $optimizer = app(ImageOptimizer::class);
         $linked = 0;
 
-        foreach ($productsWithoutMedia as $product) {
-            $match = $this->matchFile($product, $files);
+        // Same one-to-one rule as --repair: a file that two products could
+        // claim, or a product with two candidate files, is left alone.
+        $matches = $this->matchOneToOne($productsWithoutMedia, $files);
 
-            if ($match === null) {
+        foreach ($matches as $productId => $match) {
+            $product = Product::find($productId);
+
+            if ($product === null) {
                 continue;
             }
 
@@ -282,6 +286,12 @@ class DoctorImages extends Command
             }
 
             $destination = public_path('images/products/'.$target);
+
+            // Never overwrite a file that is already on the server.
+            if (is_file($destination)) {
+                $target = $product->slug.'-'.time().'-'.Str::random(6).(str_ends_with($target, '.webp') ? '.webp' : '.'.pathinfo($target, PATHINFO_EXTENSION));
+                $destination = public_path('images/products/'.$target);
+            }
 
             if ($optimizer->supportsWebp()) {
                 if (! $optimizer->writeWebp($match, $destination, ImageOptimizer::DEFAULT_MAX_WIDTH)) {
@@ -312,59 +322,26 @@ class DoctorImages extends Command
     }
 
     /**
-     * Finds the file that best matches a product by slug or name.
+     * Builds product ⇄ file pairs and keeps only those that are unambiguous in
+     * BOTH directions.
      *
-     * @param  array<int, string>  $files
-     */
-    private function matchFile(Product $product, array $files): ?string
-    {
-        $needles = array_filter([
-            $product->slug,
-            Str::slug($product->name),
-            Str::slug(str_replace(['with application kit', 'with Application Kit'], '', $product->name)),
-        ]);
-
-        foreach ($files as $file) {
-            $basename = strtolower(pathinfo(basename($file), PATHINFO_FILENAME));
-
-            foreach ($needles as $needle) {
-                $needle = trim(strtolower((string) $needle), '-');
-
-                if ($needle === '' || mb_strlen($needle) < 6) {
-                    continue;
-                }
-
-                if (str_contains($basename, $needle) || str_contains($needle, $basename)) {
-                    return $file;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Tries to match an unreferenced file on disk to a product that has no
-     * image, using the slug / name as the key.
+     * A photo that two products could claim, or a product with two similarly
+     * named photos, is never assigned automatically — the admin attaches those
+     * by hand in the Image Doctor.
      *
      * @param  array<int, Product>  $productsWithoutMedia
      * @param  array<int, string>  $files
+     * @return array<int, string> product id => absolute file path
      */
-    private function repair(array $productsWithoutMedia, array $files): int
+    private function matchOneToOne(array $productsWithoutMedia, array $files): array
     {
-        if ($productsWithoutMedia === []) {
-            return 0;
-        }
-
         // Only unclaimed photos are candidates: a file another product still
         // points at must never be moved onto a second listing, and a 1×1 stub
         // is not a photo at all.
         $claimed = $this->claimedStems();
 
         $candidates = array_values(array_filter($files, function (string $file) use ($claimed): bool {
-            $stem = pathinfo($file, PATHINFO_FILENAME);
-
-            if (isset($claimed[$stem])) {
+            if (isset($claimed[pathinfo($file, PATHINFO_FILENAME)])) {
                 return false;
             }
 
@@ -374,13 +351,9 @@ class DoctorImages extends Command
         }));
 
         if ($candidates === []) {
-            return 0;
+            return [];
         }
 
-        // Build every product ⇄ file pair first, then keep only pairs that are
-        // unambiguous in BOTH directions. A photo named after two products, or
-        // a product with two similarly named photos, is left for the admin to
-        // attach by hand in the Image Doctor.
         $byFile = [];
 
         foreach ($productsWithoutMedia as $product) {
@@ -413,26 +386,55 @@ class DoctorImages extends Command
 
         // A product that would receive more than one file is ambiguous too.
         $perProduct = [];
+
         foreach ($byFile as $file => $products) {
             $perProduct[array_key_first($products)][] = $file;
         }
 
-        $repaired = 0;
+        $matches = [];
 
-        foreach ($perProduct as $productId => $matches) {
-            if (count($matches) !== 1) {
-                $this->line('   … skipped an ambiguous match for product #'.$productId);
+        foreach ($perProduct as $productId => $productFiles) {
+            if (count($productFiles) === 1) {
+                $matches[(int) $productId] = $productFiles[0];
 
                 continue;
             }
 
+            $this->line('   … skipped an ambiguous match for product #'.$productId.' ('.count($productFiles).' candidate photos)');
+        }
+
+        return $matches;
+    }
+
+    /**
+     * Tries to match an unreferenced file on disk to a product that has no
+     * image, using the slug / name as the key.
+     *
+     * @param  array<int, Product>  $productsWithoutMedia
+     * @param  array<int, string>  $files
+     */
+    private function repair(array $productsWithoutMedia, array $files): int
+    {
+        if ($productsWithoutMedia === []) {
+            return 0;
+        }
+
+        $matches = $this->matchOneToOne($productsWithoutMedia, $files);
+
+        if ($matches === []) {
+            return 0;
+        }
+
+        $repaired = 0;
+
+        foreach ($matches as $productId => $file) {
             $product = Product::find($productId);
 
             if ($product === null) {
                 continue;
             }
 
-            $basename = basename($matches[0]);
+            $basename = basename($file);
 
             $product->update([
                 'image' => $basename,

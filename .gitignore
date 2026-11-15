@@ -19,3 +19,7 @@ yarn-error.log
 # Generated browser-audit artefacts (reports change on every run)
 /tools/audit/*.json
 /tools/audit/*.txt
+
+# Local database dumps (contain customer data and password hashes)
+/database/*.sql
+/database/*.sqlite

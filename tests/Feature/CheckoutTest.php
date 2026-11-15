@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingRate;
@@ -56,6 +57,59 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseHas('orders', ['email' => 'sana@example.com', 'status' => 'pending']);
         $this->assertEquals(3, $product->fresh()->stock, 'Stock must decrease by the ordered quantity.');
         $this->assertEmpty(Cart::content(), 'Cart must be cleared after successful checkout.');
+    }
+
+    public function test_a_valid_coupon_discounts_the_order_and_counts_one_use(): void
+    {
+        $product = $this->makeProduct(['price' => 2000, 'stock' => 10]);
+
+        $coupon = Coupon::create([
+            'code' => 'SAVE10',
+            'type' => 'percent',
+            'value' => 10,
+            'usage_limit' => 5,
+            'used_count' => 0,
+            'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $this->withSession(['applied_coupon' => ['code' => 'SAVE10']])
+            ->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect();
+
+        $order = Order::latest('id')->first();
+
+        $this->assertNotNull($order);
+        $this->assertSame('SAVE10', $order->coupon_code);
+        $this->assertGreaterThan(0.0, (float) $order->discount_amount);
+        $this->assertSame(1, $coupon->fresh()->used_count);
+    }
+
+    public function test_a_coupon_that_reached_its_usage_limit_is_not_applied(): void
+    {
+        $product = $this->makeProduct(['price' => 2000, 'stock' => 10]);
+
+        Coupon::create([
+            'code' => 'LASTONE',
+            'type' => 'percent',
+            'value' => 10,
+            'usage_limit' => 1,
+            'used_count' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add', $product), ['qty' => 1]);
+
+        $this->withSession(['applied_coupon' => ['code' => 'LASTONE']])
+            ->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect();
+
+        $order = Order::latest('id')->first();
+
+        $this->assertNotNull($order);
+        $this->assertNull($order->coupon_code, 'An exhausted coupon must not be written to the order.');
+        $this->assertSame(0.0, (float) $order->discount_amount);
     }
 
     public function test_checkout_is_blocked_when_stock_is_insufficient(): void

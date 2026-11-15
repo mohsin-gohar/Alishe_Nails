@@ -97,7 +97,10 @@
 
     # Application internals must never be reachable over HTTP.
     RewriteRule ^(\.env(\..*)?|\.git|\.gitignore|\.htaccess|\.htpasswd|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|artisan|server\.php)$ - [F,L,NC]
-    RewriteRule ^(database|deploy|tests|bootstrap|config|routes|lang|node_modules|storage/framework|storage/logs|storage/app)/ - [F,L,NC]
+    RewriteRule ^(database|deploy|tests|bootstrap|config|routes|lang|node_modules|tools|docs|storage/framework|storage/logs|storage/app)/ - [F,L,NC]
+    # Local database dumps, editor backups and one-off maintenance scripts must
+    # never be downloadable, even if one is accidentally left in the web root.
+    RewriteRule \.(sql|sqlite|bak|py)$ - [F,L,NC]
 
     # Preserve the Authorization header for API authentication.
     RewriteCond %{HTTP:Authorization} .

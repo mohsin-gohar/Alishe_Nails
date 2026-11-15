@@ -8,7 +8,10 @@ Yeh guide AlifHost ya kisi bhi standard cPanel shared hosting par **Alishe Nails
 
 - [x] **No /public in URLs:** Root `.htaccess` aur `public/index.php` configure ho chuke hain.
 - [x] **Vite Assets Compiled:** `npm run build` run ho chuka hai (`public/build` mein production assets moujood hain). `node_modules` server par upload karne ki bilkul zaroorat nahi hai.
-- [x] **Database Export:** Fresh database backup ready hai: `database/alishe_nails_backup.sql`.
+- [x] **Database Export:** Purana demo dump (`database/alishe_nails_backup.sql`) repository se
+  **hata diya gaya hai** — us mein customer orders, emails aur admin password
+  hashes thay. Schema `php artisan migrate --force` se banta hai; real data ke
+  liye apna cPanel backup import karein.
 - [x] **Automated Tests:** 113 tests pass in the local SQLite test environment; this does not guarantee zero defects or validate the production server.
 - [ ] **Production Config:** Create the server's `.env` from `.env.example`; production secrets are not included in this repository.
 
@@ -33,8 +36,11 @@ Yeh guide AlifHost ya kisi bhi standard cPanel shared hosting par **Alishe Nails
 2. cPanel Home par ja kar **phpMyAdmin** open karein.
 3. Left side se apna naya database select karein.
 4. Top menu mein **Import** par click karein.
-5. **Choose File** par click karke yeh file select karein:  
-   👉 `database/alishe_nails_backup.sql`
+5. **Choose File** par click karke apna SQL dump select karein (cPanel →
+   **Backup → Download a Home Directory Backup** se milne wala dump, ya jo
+   backup aap ne khud export kiya ho). Repository mein koi dump ship nahi hota.
+   Agar aap pehli baar fresh install kar rahe hain to import skip karein aur
+   terminal mein `php artisan migrate --force --seed` chala dein.
 6. Niche **Import / Go** button daba dein. (Saare 25 tables aur sample products import ho jayenge).
 
 ---
@@ -90,12 +96,20 @@ Agar aap files bahar move nahi karna chahte aur saara project seedha `public_htm
 
 ---
 
-## Step 5: Storage Link (Public Images Display Fix)
+## Step 5: Product Images (Public Images Display Fix)
 
-Agar product images ya uploads show na hon:
-1. `deploy/alifhost/storage_link.php` file ko apne `public_html` mein upload karein.
-2. Browser mein open karein: `https://yourdomain.com/storage_link.php`.
-3. Green success message aane ke baad `storage_link.php` file ko cPanel se **delete** kar dein.
+Catalogue photos `public/images/products/` mein rehti hain, is liye storage
+symlink ki zaroorat nahi hai — `storage_link.php` helper hata diya gaya hai
+(public symlink-banaane wala tool production par security risk tha).
+
+Agar product images show na hon:
+1. Terminal mein `php artisan images:doctor` chalayein — ye batata hai ke
+   problem database reference mein hai ya file disk par nahi hai.
+2. `php artisan images:doctor --repair` sirf un files ko link karta hai jinka
+   match bilkul unambiguous ho.
+3. Jo photos naam se match na hon, unhein admin → **Image Doctor**
+   (`/admin/images`) par thumbnail dekh kar attach karein.
+4. `php artisan optimize:clear` chala kar page reload karein.
 
 ---
 

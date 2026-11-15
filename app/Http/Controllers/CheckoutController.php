@@ -96,7 +96,7 @@ class CheckoutController extends Controller
                 );
                 $shipping = $shippingRes['fee'];
 
-                [$coupon, $discount] = $this->resolveCoupon($request, $subtotal);
+                [$coupon, $discount] = $this->lockCoupon($request, $subtotal);
                 $total = max(0, $subtotal + $shipping - $discount);
 
                 $method = $request->input('payment_method') ?: 'online_payment';
@@ -138,7 +138,10 @@ class CheckoutController extends Controller
                 return [$order, $this->createOrderItems($order, $cartContent, $coupon, $request)];
             });
 
-            SendOrderEmails::dispatch($order, $lineItems);
+            // afterCommit: a database-queue worker can pick the job up the
+            // instant it is pushed. Without this the worker may read an order
+            // that has not been committed yet and fail all three attempts.
+            SendOrderEmails::dispatch($order, $lineItems)->afterCommit();
 
             Cart::clear();
 
@@ -157,8 +160,11 @@ class CheckoutController extends Controller
     {
         $orderModel = Order::where('order_number', $order)->firstOrFail();
 
-        $token = $request->query('signature');
-        $validSignature = is_string($token) && hash_equals($orderModel->access_token, $token);
+        // access_token is nullable on rows created before tokens existed, and
+        // hash_equals() only accepts strings — an old order must 403, not 500.
+        $token = (string) $request->query('signature', '');
+        $stored = (string) $orderModel->access_token;
+        $validSignature = $token !== '' && $stored !== '' && hash_equals($stored, $token);
         $isOwner = $request->user() && $request->user()->id === $orderModel->user_id;
 
         if (! $validSignature && ! $isOwner) {
@@ -260,6 +266,37 @@ class CheckoutController extends Controller
         return $lineItems;
     }
 
+    /**
+     * Resolves the session coupon and locks its row for the rest of the order
+     * transaction. Two simultaneous checkouts then serialise on that row, so
+     * the last redemption of a limited coupon cannot be spent twice.
+     *
+     * @return array{0:Coupon|null,1:float}
+     */
+    private function lockCoupon(Request $request, float $subtotal): array
+    {
+        $couponCode = data_get($request->session()->get('applied_coupon'), 'code');
+
+        if (! $couponCode) {
+            return [null, 0.0];
+        }
+
+        $coupon = Coupon::where('code', strtoupper((string) $couponCode))->lockForUpdate()->first();
+
+        if (! $coupon || ! $coupon->isValid()) {
+            $request->session()->forget('applied_coupon');
+
+            return [null, 0.0];
+        }
+
+        $discount = min($coupon->getDiscountFor($subtotal), $subtotal);
+
+        return [$coupon, $discount];
+    }
+
+    /**
+     * Read-only coupon lookup for the cart/checkout display.
+     */
     private function resolveCoupon(Request $request, float $subtotal): array
     {
         $couponCode = data_get($request->session()->get('applied_coupon'), 'code');
