@@ -27,6 +27,8 @@
                                 $availableStock = max(0, (int) ($stock[$item['product_id']] ?? 0));
                                 $maxQty = max(0, min($availableStock, 20));
                                 $isUnavailable = $availableStock <= 0 || $unitPrice <= 0.0;
+                                $overStock = ! $isUnavailable && (int) $item['qty'] > $availableStock;
+                                $billableQty = $isUnavailable ? 0 : min((int) $item['qty'], $availableStock);
                                 $url = $item['image'] && file_exists(public_path('images/products/'.$item['image'])) ? \App\Support\ImageUrl::relativeUrl('images/products/'.$item['image']) : null;
                             @endphp
                             <div class="cart-item__image">
@@ -66,11 +68,13 @@
                                 </div>
                                 @if ($isUnavailable)
                                     <small style="display:block;color:#B3261E;margin-top:4px;">Out of stock</small>
+                                @elseif ($overStock)
+                                    <small style="display:block;color:#8a5a00;margin-top:4px;">Only {{ $availableStock }} left — the quantity will be adjusted to what is in stock.</small>
                                 @endif
                             </form>
 
                             <div class="cart-item__price" style="font-weight:600;">
-                                PKR {{ number_format($unitPrice * ($isUnavailable ? 0 : $item['qty']), 0) }}
+                                PKR {{ number_format($unitPrice * $billableQty, 0) }}
                             </div>
                         </div>
                     @endforeach

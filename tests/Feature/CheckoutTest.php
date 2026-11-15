@@ -181,6 +181,81 @@ class CheckoutTest extends TestCase
         $this->assertSame(3000.0, (float) $item->line_total);
     }
 
+    public function test_checkout_is_blocked_when_an_item_sells_out_after_being_added(): void
+    {
+        $product = $this->makeProduct(['price' => 2000, 'stock' => 2]);
+        $this->post(route('cart.add', $product), ['qty' => 2]);
+
+        // The last units sell elsewhere, so the cart row is now impossible.
+        $product->update(['stock' => 0]);
+
+        // Cart and checkout must agree: the unavailable row is not priced.
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('Currently unavailable')
+            ->assertSee('PKR 300')      // flat delivery only
+            ->assertDontSee('PKR 4,000')
+            ->assertDontSee('PKR 4,300');
+
+        $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+        ]))->assertOk()->assertJson([
+            'subtotal' => 0,
+            'shipping' => 300,
+            'total' => 300,
+        ]);
+
+        $this->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('orders', ['email' => 'sana@example.com']);
+        $this->assertSame(0, (int) $product->fresh()->stock);
+    }
+
+    public function test_price_drop_after_cart_lowers_cart_checkout_order_and_order_item_totals(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 10]);
+        $this->post(route('cart.add', $product), ['qty' => 3]);
+
+        // Price drops after the cart was built.
+        $product->update(['price' => 600]);
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('PKR 1,800') // 3 x 600, never the stale 3 x 1000
+            ->assertSee('PKR 2,100')
+            ->assertDontSee('PKR 3,000')
+            ->assertDontSee('PKR 3,300');
+
+        $this->getJson(route('checkout.shippingFee', [
+            'city' => 'Karachi',
+            'area' => 'DHA (Defence)',
+        ]))->assertOk()->assertJson([
+            'subtotal' => 1800,
+            'shipping' => 300,
+            'is_free' => false,
+            'total' => 2100,
+        ]);
+
+        $this->post(route('checkout.store'), $this->checkoutPayload())->assertRedirect();
+
+        $order = Order::where('email', 'sana@example.com')->firstOrFail();
+        $this->assertSame(1800.0, (float) $order->subtotal);
+        $this->assertSame(300.0, (float) $order->shipping);
+        $this->assertSame(2100.0, (float) $order->total);
+
+        $item = $order->items()->firstOrFail();
+        $this->assertSame(600.0, (float) $item->price);
+        $this->assertSame(3, (int) $item->quantity);
+        $this->assertSame(1800.0, (float) $item->line_total);
+    }
+
     public function test_shipping_fee_endpoint_is_null_safe_when_threshold_is_absent(): void
     {
         // calculateFee() always returns threshold => null for the flat model.

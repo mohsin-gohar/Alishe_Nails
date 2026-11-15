@@ -57,18 +57,7 @@ class AdminSellerController extends Controller
     {
         try {
             DB::transaction(function () use ($request, $seller) {
-                $subscription = SellerSubscription::where('id', function ($query) use ($seller) {
-                    $query->select('id')
-                        ->from('seller_subscriptions')
-                        ->where('seller_id', $seller->id)
-                        ->where('status', 'pending')
-                        ->orderByDesc('id')
-                        ->limit(1);
-                })->lockForUpdate()->first();
-
-                if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
-                    throw new RuntimeException('This subscription payment is no longer pending.');
-                }
+                $subscription = $this->lockLatestPendingSubscription($seller);
 
                 // Lock any currently-active rows so a concurrent activation
                 // cannot race us into two active subscriptions for one seller.
@@ -86,9 +75,9 @@ class AdminSellerController extends Controller
                 $subscription->update([
                     'status' => 'active',
                     'starts_at' => $startsAt,
-                    'expires_at' => $startsAt->copy()->addDays($subscription->duration_days),
+                    'expires_at' => $startsAt->copy()->addDays((int) $subscription->duration_days),
                     'reviewed_at' => now(),
-                    'reviewed_by' => $request->user('admin')->id,
+                    'reviewed_by' => $request->user('admin')?->id,
                 ]);
 
                 $seller->products()->update(['is_active' => true]);
@@ -107,23 +96,12 @@ class AdminSellerController extends Controller
     {
         try {
             DB::transaction(function () use ($request, $seller) {
-                $subscription = SellerSubscription::where('id', function ($query) use ($seller) {
-                    $query->select('id')
-                        ->from('seller_subscriptions')
-                        ->where('seller_id', $seller->id)
-                        ->where('status', 'pending')
-                        ->orderByDesc('id')
-                        ->limit(1);
-                })->lockForUpdate()->first();
-
-                if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
-                    throw new RuntimeException('This subscription payment is no longer pending.');
-                }
+                $subscription = $this->lockLatestPendingSubscription($seller);
 
                 $subscription->update([
                     'status' => 'rejected',
                     'reviewed_at' => now(),
-                    'reviewed_by' => $request->user('admin')->id,
+                    'reviewed_by' => $request->user('admin')?->id,
                 ]);
             });
         } catch (RuntimeException $e) {
@@ -134,5 +112,28 @@ class AdminSellerController extends Controller
         Cache::forget('shop_sidebar_facets');
 
         return back()->with('success', 'Subscription payment rejected.');
+    }
+
+    /**
+     * Select and lock the seller's newest pending payment.
+     *
+     * The direct SELECT ... FOR UPDATE is deliberate: on MySQL the lock is
+     * taken on the row as it is read, so a second request that was waiting on
+     * the same row sees the committed `active`/`rejected` status and fails the
+     * revalidation below instead of reviewing the payment twice.
+     */
+    private function lockLatestPendingSubscription(Seller $seller): SellerSubscription
+    {
+        $subscription = SellerSubscription::where('seller_id', $seller->id)
+            ->where('status', 'pending')
+            ->orderByDesc('id')
+            ->lockForUpdate()
+            ->first();
+
+        if (! $subscription || $subscription->seller_id !== $seller->id || $subscription->status !== 'pending') {
+            throw new RuntimeException('This subscription payment is no longer pending.');
+        }
+
+        return $subscription;
     }
 }

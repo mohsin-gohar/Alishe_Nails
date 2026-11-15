@@ -32,6 +32,10 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
+        if (($unavailable = Cart::unavailableRows()) !== []) {
+            return redirect()->route('cart.index')->with('error', $this->unavailableMessage($unavailable));
+        }
+
         $subtotal = Cart::subtotal();
 
         $shipping = ShippingRate::calculateFee(
@@ -86,6 +90,10 @@ class CheckoutController extends Controller
 
         if (empty($cartContent)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        if (($unavailable = Cart::unavailableRows()) !== []) {
+            return redirect()->route('cart.index')->with('error', $this->unavailableMessage($unavailable));
         }
 
         try {
@@ -201,6 +209,19 @@ class CheckoutController extends Controller
         $request->session()->forget('applied_coupon');
 
         return redirect()->route('checkout.index')->with('success', 'Promo code removed.');
+    }
+
+    /**
+     * Human-readable list of the rows blocking checkout.
+     *
+     * @param  array<string, array{product_id:int, name:string, qty:int, stock:int}>  $rows
+     */
+    private function unavailableMessage(array $rows): string
+    {
+        $names = array_slice(array_values(array_unique(array_column($rows, 'name'))), 0, 3);
+        $list = $names === [] ? '' : ': '.implode(', ', $names);
+
+        return 'Some items in your cart are no longer available'.$list.'. Please update or remove them before checkout.';
     }
 
     /**

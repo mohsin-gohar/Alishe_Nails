@@ -216,4 +216,104 @@ class MarketplaceTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertSame('active', $subscription->fresh()->status);
     }
+
+    public function test_activating_the_same_pending_payment_twice_only_applies_once(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-DOUBLE-1',
+        ]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin4@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller))
+            ->assertSessionHas('success');
+
+        // A double click / browser retry must not review the same payment again.
+        $this->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller))
+            ->assertSessionHas('error');
+
+        $this->assertSame('active', $subscription->fresh()->status);
+        $this->assertSame(1, SellerSubscription::where('seller_id', $seller->id)->where('status', 'active')->count());
+    }
+
+    public function test_rejecting_the_same_pending_payment_twice_only_applies_once(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-DOUBLE-2',
+        ]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin5@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller))
+            ->assertSessionHas('success');
+
+        $reviewedAt = $subscription->fresh()->reviewed_at;
+
+        $this->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller))
+            ->assertSessionHas('error');
+
+        $this->assertSame('rejected', $subscription->fresh()->status);
+        $this->assertEquals($reviewedAt, $subscription->fresh()->reviewed_at);
+    }
+
+    public function test_a_rejected_payment_cannot_then_be_activated(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-DOUBLE-3',
+        ]);
+        $product = $this->makeProduct($seller);
+        $product->update(['is_active' => false]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin6@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller))
+            ->assertSessionHas('success');
+
+        $this->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller))
+            ->assertSessionHas('error');
+
+        $this->assertSame('rejected', $subscription->fresh()->status);
+        $this->assertFalse((bool) $product->fresh()->is_active, 'Products must stay hidden when the payment stays rejected.');
+    }
+
+    public function test_an_activated_payment_cannot_then_be_rejected(): void
+    {
+        $seller = $this->makeSeller();
+        $plan = SubscriptionPlan::create(['name' => 'Monthly', 'duration_days' => 30, 'price' => 1000, 'is_active' => true]);
+        $subscription = SellerSubscription::create([
+            'seller_id' => $seller->id, 'subscription_plan_id' => $plan->id, 'price' => 1000,
+            'duration_days' => 30, 'status' => 'pending', 'payment_method' => 'bank_transfer',
+            'transaction_reference' => 'BANK-DOUBLE-4',
+        ]);
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'sub-admin7@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.activate', $seller))
+            ->assertSessionHas('success');
+
+        $this->from(route('admin.marketplace.sellers.show', $seller))
+            ->post(route('admin.marketplace.sellers.subscription.reject', $seller))
+            ->assertSessionHas('error');
+
+        $this->assertSame('active', $subscription->fresh()->status);
+    }
 }

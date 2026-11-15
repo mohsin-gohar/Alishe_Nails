@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Cart;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -144,5 +145,54 @@ class CartTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertEmpty(session('alishe_cart', []));
+    }
+
+    public function test_subtotal_ignores_zero_stock_and_inactive_products(): void
+    {
+        $available = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+        $soldOut = $this->makeProduct(['price' => 2000, 'stock' => 0]);
+        $inactive = $this->makeProduct(['price' => 3000, 'stock' => 5, 'is_active' => false]);
+
+        $this->withSession(['alishe_cart' => [
+            'row-available' => $this->cartRow($available, 2),
+            'row-sold-out' => $this->cartRow($soldOut, 1),
+            'row-inactive' => $this->cartRow($inactive, 1),
+        ]]);
+
+        $this->assertSame(2000.0, Cart::subtotal(), 'Only the buyable row may be priced.');
+        $this->assertSame(
+            ['row-sold-out', 'row-inactive'],
+            array_keys(Cart::unavailableRows()),
+            'The sold-out and inactive rows must be flagged as unavailable.'
+        );
+    }
+
+    public function test_subtotal_never_charges_more_units_than_live_stock(): void
+    {
+        $product = $this->makeProduct(['price' => 1000, 'stock' => 5]);
+
+        $this->withSession(['alishe_cart' => [
+            'row-over-stock' => $this->cartRow($product, 4),
+        ]]);
+
+        // Another order takes three of the five units after the cart was saved.
+        $product->update(['stock' => 1]);
+
+        $this->assertSame(1000.0, Cart::subtotal(), 'The subtotal must cap the quantity at the live stock.');
+        $this->assertArrayHasKey('row-over-stock', Cart::unavailableRows());
+    }
+
+    private function cartRow(Product $product, int $qty): array
+    {
+        return [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'image' => null,
+            'price' => (float) $product->price,
+            'shape' => null,
+            'size' => null,
+            'qty' => $qty,
+        ];
     }
 }

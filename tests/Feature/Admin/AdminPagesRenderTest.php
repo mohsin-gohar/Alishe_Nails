@@ -62,8 +62,29 @@ class AdminPagesRenderTest extends TestCase
             'password' => Hash::make('AdminPass123'),
         ]);
 
-        foreach (['/admin/coupons', '/admin/subscriptions', '/admin/campaign-pitches'] as $url) {
+        $urls = [
+            '/admin/coupons',
+            '/admin/coupons/create',
+            '/admin/subscriptions',
+            '/admin/subscriptions/1',
+            '/admin/campaign-pitches',
+            '/admin/campaign-pitches/1',
+        ];
+
+        foreach ($urls as $url) {
             $this->actingAs($admin, 'admin')->get($url)->assertNotFound();
+        }
+
+        // A missing route must 404 for guests too, never leak a login redirect.
+        foreach ($urls as $url) {
+            $this->get($url)->assertNotFound();
+        }
+    }
+
+    public function test_removed_admin_auth_screens_are_gone(): void
+    {
+        foreach (['/admin/register', '/admin/forgot-password', '/admin/reset-password/example-token'] as $url) {
+            $this->get($url)->assertNotFound();
         }
     }
 
