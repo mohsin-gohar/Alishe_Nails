@@ -74,16 +74,20 @@
 
     # ------------------------------------------------------------------
     #  Security headers
+    #
+    #  These are repeated here (and MUST stay identical to
+    #  app/Http/Middleware/SecurityHeaders.php) because Apache serves CSS, JS
+    #  and images directly, without ever booting Laravel. Two different
+    #  policies means the browser enforces the intersection of both — a
+    #  directive that only one of them allows is silently blocked.
+    #  tests/Feature/SecurityHeadersTest.php asserts the two stay in sync.
     # ------------------------------------------------------------------
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-
-    # Content-Security-Policy. 'unsafe-inline'/'unsafe-eval' stay for the
-    # inline theme bootstrap; https: is allowed for the CDN font/icon assets.
-    Header always set Content-Security-Policy "default-src 'self' data: https:; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; font-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.clarity.ms https://c.bing.com https://www.facebook.com https://connect.facebook.net https://graph.facebook.com https://graph.instagram.com; frame-src 'self' https://www.googletagmanager.com; frame-ancestors 'self'"
 
     # Remove the X-Powered-By fingerprint.
     Header unset X-Powered-By

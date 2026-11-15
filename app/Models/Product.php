@@ -212,14 +212,6 @@ class Product extends Model
             array_unshift($dirs, $publicRel.'/'.$sub);
         }
 
-        // If public_path() is different from base_path()/public (e.g. symlinked
-        // or custom), add its subdirectories directly.
-        $sub = $type === 'video' ? 'videos/products' : 'images/products';
-        $pubSub = $publicBase.'/'.$sub;
-        if (is_dir($pubSub)) {
-            // Will be handled via absolute path check below
-        }
-
         return array_values(array_unique($dirs));
     }
 

@@ -1719,7 +1719,7 @@ img { max-width: 100%; display: block; }
   font-size: 1.25rem;
   margin-bottom: 14px;
 }
-.luxe-value-card h3,
+.luxe-value-card h3 {
   font-size: 0.95rem;
   margin-bottom: 6px;
   color: var(--espresso);
@@ -1785,7 +1785,7 @@ img { max-width: 100%; display: block; }
 .shape-art-stiletto { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
 .shape-art-oval { border-radius: 18px; }
 
-.shape-card h3,
+.shape-card h3 {
   font-size: 0.95rem;
   margin-bottom: 4px;
 }
