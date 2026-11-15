@@ -106,6 +106,15 @@ jobs:
         run: |
           set -o pipefail
           php -d error_reporting=E_ALL vendor/bin/phpunit 2>&1 | tee phpunit-mariadb.log
+          status=${PIPESTATUS[0]}
+          if [ $status -ne 0 ]; then
+            echo "=== Failing tests ==="
+            grep -E "^[0-9]+\)" phpunit-mariadb.log | head -30
+            grep -E "^[0-9]+\)" phpunit-mariadb.log | head -30 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+          fi
+          exit $status
 
       - name: Concurrency harness (real MariaDB row locks)
         run: |
