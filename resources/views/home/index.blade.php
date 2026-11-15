@@ -368,27 +368,4 @@
         @endif
     </section>
 
-    {{-- ---------- 8. Bespoke Custom Inspo Concierge Banner ---------- --}}
-    <div class="container">
-        <div class="concierge-banner">
-            <div>
-                <span style="display:inline-block;color:var(--gold);font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Bespoke Custom Atelier
-                </span>
-                <h3>Have a Dream Nail Design in Mind?</h3>
-                <p>
-                    Found a design on Pinterest or Instagram that you love? Send us the reference picture! Our master nail artist will handcraft your custom set to your exact shape, length, and mm measurements.
-                </p>
-            </div>
-            <div class="concierge-buttons">
-                <a href="https://ig.me/m/{{ config('services.instagram.handle', 'alishe_nails') }}" target="_blank" rel="noopener" class="btn-concierge-ig">
-                    <i class="fa-brands fa-instagram" style="font-size:1.2rem;"></i> Send Inspo on Instagram (@alishe_nails)
-                </a>
-                <a href="https://wa.me/923113925166?text={{ urlencode('Assalam-o-Alaikum! Mujhe custom nail design banwana hai. Ye raha reference picture.') }}" target="_blank" rel="noopener" class="btn-concierge-wa">
-                    <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> WhatsApp Consultation (+92 311 3925166)
-                </a>
-            </div>
-        </div>
-    </div>
-
-@endsection
+    @endsection

@@ -36,7 +36,25 @@ class TrackOrderController extends Controller
         $order->load('items');
 
         if ($request->expectsJson()) {
-            return response()->json(['order' => $order]);
+            // Tracked orders are looked up with an order number plus an email
+            // or phone number, so anonymous visitors can reach this endpoint.
+            // Never serialise the model: it holds the confirmation access
+            // token, the full address and the payment reference.
+            return response()->json([
+                'order' => [
+                    'order_number' => $order->order_number,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'created_at' => optional($order->created_at)->toIso8601String(),
+                    'total' => (float) $order->total,
+                    'items' => $order->items->map(fn ($item) => [
+                        'name' => $item->product_name,
+                        'quantity' => (int) $item->quantity,
+                        'price' => (float) $item->price,
+                        'line_total' => (float) $item->line_total,
+                    ])->values()->all(),
+                ],
+            ]);
         }
 
         return view('track-order.index', compact('order'));

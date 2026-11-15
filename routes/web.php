@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminHomepageController;
+use App\Http\Controllers\Admin\AdminImageController;
 use App\Http\Controllers\Admin\AdminInstagramController;
 use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -41,11 +42,7 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TrackOrderController;
 use App\Http\Controllers\WishlistController;
-use App\Models\Product;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,238 +53,6 @@ use Illuminate\Support\Str;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
-
-// ---------------------------------------------------------------------
-// Temporary shared-hosting deploy helper (NO SSH/terminal required).
-// Visit:  https://yourdomain.com/_deploy?token=YOUR_DEPLOY_TOKEN
-// Remove this route (and DEPLOY_TOKEN) once deployment is complete.
-// ---------------------------------------------------------------------
-Route::get('/_deploy', function (Request $request) {
-    $token = (string) config('app.deploy_token', env('DEPLOY_TOKEN'));
-
-    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
-        abort(404);
-    }
-
-    $log = [];
-    $run = function (string $command, array $parameters = []) use (&$log): void {
-        try {
-            Artisan::call($command, $parameters);
-            $output = trim(Artisan::output());
-            $log[] = "[$command] OK".($output !== '' ? "\n".$output : '');
-        } catch (Throwable $e) {
-            $log[] = "[$command] FAILED: ".$e->getMessage();
-        }
-    };
-
-    $run('migrate', ['--force' => true]);
-
-    // If the live database is completely empty (fresh deploy), seed the
-    // catalogue, admin user and shipping zones automatically. Guarded so
-    // an already-populated database is never duplicated.
-    try {
-        if (Product::count() === 0) {
-            $run('db:seed', ['--force' => true]);
-        } else {
-            $log[] = '[db:seed] skipped (products already exist: '.Product::count().')';
-        }
-    } catch (Throwable $e) {
-        $log[] = '[db:seed] FAILED: '.$e->getMessage();
-    }
-
-    $run('optimize:clear');
-    $run('images:doctor', ['--from' => base_path('public/images/products')]);
-    $run('config:cache');
-
-    return response(implode("\n\n", $log)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
-})->name('deploy.helper');
-
-// ---------------------------------------------------------------------
-// Temporary diagnostic endpoint (no terminal required).
-// Visit:  https://yourdomain.com/check-db-products?token=YOUR_DEPLOY_TOKEN
-// Reports the live product count so an empty DB is obvious. Runs migrate.
-// Remove together with /_deploy once deployment is complete.
-// ---------------------------------------------------------------------
-Route::get('/check-db-products', function (Request $request) {
-    $token = (string) config('app.deploy_token', '');
-
-    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
-        abort(404);
-    }
-
-    try {
-        Artisan::call('migrate', ['--force' => true]);
-        $migrateOutput = trim(Artisan::output());
-    } catch (Throwable $e) {
-        return response()->json(['database_connected' => false, 'error' => $e->getMessage()], 500);
-    }
-
-    $total = Product::count();
-    $active = Product::where('is_active', true)->count();
-
-    return response()->json([
-        'database_connected' => true,
-        'total_products_in_db' => $total,
-        'active_products' => $active,
-        'sample_products' => Product::take(3)->get(['id', 'name', 'slug', 'is_active']),
-        'migrate_output' => $migrateOutput,
-        'hint' => $total === 0
-            ? 'DB is empty. Run /_deploy?token=... to auto-seed, or import SQL via phpMyAdmin.'
-            : ($active === 0 ? 'Products exist but none are active. Check is_active flags.' : 'Products OK. Run /fix-images?token=... to repair image links.'),
-    ]);
-})->name('check.db.products');
-
-// ---------------------------------------------------------------------
-// Temporary image-repair endpoint (no terminal required).
-// Visit:  https://yourdomain.com/fix-images?token=YOUR_DEPLOY_TOKEN
-// Scans all known image directories and links matching files to products
-// whose image/media links are missing or point at absent files.
-// Remove together with /_deploy once deployment is complete.
-// ---------------------------------------------------------------------
-Route::get('/fix-images', function (Request $request) {
-    $token = (string) config('app.deploy_token', '');
-
-    if ($token === '' || ! hash_equals($token, (string) $request->query('token', ''))) {
-        abort(404);
-    }
-
-    $scanDirs = array_values(array_unique(array_filter([
-        public_path('images/products'),
-        base_path('public/images/products'),
-        base_path('images/products'),
-        public_path('storage/products'),
-        base_path('storage/app/public/products'),
-    ], 'is_dir')));
-
-    if ($scanDirs === []) {
-        return response('No image directories found. Expected public/images/products/', 500);
-    }
-
-    $files = collect();
-    foreach ($scanDirs as $dir) {
-        foreach (@scandir($dir) ?: [] as $file) {
-            $full = $dir.'/'.$file;
-            if ($file === '.' || $file === '..' || ! is_file($full)) {
-                continue;
-            }
-            if (preg_match('/\.(jpe?g|png|webp|gif)$/i', $file) !== 1) {
-                continue;
-            }
-            $stem = pathinfo($file, PATHINFO_FILENAME);
-            $key = Str::slug($stem);
-            // Strip admin-upload timestamp suffix: slug-1700000000-abc123 -> slug
-            $keyStripped = preg_replace('/-\d{10}-[a-z0-9]{6}$/i', '', $stem);
-            $keyStripped = Str::slug((string) $keyStripped);
-            $files->push([
-                'file' => $file,
-                'stem' => $stem,
-                'key' => $key,
-                'key_stripped' => $keyStripped,
-                'dir' => $dir,
-            ]);
-        }
-    }
-    $files = $files->unique('file')->values();
-
-    $fixed = 0;
-    $skipped = 0;
-    $unmatched = 0;
-    $log = [];
-
-    Product::query()->orderBy('id')->chunkById(100, function ($products) use ($files, &$fixed, &$skipped, &$unmatched, &$log): void {
-        foreach ($products as $product) {
-            // Check if product already has any resolvable media
-            $hasResolvable = collect($product->media_urls)->isNotEmpty();
-            if ($hasResolvable) {
-                $skipped++;
-
-                continue;
-            }
-
-            $slugKeys = collect([
-                Str::slug((string) $product->slug),
-                Str::slug((string) $product->name),
-                preg_replace('/-with-application-kit$/', '', Str::slug((string) $product->slug)),
-                preg_replace('/-with-application-kit$/', '', Str::slug((string) $product->name)),
-            ])->filter()->unique()->values()->all();
-
-            // Score-based matching: find best file for this product
-            $bestMatch = null;
-            $bestScore = -1;
-
-            foreach ($files as $item) {
-                foreach ($slugKeys as $slugKey) {
-                    if ($slugKey === '' || strlen($slugKey) < 3) {
-                        continue;
-                    }
-                    $score = -1;
-                    $fk = $item['key'];
-                    $fks = $item['key_stripped'];
-
-                    foreach ([$fk, $fks] as $fileKey) {
-                        if ($fileKey === '') {
-                            continue;
-                        }
-                        if ($fileKey === $slugKey) {
-                            $score = max($score, 100);
-                        } elseif (str_starts_with($fileKey, $slugKey.'-') || str_starts_with($fileKey, $slugKey.'_')) {
-                            $score = max($score, 90);
-                        } elseif (str_starts_with($slugKey, $fileKey.'-')) {
-                            $score = max($score, 80);
-                        } elseif (strlen($slugKey) >= 8 && str_contains($fileKey, $slugKey)) {
-                            $score = max($score, 70);
-                        } elseif (strlen($slugKey) >= 12 && strlen($fileKey) >= 8 && str_contains($slugKey, $fileKey)) {
-                            $score = max($score, 60);
-                        }
-                    }
-
-                    if ($score > 0) {
-                        $ext = strtolower(pathinfo($item['file'], PATHINFO_EXTENSION));
-                        $extBonus = match ($ext) {
-                            'webp' => 3, 'jpg', 'jpeg' => 2, 'png' => 1, default => 0,
-                        };
-                        $total = $score * 10 + $extBonus;
-                        if ($total > $bestScore) {
-                            $bestScore = $total;
-                            $bestMatch = $item;
-                        }
-                    }
-                }
-            }
-
-            if ($bestMatch === null) {
-                $unmatched++;
-                $log[] = "unmatched #{$product->id} {$product->slug}";
-
-                continue;
-            }
-
-            $target = $bestMatch['file'];
-            $product->forceFill([
-                'image' => $target,
-                'gallery' => [$target],
-                'media' => [
-                    [
-                        'type' => 'image',
-                        'path' => $target,
-                        'order' => 0,
-                    ],
-                ],
-            ])->save();
-
-            $fixed++;
-            $log[] = "fixed #{$product->id} {$product->slug} -> {$target} (dir: {$bestMatch['dir']})";
-        }
-    });
-
-    $dirList = implode(', ', $scanDirs);
-
-    return response(
-        implode("\n", $log)."\n\nScanned dirs: {$dirList}\nFiles found: {$files->count()}\nFixed: {$fixed}, Skipped: {$skipped}, Unmatched: {$unmatched}",
-        200,
-        ['Content-Type' => 'text/plain; charset=UTF-8']
-    );
-})->name('fix.images');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
@@ -410,6 +175,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Homepage merchandising studio: choose and order featured products.
         Route::get('/homepage', [AdminHomepageController::class, 'index'])->name('homepage.index');
         Route::post('/homepage', [AdminHomepageController::class, 'update'])->name('homepage.update');
+
+        // Catalogue image doctor: re-attach photos that are already on the
+        // server to the products whose records lost their image reference.
+        Route::get('/images', [AdminImageController::class, 'index'])->name('images.index');
+        Route::post('/images/{product}/attach', [AdminImageController::class, 'attach'])->name('images.attach');
 
         Route::resource('shipping', AdminShippingController::class)->names('shipping')->except(['show']);
 

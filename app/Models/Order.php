@@ -40,6 +40,15 @@ class Order extends Model
         'stock_restored_at',
     ];
 
+    /**
+     * The confirmation token grants access to a guest order, so it must
+     * never leak through toArray()/toJson() (order tracking, emails, logs).
+     */
+    protected $hidden = [
+        'access_token',
+        'transaction_reference',
+    ];
+
     protected $casts = [
         'subtotal' => 'decimal:2',
         'shipping' => 'decimal:2',

@@ -37,6 +37,9 @@
                     <a href="{{ route('admin.homepage.index') }}" class="admin-nav-link {{ request()->routeIs('admin.homepage.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-house-chimney"></i> Homepage Studio
                     </a>
+                    <a href="{{ route('admin.images.index') }}" class="admin-nav-link {{ request()->routeIs('admin.images.*') ? 'is-active' : '' }}">
+                        <i class="fa-solid fa-image"></i> Image Doctor
+                    </a>
                     <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}">
                         <i class="fa-solid fa-tags"></i> Categories
                     </a>

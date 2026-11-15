@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Product;
+use App\Support\ImageUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -138,5 +139,78 @@ class ProductMediaPathTest extends TestCase
 
         $this->assertCount(1, $urls);
         $this->assertStringEndsWith('/images/products/path-test-real.jpg', $urls[0]['url']);
+    }
+
+    public function test_a_record_saved_with_the_original_upload_name_finds_the_slugged_file(): void
+    {
+        $this->putPublicImage('whatsapp-image-2026-09-06-at-122628-pm.jpg');
+
+        $product = $this->product([
+            'image' => 'WhatsApp Image 2026-09-06 at 12.26.28 PM.jpg',
+        ]);
+
+        $this->assertStringEndsWith(
+            '/images/products/whatsapp-image-2026-09-06-at-122628-pm.jpg',
+            (string) $product->image_url,
+        );
+    }
+
+    public function test_a_record_keeps_working_when_only_the_extension_changed(): void
+    {
+        $this->putPublicImage('path-test-extension.jpeg');
+
+        $product = $this->product([
+            'image' => 'path-test-extension.webp',
+        ]);
+
+        $this->assertStringEndsWith('/images/products/path-test-extension.jpeg', (string) $product->image_url);
+    }
+
+    public function test_the_uploader_timestamp_suffix_is_ignored_when_matching(): void
+    {
+        $this->putPublicImage('path-test-timestamped-1700000000-Ab12Cd.jpg');
+
+        $product = $this->product([
+            'slug' => 'path-test-timestamped',
+            'image' => 'path-test-timestamped-1700000000-Ab12Cd.webp',
+        ]);
+
+        $this->assertStringEndsWith(
+            '/images/products/path-test-timestamped-1700000000-Ab12Cd.jpg',
+            $product->image_url,
+        );
+    }
+
+    public function test_similar_but_unrelated_filenames_are_never_guessed(): void
+    {
+        $this->putPublicImage('path-test-other-product.jpg');
+
+        $product = $this->product([
+            'slug' => 'path-test',
+            'image' => 'path-test.webp',
+        ]);
+
+        $this->assertNull($product->image_url);
+    }
+
+    public function test_a_storage_url_is_not_mangled_by_the_picture_component(): void
+    {
+        $absolute = storage_path('app/public/products/path-test-storage.png');
+
+        if (! is_dir(dirname($absolute))) {
+            mkdir(dirname($absolute), 0775, true);
+        }
+
+        file_put_contents($absolute, $this->pngBytes());
+
+        try {
+            $this->assertSame(
+                ImageUrl::urlForFile($absolute),
+                ImageUrl::fallback('/storage/products/path-test-storage.png'),
+            );
+            $this->assertStringEndsWith('/storage/products/path-test-storage.png', ImageUrl::fallback('/storage/products/path-test-storage.png'));
+        } finally {
+            @unlink($absolute);
+        }
     }
 }

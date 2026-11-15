@@ -70,10 +70,13 @@ class SitemapController extends Controller
             return array_merge($static, $categories, $products);
         });
 
-        $response = response()
-            ->view('sitemap', compact('urls'))
-            ->header('Content-Type', 'application/xml; charset=utf-8');
+        // The XML declaration is prepended here rather than in the Blade
+        // view: a literal "<?xml" inside a template is rewritten as a PHP
+        // short open tag on servers with short_open_tag enabled, which made
+        // /sitemap.xml return an empty 200 response.
+        $body = '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .view('sitemap', compact('urls'))->render();
 
-        return $response;
+        return response($body, 200, ['Content-Type' => 'application/xml; charset=utf-8']);
     }
 }

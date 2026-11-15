@@ -57,6 +57,12 @@ class Product extends Model
 
     public const LOW_STOCK_THRESHOLD = 5;
 
+    /** @var array{byLower: array<string,string>, byKey: array<string,list<string>>}|null */
+    protected static ?array $imageMediaIndex = null;
+
+    /** @var array{byLower: array<string,string>, byKey: array<string,list<string>>}|null */
+    protected static ?array $videoMediaIndex = null;
+
     protected static function booted(): void
     {
         static::saved(function () {
@@ -219,94 +225,267 @@ class Product extends Model
      * Only the basename of the database value is used, so a malformed or
      * malicious `../` path can never escape the media folders.
      *
+     * Lookup order:
+     *   1. exact filename in every known media folder;
+     *   2. the same name under one of the interchangeable extensions;
+     *   3. case-insensitive filename (Linux is case-sensitive, uploads are not);
+     *   4. the filename with its upload timestamp suffix stripped;
+     *   5. the file whose normalised name is the ONLY match for the record.
+     *
+     * Every step is a real file check — nothing is guessed.
+     *
      * @return array{file:string,url:string,name:string}|null
      */
     protected function resolveMediaFile(string $type, string $path): ?array
     {
         $type = $type === 'video' ? 'video' : 'image';
 
-        $path = trim(str_replace('\\', '/', (string) $path));
+        $path = self::normaliseMediaPath($path);
+
         if ($path === '') {
             return null;
         }
 
-        foreach (['public/storage/', 'storage/app/public/', 'public/'] as $prefix) {
-            if (str_starts_with($path, $prefix)) {
-                $path = substr($path, strlen($prefix));
-                break;
-            }
-        }
+        $basename = basename($path);
 
-        $path = basename($path);
-        if ($path === '' || $path === '.' || $path === '..') {
+        if ($basename === '' || $basename === '.' || $basename === '..') {
             return null;
         }
 
-        $stem = pathinfo($path, PATHINFO_FILENAME);
-        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $stem = pathinfo($basename, PATHINFO_FILENAME);
+        $extension = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
 
         // Prefer the stored name, then the WebP derivative, then the
         // raster fallbacks. One upload can legitimately produce both a
         // `.webp` and a `.jpg`, and old rows may point at either.
-        $names = [$path];
-        $extensions = $type === 'video'
-            ? ['mp4', 'webm', 'mov', 'm4v']
-            : ['webp', 'jpg', 'jpeg', 'png'];
+        $names = [$basename];
 
-        foreach ($extensions as $candidate) {
+        foreach (self::mediaExtensions($type) as $candidate) {
             if ($extension !== $candidate) {
                 $names[] = $stem.'.'.$candidate;
             }
         }
 
-        foreach (self::mediaSearchDirectories($type) as $directory) {
-            foreach ($names as $name) {
-                // Try base_path + relative directory
-                $file = base_path($directory.'/'.$name);
-                if (is_file($file) && (int) @filesize($file) > 0) {
-                    return [
-                        'file' => $file,
-                        'url' => $this->mediaFileUrl($file),
-                        'name' => $name,
-                    ];
-                }
-                // Also try as absolute path (for custom public_path layouts)
-                $absFile = $directory.'/'.$name;
-                if (str_starts_with($directory, '/') || (strlen($directory) > 1 && $directory[1] === ':')) {
-                    if (is_file($absFile) && (int) @filesize($absFile) > 0) {
-                        return [
-                            'file' => $absFile,
-                            'url' => $this->mediaFileUrl($absFile),
-                            'name' => $name,
-                        ];
-                    }
+        // A record saved with the original upload name ("WhatsApp Image
+        // 2026-09-06 at 12.26.28 PM.jpeg") still has to find the slugged file
+        // the uploader wrote ("whatsapp-image-2026-09-06-at-122628-pm.jpeg").
+        $slugStem = Str::slug($stem);
+
+        if ($slugStem !== '' && $slugStem !== $stem) {
+            $names[] = $slugStem.'.'.$extension;
+
+            foreach (self::mediaExtensions($type) as $candidate) {
+                if ($extension !== $candidate) {
+                    $names[] = $slugStem.'.'.$candidate;
                 }
             }
         }
 
-        // Direct check in public_path() subdirectory as last resort
-        $sub = $type === 'video' ? 'videos/products' : 'images/products';
+        // 1. Direct hit in every known directory.
+        foreach (self::mediaSearchDirectories($type) as $directory) {
+            $dir = self::absoluteMediaDirectory($directory);
+
+            foreach ($names as $name) {
+                if (self::isUsableMediaFile($dir.'/'.$name)) {
+                    return $this->foundMediaFile($dir.'/'.$name);
+                }
+            }
+        }
+
+        $index = self::mediaIndex($type);
+
+        // 2. Case-insensitive match.
         foreach ($names as $name) {
-            $file = public_path($sub.'/'.$name);
-            if (is_file($file) && (int) @filesize($file) > 0) {
-                return [
-                    'file' => $file,
-                    'url' => $this->mediaFileUrl($file),
-                    'name' => $name,
-                ];
+            $match = $index['byLower'][strtolower($name)] ?? null;
+
+            if ($match !== null) {
+                return $this->foundMediaFile($match);
             }
-            // Also check storage public path directly (symlink may be missing/broken)
-            $storageFile = storage_path('app/public/'.$sub.'/'.$name);
-            if (is_file($storageFile) && (int) @filesize($storageFile) > 0) {
-                return [
-                    'file' => $storageFile,
-                    'url' => $this->mediaFileUrl($storageFile),
-                    'name' => $name,
-                ];
+        }
+
+        // 3. Same normalised stem (handles a lost/changed extension and the
+        //    "slug-<timestamp>-<random>" names written by the uploader).
+        $key = self::mediaFileKey($stem);
+
+        if ($key !== '' && isset($index['byKey'][$key])) {
+            $matches = $index['byKey'][$key];
+
+            if (count($matches) === 1) {
+                return $this->foundMediaFile($matches[0]);
             }
+
+            // Several files share the stem (usually the WebP plus its JPEG
+            // fallback). Take the best-ranked one — still the same photo.
+            usort($matches, fn (string $a, string $b) => self::mediaExtensionRank($a) <=> self::mediaExtensionRank($b));
+
+            return $this->foundMediaFile($matches[0]);
         }
 
         return null;
+    }
+
+    /**
+     * Normalises a stored media reference to a relative path.
+     */
+    protected static function normaliseMediaPath(string $path): string
+    {
+        $path = trim(str_replace('\\', '/', $path));
+
+        if ($path === '') {
+            return '';
+        }
+
+        $path = (string) preg_split('/[?#]/', $path)[0];
+        $path = rawurldecode($path);
+
+        foreach (['public/storage/', 'storage/app/public/', 'public/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+
+                break;
+            }
+        }
+
+        return trim($path);
+    }
+
+    /**
+     * Extensions that may hold the media for the given type, best first.
+     *
+     * @return list<string>
+     */
+    protected static function mediaExtensions(string $type): array
+    {
+        return $type === 'video'
+            ? ['mp4', 'webm', 'mov', 'm4v']
+            : ['webp', 'jpg', 'jpeg', 'png'];
+    }
+
+    /**
+     * Resolves a relative media directory to an absolute one, supporting
+     * both the standard Laravel layout and cPanel document roots.
+     */
+    protected static function absoluteMediaDirectory(string $directory): string
+    {
+        $directory = rtrim(str_replace('\\', '/', $directory), '/');
+
+        if (str_starts_with($directory, '/') || preg_match('#^[A-Za-z]:/#', $directory) === 1) {
+            return $directory;
+        }
+
+        return rtrim(str_replace('\\', '/', base_path($directory)), '/');
+    }
+
+    protected static function isUsableMediaFile(string $file): bool
+    {
+        return is_file($file) && (int) @filesize($file) > 0;
+    }
+
+    protected static function mediaExtensionRank(string $file): int
+    {
+        return match (strtolower(pathinfo($file, PATHINFO_EXTENSION))) {
+            'webp' => 0,
+            'jpg', 'jpeg' => 1,
+            'png' => 2,
+            'mp4' => 0,
+            'webm' => 1,
+            default => 3,
+        };
+    }
+
+    /**
+     * A comparable key for a filename: slug of the stem with the uploader's
+     * "slug-<unix time>-<random>" suffix removed.
+     */
+    protected static function mediaFileKey(string $stem): string
+    {
+        $stem = preg_replace('/-\d{10}-[a-z0-9]{6}$/i', '', $stem) ?? $stem;
+
+        return Str::slug($stem);
+    }
+
+    /**
+     * Index of every media file on disk, keyed by lowercase filename and by
+     * normalised stem. Built once per request — a catalogue page resolves
+     * dozens of images and must not scan the directory each time.
+     *
+     * @return array{byLower: array<string,string>, byKey: array<string,list<string>>}
+     */
+    protected static function mediaIndex(string $type): array
+    {
+        $cache = $type === 'video' ? 'videoMediaIndex' : 'imageMediaIndex';
+
+        if (static::$$cache !== null) {
+            return static::$$cache;
+        }
+
+        $directories = self::mediaSearchDirectories($type);
+        $directories[] = public_path($type === 'video' ? 'videos/products' : 'images/products');
+
+        $byLower = [];
+        $byKey = [];
+        $seen = [];
+
+        foreach (array_unique($directories) as $directory) {
+            $dir = self::absoluteMediaDirectory($directory);
+
+            if (! is_dir($dir)) {
+                continue;
+            }
+
+            $entries = @scandir($dir);
+
+            if ($entries === false) {
+                continue;
+            }
+
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+
+                $full = $dir.'/'.$entry;
+
+                if (! self::isUsableMediaFile($full)) {
+                    continue;
+                }
+
+                $extension = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
+
+                if (! in_array($extension, self::mediaExtensions($type), true)) {
+                    continue;
+                }
+
+                $real = (string) (@realpath($full) ?: $full);
+
+                if (isset($seen[$real])) {
+                    continue;
+                }
+
+                $seen[$real] = true;
+
+                $byLower[strtolower($entry)] ??= $full;
+                $key = self::mediaFileKey(pathinfo($entry, PATHINFO_FILENAME));
+
+                if ($key !== '') {
+                    $byKey[$key][] = $full;
+                }
+            }
+        }
+
+        return static::$$cache = ['byLower' => $byLower, 'byKey' => $byKey];
+    }
+
+    /**
+     * @return array{file:string,url:string,name:string}
+     */
+    protected function foundMediaFile(string $file): array
+    {
+        return [
+            'file' => $file,
+            'url' => $this->mediaFileUrl($file),
+            'name' => basename($file),
+        ];
     }
 
     /** Turn an absolute media file path into a browser-facing URL. */
@@ -402,11 +581,13 @@ class Product extends Model
 
     /**
      * Last-resort image discovery when DB media records are empty or all
-     * point at missing files. Tries:
-     *  1. Exact slug-named file (<slug>.webp/.jpg/...)
-     *  2. Any file in the product image directories whose normalized name
-     *     starts with or contains the product slug/name (handles admin
-     *     uploads with timestamp suffixes, or manually placed files).
+     * point at missing files.
+     *
+     * Only an unambiguous match is accepted: a file whose normalised name
+     * (uploader timestamp suffix stripped) is exactly one of the product's
+     * own keys. Similar-looking photos belonging to other products are never
+     * substituted, because a wrong image on a product page is worse than an
+     * honest "image unavailable" placeholder.
      *
      * @return array{file:string,url:string,name:string}|null
      */
@@ -415,156 +596,43 @@ class Product extends Model
         $stems = array_values(array_filter(array_unique([
             (string) $this->slug,
             Str::slug((string) $this->name),
-            // Also try without common suffixes like "with-application-kit"
-            preg_replace('/-with-application-kit$/', '', (string) $this->slug),
-            preg_replace('/-with-application-kit$/', '', Str::slug((string) $this->name)),
+            (string) preg_replace('/-with-application-kit$/', '', (string) $this->slug),
+            (string) preg_replace('/-with-application-kit$/', '', Str::slug((string) $this->name)),
         ])));
 
-        // 1) Exact slug-named file
+        // 1) A file literally named after the product slug, whatever its
+        //    extension (WebP, JPEG, PNG, or a stale extension in the record).
         foreach ($stems as $stem) {
             $resolved = $this->resolveMediaFile('image', $stem.'.webp');
+
             if ($resolved !== null) {
                 return $resolved;
             }
         }
 
-        // 2) Scan product image directories for best fuzzy match
-        $candidates = $this->collectProductImageFiles();
-        if ($candidates === []) {
-            return null;
-        }
+        // 2) The same normalised key, so "product-slug-<time>-<random>.webp"
+        //    still belongs to "product-slug".
+        $index = self::mediaIndex('image');
 
-        $bestFile = null;
-        $bestScore = -1;
+        foreach ($stems as $stem) {
+            $key = self::mediaFileKey((string) $stem);
 
-        foreach ($candidates as $file) {
-            $basename = basename($file);
-            $fileKey = Str::slug(pathinfo($basename, PATHINFO_FILENAME));
-
-            foreach ($stems as $stem) {
-                $stemKey = Str::slug($stem);
-                if ($stemKey === '' || strlen($stemKey) < 3) {
-                    continue;
-                }
-
-                $score = -1;
-                if ($fileKey === $stemKey) {
-                    $score = 100;
-                } elseif (str_starts_with($fileKey, $stemKey.'-') || str_starts_with($fileKey, $stemKey.'_')) {
-                    $score = 90;
-                } elseif (str_starts_with($stemKey, $fileKey.'-') || str_starts_with($stemKey, $fileKey.'_')) {
-                    $score = 80;
-                } elseif (strlen($stemKey) >= 6 && str_contains($fileKey, $stemKey)) {
-                    $score = 70;
-                } elseif (strlen($stemKey) >= 10 && str_contains($stemKey, $fileKey) && strlen($fileKey) >= 6) {
-                    $score = 60;
-                }
-
-                // Prefer webp over jpg for same score
-                if ($score >= 0) {
-                    $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
-                    $extBonus = match ($ext) {
-                        'webp' => 3, 'jpg', 'jpeg' => 2, 'png' => 1, default => 0,
-                    };
-                    $total = $score * 10 + $extBonus;
-                    if ($total > $bestScore) {
-                        $bestScore = $total;
-                        $bestFile = $file;
-                    }
-                }
+            if ($key === '' || strlen($key) < 3) {
+                continue;
             }
-        }
 
-        if ($bestFile !== null) {
-            $name = basename($bestFile);
+            $matches = $index['byKey'][$key] ?? [];
 
-            return [
-                'file' => $bestFile,
-                'url' => $this->mediaFileUrl($bestFile),
-                'name' => $name,
-            ];
+            if ($matches === []) {
+                continue;
+            }
+
+            usort($matches, fn (string $a, string $b) => self::mediaExtensionRank($a) <=> self::mediaExtensionRank($b));
+
+            return $this->foundMediaFile($matches[0]);
         }
 
         return null;
-    }
-
-    /**
-     * Collect all image files from known product image directories.
-     * Cached per-request via static to avoid repeated filesystem scans.
-     *
-     * @return list<string>
-     */
-    protected function collectProductImageFiles(): array
-    {
-        static $cache = null;
-
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $files = [];
-        $seen = [];
-
-        foreach (self::mediaSearchDirectories('image') as $directory) {
-            $dir = base_path($directory);
-            if (! is_dir($dir)) {
-                continue;
-            }
-            $entries = @scandir($dir);
-            if ($entries === false) {
-                continue;
-            }
-            foreach ($entries as $entry) {
-                if ($entry === '.' || $entry === '..') {
-                    continue;
-                }
-                $full = $dir.'/'.$entry;
-                if (! is_file($full) || (int) @filesize($full) <= 0) {
-                    continue;
-                }
-                $ext = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
-                if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-                    continue;
-                }
-                $key = strtolower($entry);
-                if (isset($seen[$key])) {
-                    continue;
-                }
-                $seen[$key] = true;
-                $files[] = $full;
-            }
-        }
-
-        // Also check public_path() subdirectory directly
-        $pubDir = public_path('images/products');
-        if (is_dir($pubDir)) {
-            $entries = @scandir($pubDir);
-            if ($entries !== false) {
-                foreach ($entries as $entry) {
-                    if ($entry === '.' || $entry === '..') {
-                        continue;
-                    }
-                    $full = $pubDir.'/'.$entry;
-                    if (! is_file($full) || (int) @filesize($full) <= 0) {
-                        continue;
-                    }
-                    $ext = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
-                    if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-                        continue;
-                    }
-                    $key = strtolower($entry);
-                    if (isset($seen[$key])) {
-                        continue;
-                    }
-                    $seen[$key] = true;
-                    $files[] = $full;
-                }
-            }
-        }
-
-        $cache = $files;
-
-        return $cache;
     }
 
     /**

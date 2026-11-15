@@ -3,7 +3,8 @@
 namespace App\Support;
 
 /**
- * Helpers that turn a stored image path into the markup a browser needs.
+ * Helpers that turn a stored image path (or an already-resolved media URL)
+ * into the markup a browser needs.
  *
  * The catalogue keeps the original file on disk and writes a WebP sibling
  * next to it. This class resolves the two variants plus the intrinsic
@@ -16,6 +17,11 @@ namespace App\Support;
  *
  * Emitting width/height removes the layout shift that lazy-loaded images
  * normally cause (CLS), which is both a Core Web Vitals win and an SEO win.
+ *
+ * Every method accepts either a storage path ("images/products/foo.jpg"),
+ * a root-relative URL ("/images/products/foo.jpg") or an absolute URL.
+ * Anything that cannot be found on disk is left untouched, so a caller can
+ * never corrupt a working URL by passing it through here a second time.
  */
 class ImageUrl
 {
@@ -28,22 +34,93 @@ class ImageUrl
      */
     public static function relativePath(string $src): string
     {
+        $src = trim($src);
+
         if ($src === '') {
             return '';
         }
 
+        $src = str_replace('\\', '/', $src);
+
         // Absolute URL (http/https) -> keep only its path segment.
         if (preg_match('#^https?://#i', $src)) {
-            $path = parse_url($src, PHP_URL_PATH) ?: '';
-        } else {
-            $path = $src;
+            $src = (string) (parse_url($src, PHP_URL_PATH) ?? '');
         }
 
-        // Storage-style URLs ("/storage/images/...") keep everything after
-        // the storage segment.
-        $path = preg_replace('#^.*?/storage/#', '', $path) ?? $path;
+        // Drop query strings / fragments and decode %20-style escapes so a
+        // browser-encoded filename still maps back to the file on disk.
+        $src = (string) preg_split('/[?#]/', $src)[0];
+        $src = rawurldecode($src);
+        $src = preg_replace('#^\./#', '', $src) ?? $src;
 
-        return ltrim($path, '/');
+        return ltrim($src, '/');
+    }
+
+    /**
+     * Absolute filesystem path of the file behind the given reference,
+     * or null when nothing exists on disk.
+     */
+    public static function publicFile(string $src): ?string
+    {
+        $relative = self::relativePath($src);
+
+        if ($relative === '' || str_contains($relative, '..')) {
+            return null;
+        }
+
+        $candidates = [];
+
+        // "/storage/..." is served through the public/storage symlink, but a
+        // shared host may have skipped `storage:link`, so also look at the
+        // real storage directory.
+        if (str_starts_with($relative, 'storage/')) {
+            $candidates[] = public_path($relative);
+            $candidates[] = storage_path('app/public/'.substr($relative, strlen('storage/')));
+        }
+
+        $candidates[] = public_path($relative);
+        $candidates[] = base_path('public/'.$relative);
+
+        // A reference that still carries a "public/" prefix (legacy rows).
+        if (str_starts_with($relative, 'public/')) {
+            $candidates[] = public_path(substr($relative, strlen('public/')));
+        }
+
+        $candidates[] = base_path($relative);
+
+        foreach (array_unique($candidates) as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Root-relative URL ("/images/products/foo.webp") for an absolute file.
+     * Respects subdirectory installs and storage files without a symlink.
+     */
+    public static function urlForFile(string $file): string
+    {
+        $file = str_replace('\\', '/', $file);
+        $public = rtrim(str_replace('\\', '/', public_path()), '/');
+        $base = rtrim(str_replace('\\', '/', base_path()), '/');
+        $storage = rtrim(str_replace('\\', '/', storage_path()), '/');
+
+        if (str_starts_with($file, $public.'/')) {
+            return self::relativeUrl(substr($file, strlen($public) + 1));
+        }
+
+        if (str_starts_with($file, $storage.'/app/public/')) {
+            return self::relativeUrl('storage/'.substr($file, strlen($storage.'/app/public/')));
+        }
+
+        if (str_starts_with($file, $base.'/')) {
+            return self::relativeUrl(substr($file, strlen($base) + 1));
+        }
+
+        return self::relativeUrl(basename($file));
     }
 
     /**
@@ -111,52 +188,49 @@ class ImageUrl
      */
     public static function webpVariant(string $src): ?string
     {
-        $relative = self::relativePath($src);
+        $file = self::publicFile($src);
 
-        if ($relative === '') {
+        if ($file === null) {
             return null;
         }
 
-        $extension = strtolower(pathinfo($relative, PATHINFO_EXTENSION));
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
         if ($extension === 'webp') {
-            return is_file(public_path($relative)) ? self::relativeUrl($relative) : null;
+            return self::urlForFile($file);
         }
 
-        $candidate = pathinfo($relative, PATHINFO_DIRNAME).'/'.pathinfo($relative, PATHINFO_FILENAME).'.webp';
-        $candidate = ltrim($candidate, './');
+        $webp = substr($file, 0, strlen($file) - strlen($extension)).'webp';
 
-        if (is_file(public_path($candidate))) {
-            return self::relativeUrl($candidate);
-        }
-
-        return null;
+        return is_file($webp) ? self::urlForFile($webp) : null;
     }
 
     /**
-     * The fallback image URL — the original file, or the JPEG sibling when
-     * the stored file is itself a WebP.
+     * The fallback image URL — the original file, or a raster sibling when
+     * the stored file is itself a WebP. References that do not exist on
+     * disk are returned untouched instead of being rewritten into a guess.
      */
     public static function fallback(string $src): string
     {
-        $relative = self::relativePath($src);
+        $file = self::publicFile($src);
 
-        if ($relative === '') {
+        if ($file === null) {
             return $src;
         }
 
-        $extension = strtolower(pathinfo($relative, PATHINFO_EXTENSION));
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
         if ($extension === 'webp') {
-            $sibling = pathinfo($relative, PATHINFO_DIRNAME).'/'.pathinfo($relative, PATHINFO_FILENAME).'.jpg';
-            $sibling = ltrim($sibling, './');
+            foreach (['jpg', 'jpeg', 'png'] as $siblingExtension) {
+                $sibling = substr($file, 0, strlen($file) - strlen($extension)).$siblingExtension;
 
-            if (is_file(public_path($sibling))) {
-                return self::relativeUrl($sibling);
+                if (is_file($sibling)) {
+                    return self::urlForFile($sibling);
+                }
             }
         }
 
-        return self::relativeUrl($relative);
+        return self::urlForFile($file);
     }
 
     /**
@@ -180,25 +254,15 @@ class ImageUrl
             return $cached === false ? [null, null] : $cached;
         }
 
-        $path = public_path($relative);
+        $path = self::publicFile($relative);
 
-        if (! is_file($path)) {
-            // The stored file may be WebP while the size lives on its
-            // JPEG sibling (or the other way round).
-            $stem = pathinfo($relative, PATHINFO_FILENAME);
-            $dir = ltrim(pathinfo($relative, PATHINFO_DIRNAME), './');
+        if ($path === null) {
+            self::$dimensionCache[$relative] = false;
 
-            foreach (['.jpg', '.jpeg', '.png', '.webp'] as $extension) {
-                $candidate = ($dir === '.' ? '' : $dir.'/').$stem.$extension;
-
-                if (is_file(public_path($candidate))) {
-                    $path = public_path($candidate);
-                    break;
-                }
-            }
+            return [null, null];
         }
 
-        $size = is_file($path) ? @getimagesize($path) : false;
+        $size = @getimagesize($path);
 
         if ($size === false) {
             self::$dimensionCache[$relative] = false;
