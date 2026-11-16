@@ -1,0 +1,51 @@
+# cPanel Git Version Control — Laravel 12 / PHP 8.2 deployment config
+# This file configures cPanel's "Git™ Version Control" interface.
+# Place it in the project root. Do NOT delete or rename the root .htaccess
+# or public/.htaccess — they work together to forward requests into public/.
+
+# -----------------------------------------------------------------------------
+# application_dir
+#   Relative to the repository root (public_html or your home directory)
+#   where Laravel's public/ index.php lives. Because our root .htaccess already
+#   rewrites every request into public/, we keep the application at the root.
+# -----------------------------------------------------------------------------
+application_dir: /
+
+# -----------------------------------------------------------------------------
+# php_version
+#   cPanel will use this PHP version for the Git deployment environment.
+#   Verified compatible with Laravel 12 / PHP 8.2.
+# -----------------------------------------------------------------------------
+php_version: 8.2
+
+# -----------------------------------------------------------------------------
+# commands
+#   Pre‑deployment and post‑deployment commands run by cPanel's Git pipeline.
+#   – Each item is a single line string.
+#   – Commands run from the repository root (i.e. the directory containing
+#     .cpanel.yml, .htaccess, composer.json, etc.).
+#   – **Never** override .env values or write to storage/upload directories
+#     from these commands; the deployment is read‑only for data safety.
+# -----------------------------------------------------------------------------
+commands:
+  # Install production dependencies only; lock file is respected.
+  - composer install --no-dev --optimize-autoloader
+
+  # Generate APP_KEY if missing from .env (idempotent — no‑op if key exists).
+  - >
+    if ! grep -q "^APP_KEY=" .env || grep -q "^APP_KEY=$" .env; then
+      php artisan key:generate --ansi
+    fi
+
+  # Run migrations with --force.  Our codebase uses hasColumn() guards so that
+  # the migration can safely run even when some merchandising columns are absent
+  # from the production database.  If a column already exists the query is a no‑op.
+  - php artisan migrate --force
+
+  # Cache configuration, routes and views so the first request is fast.
+  - php artisan config:cache
+  - php artisan route:cache
+  - php artisan view:cache
+
+  # Clear runtime caches so the freshly cached config takes effect immediately.
+  - php artisan optimize:clear

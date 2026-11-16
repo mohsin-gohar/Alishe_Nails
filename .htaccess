@@ -5,24 +5,42 @@
 #      <project-root>/.htaccess      <- this file (security + caching + rewrite)
 #      <project-root>/public/         <- document root served by Apache
 #
-#  NOTE: every <IfModule> block below is properly opened AND closed. A stray
-#  closing tag makes the whole Apache config fail to parse, which takes the
-#  entire site down with a 500 — keep the pairs balanced.
+#  IMPORTANT:
+#  - every <IfModule> block below is properly opened AND closed. A stray
+#    closing tag makes the whole Apache config fail to parse, which takes the
+#    entire site down with a 500 — keep the pairs balanced.
+#  - THIS FILE works IN TANDEM with public/.htaccess (Laravel front controller).
+#    The root .htaccess rewrites ALL requests into public/; public/.htaccess
+#    then handles the Laravel front controller, routing, and Authorization headers.
+#  - Production: AlifHost cPanel, PHP 8.2, Laravel.
+#  - NEVER run migrate:fresh, db:wipe, or destructive SQL against production.
+#  - Never overwrite .env or uploaded images on production without explicit approval.
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-#  1. HTTPS — every request is upgraded to TLS (e-commerce requirement)
+#  1. HTTPS — let cPanel/WHM enforce HTTPS, not .htaccess.
+#  ------------------------------------------------------------------
+#  On cPanel hosting, HTTPS is typically managed at the server level via WHM:
+#  "SSL/TLS Manager" > "Auto Redirect HTTPS" or "Redirects".
+#  Adding a 301 redirect here can conflict with cPanel's own redirect, causing
+#  redirect loops or broken certificate handling.
+#  If you must force HTTPS in .htaccess, test thoroughly in a staging environment
+#  first, and ensure no conflicting redirect exists in cPanel.
 # ------------------------------------------------------------------------------
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    RewriteCond %{HTTPS} !=on
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-</IfModule>
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#
+#     RewriteCond %{HTTPS} !=on
+#     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+# ------------------------------------------------------------------------------
+#  For production AlifHost cPanel: configure HTTPS in WHM under "SSL/TLS Manager"
+#  or "Redirects" — do not rely on .htaccess for HTTP->HTTPS redirect.
+# ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 #  2. Compression — text assets are gzipped, cutting transfer size by ~70%
-#     (brotli is used when the server supports it, gzip is the fallback)
+#    (brotli is used when the server supports it, gzip is the fallback)
 # ------------------------------------------------------------------------------
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
@@ -40,7 +58,7 @@
 
 # ------------------------------------------------------------------------------
 #  3. Browser caching — fingerprinted assets are cached for a year, images for
-#     a month. Repeat visitors then download almost nothing at all.
+#    a month. Repeat visitors then download almost nothing at all.
 # ------------------------------------------------------------------------------
 <IfModule mod_expires.c>
     ExpiresActive On
@@ -75,12 +93,12 @@
     # ------------------------------------------------------------------
     #  Security headers
     #
-    #  These are repeated here (and MUST stay identical to
-    #  app/Http/Middleware/SecurityHeaders.php) because Apache serves CSS, JS
-    #  and images directly, without ever booting Laravel. Two different
-    #  policies means the browser enforces the intersection of both — a
-    #  directive that only one of them allows is silently blocked.
-    #  tests/Feature/SecurityHeadersTest.php asserts the two stay in sync.
+    #  These MUST stay identical to app/Http/Middleware/SecurityHeaders.php,
+    #  because Apache serves CSS, JS and images directly, without ever booting
+    #  Laravel. Two different policies means the browser enforces the intersection
+    #  of both — a directive that only one of them allows is silently blocked.
+    #  tests/Feature/SecurityHeadersTest.php asserts the .htaccess CSP exactly
+    #  matches the middleware CSP.
     # ------------------------------------------------------------------
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
@@ -111,11 +129,14 @@
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     # Strip trailing slashes (one canonical URL per page — good for SEO).
+    # Only strip if the request is NOT for a real directory (prevent 404s on
+    # legitimate folder URLs that happen to end in /).
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
     # Send everything into the public directory, where the front controller lives.
+    # This works together with public/.htaccess (Laravel front controller).
     RewriteCond %{REQUEST_URI} !^public/
     RewriteRule ^(.*)$ public/$1 [L,NC]
 </IfModule>
@@ -138,6 +159,11 @@
 #  7. Upload limits — generous enough for a 20 MB product video
 # ------------------------------------------------------------------------------
 <IfModule mod_php.c>
+    # NOTE: On cPanel/PHP-FPM, php_value directives can conflict with the
+    # PHP-FPM pool settings. If you need custom PHP ini values, set them
+    # in the PHP-FPM pool config or via .user.ini instead of .htaccess.
+    # Keeping these here for shared-host setups that use mod_php; remove or
+    # comment out if using PHP-FPM or if they cause 500 errors.
     php_value upload_max_filesize 40M
     php_value post_max_size 40M
     php_value memory_limit 512M
