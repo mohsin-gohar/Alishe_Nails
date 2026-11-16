@@ -7,10 +7,29 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class Category extends Model
 {
     use HasFactory;
+
+    /**
+     * Production may not have run the merchandising migration yet, so the
+     * `is_active` / `sort_order` columns can be absent. Cache the result so we
+     * don't hit information_schema on every query.
+     *
+     * @var array<string, bool>
+     */
+    protected static array $columnCache = [];
+
+    public static function hasColumn(string $column): bool
+    {
+        if (! array_key_exists($column, static::$columnCache)) {
+            static::$columnCache[$column] = Schema::hasColumn('categories', $column);
+        }
+
+        return static::$columnCache[$column];
+    }
 
     protected $fillable = [
         'name',
@@ -44,6 +63,31 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Only active categories, when the column exists. Production may not have
+     * run the merchandising migration yet, so guard the filter.
+     */
+    public function scopeActive($query)
+    {
+        if (static::hasColumn('is_active')) {
+            $query->where('is_active', true);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Stable ordering: sort_order when available, always fall back to name.
+     */
+    public function scopeOrdered($query)
+    {
+        if (static::hasColumn('sort_order')) {
+            $query->orderBy('sort_order');
+        }
+
+        return $query->orderBy('name');
     }
 
     /**

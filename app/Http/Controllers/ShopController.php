@@ -61,11 +61,10 @@ class ShopController extends Controller
         // Facet counts for the filter sidebar, cached for 5 minutes to avoid redundant aggregate queries.
         [$categories, $shapeCounts, $lengthCounts, $finishCounts] = Cache::remember('shop_sidebar_facets', 300, function () {
             return [
-                Category::where('is_active', true)
+                Category::active()
                     ->whereHas('products', fn ($q) => $q->where('is_active', true))
                     ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
-                    ->orderBy('sort_order')
-                    ->orderBy('name')
+                    ->ordered()
                     ->get(),
                 Product::active()->selectRaw('shape, count(*) as total')->groupBy('shape')->pluck('total', 'shape'),
                 Product::active()->selectRaw('length, count(*) as total')->groupBy('length')->pluck('total', 'length'),

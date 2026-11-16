@@ -63,11 +63,10 @@ class HomeController extends Controller
     public function index()
     {
         $data = Cache::remember('home_page_data', 300, function () {
-            $collections = Category::where('is_active', true)
+            $collections = Category::active()
                 ->whereHas('products', fn ($q) => $q->where('is_active', true))
                 ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
-                ->orderBy('sort_order')
-                ->orderBy('name')
+                ->ordered()
                 ->take(4)
                 ->get();
 

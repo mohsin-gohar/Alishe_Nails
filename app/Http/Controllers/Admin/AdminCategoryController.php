@@ -14,8 +14,7 @@ class AdminCategoryController extends Controller
     public function index()
     {
         $categories = Category::withCount('products')
-            ->orderBy('sort_order')
-            ->orderBy('name')
+            ->ordered()
             ->paginate(15);
 
         return view('admin.categories.index', compact('categories'));
@@ -70,8 +69,18 @@ class AdminCategoryController extends Controller
         $data = $request->validated();
 
         $data['slug'] = $this->uniqueSlug($data['name'], $category);
-        $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
-        $data['is_active'] = $request->boolean('is_active');
+
+        if (Category::hasColumn('sort_order')) {
+            $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
+        } else {
+            unset($data['sort_order']);
+        }
+
+        if (Category::hasColumn('is_active')) {
+            $data['is_active'] = $request->boolean('is_active');
+        } else {
+            unset($data['is_active']);
+        }
 
         if ($request->hasFile('image')) {
             $newImage = $this->storeImage($request->file('image'));

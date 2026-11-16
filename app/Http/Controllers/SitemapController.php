@@ -31,8 +31,8 @@ class SitemapController extends Controller
                 ['loc' => route('seller.apply'), 'priority' => '0.3', 'changefreq' => 'monthly'],
             ];
 
-            $categories = Category::where('is_active', true)
-                ->orderBy('sort_order')
+            $categories = Category::active()
+                ->ordered()
                 ->get(['name', 'slug', 'updated_at'])
                 ->map(fn (Category $category) => [
                     'loc' => route('shop.index', ['category' => $category->slug]),
