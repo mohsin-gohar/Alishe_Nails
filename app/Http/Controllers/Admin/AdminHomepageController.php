@@ -23,7 +23,7 @@ class AdminHomepageController extends Controller
             ->get();
 
         $selected = $products
-            ->where('is_homepage', true)
+            ->whereIsHomepage()
             ->sortBy(fn (Product $product) => [$product->homepage_order ?? PHP_INT_MAX, $product->id])
             ->values();
 
@@ -49,18 +49,24 @@ class AdminHomepageController extends Controller
             ->values();
 
         DB::transaction(function () use ($ids) {
-            // Clear the previous lineup first. Using a bulk update is faster
-            // than touching every model; we invalidate the cache manually.
-            Product::query()->update([
-                'is_homepage' => false,
-                'homepage_order' => null,
-            ]);
+            // Clear the previous lineup first. Use hasColumn guards so the
+            // migration-less production DB does not crash.
+            if (Product::hasColumn('is_homepage')) {
+                Product::query()->update(['is_homepage' => false]);
+            }
+            if (Product::hasColumn('homepage_order')) {
+                Product::query()->update(['homepage_order' => null]);
+            }
 
             foreach ($ids as $index => $id) {
-                Product::whereKey($id)->update([
-                    'is_homepage' => true,
-                    'homepage_order' => $index + 1,
-                ]);
+                $updates = [];
+                if (Product::hasColumn('is_homepage')) {
+                    $updates['is_homepage'] = true;
+                }
+                if (Product::hasColumn('homepage_order')) {
+                    $updates['homepage_order'] = $index + 1;
+                }
+                Product::whereKey($id)->update($updates);
             }
         });
 

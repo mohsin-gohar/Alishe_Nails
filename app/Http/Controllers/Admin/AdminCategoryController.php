@@ -82,6 +82,20 @@ class AdminCategoryController extends Controller
             unset($data['is_active']);
         }
 
+        if (Category::hasColumn('description')) {
+            // description is already in $data from $request->validated();
+        } else {
+            unset($data['description']);
+        }
+
+        if (Category::hasColumn('image')) {
+            // image may be set from file upload below; keep it for now,
+            // and the conditional block below will unset it if the column
+            // is missing and no file was uploaded.
+        } else {
+            unset($data['image']);
+        }
+
         if ($request->hasFile('image')) {
             $newImage = $this->storeImage($request->file('image'));
             $this->deleteImage($category?->image);

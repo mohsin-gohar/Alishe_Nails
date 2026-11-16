@@ -84,7 +84,8 @@ class HomeController extends Controller
             // yet, fall back to the previous automatic merchandising logic so
             // the storefront is never empty.
             $showcaseProducts = Product::active()
-                ->where('is_homepage', true)
+                ->isHomepage()
+                ->orderByHomepage()
                 ->with(['category', 'seller'])
                 ->withCount('approvedReviews')
                 ->withAvg('approvedReviews', 'rating')

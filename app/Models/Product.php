@@ -7,11 +7,31 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use HasFactory;
+
+    /**
+     * Production may not have run the merchandising migration yet, so the
+     * `is_homepage` / `homepage_order` / `meta_title` / `meta_description`
+     * / `tags` columns can be absent. Cache the result so we don't hit
+     * information_schema on every query.
+     *
+     * @var array<string, bool>
+     */
+    protected static array $columnCache = [];
+
+    public static function hasColumn(string $column): bool
+    {
+        if (! array_key_exists($column, static::$columnCache)) {
+            static::$columnCache[$column] = Schema::hasColumn('products', $column);
+        }
+
+        return static::$columnCache[$column];
+    }
 
     protected $fillable = [
         'category_id',
@@ -121,6 +141,50 @@ class Product extends Model
                     $subscription->where('status', 'active')->where('expires_at', '>', now());
                 }));
         });
+    }
+
+    /** Only active products when is_active column exists (always present). */
+    public function scopeIsHomepage($query)
+    {
+        if (static::hasColumn('is_homepage')) {
+            $query->where('is_homepage', true);
+        }
+
+        return $query;
+    }
+
+    /** Order by homepage_order when the column exists, always fall back to id. */
+    public function scopeOrderByHomepage($query)
+    {
+        if (static::hasColumn('homepage_order')) {
+            $query->orderBy('homepage_order');
+        }
+
+        return $query->orderBy('id');
+    }
+
+    /** Per-product SEO overrides when the columns exist. When empty the storefront falls back to the product name + short description. */
+    public function scopeHasSeoOverrides($query)
+    {
+        $hasAny = false;
+
+        if (static::hasColumn('meta_title')) {
+            $hasAny = true;
+        }
+        if (static::hasColumn('meta_description')) {
+            $hasAny = true;
+        }
+        if (static::hasColumn('tags')) {
+            $hasAny = true;
+        }
+
+        if ($hasAny) {
+            $query->whereNotNull('meta_title')
+                ->orWhereNotNull('meta_description')
+                ->orWhereNotNull('tags');
+        }
+
+        return $query;
     }
 
     public function isInStock(): bool
