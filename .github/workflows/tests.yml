@@ -64,7 +64,6 @@ jobs:
     env:
       APP_ENV: testing
       APP_DEBUG: 'false'
-      APP_KEY: base64:CI-dummy-key-will-be-generated
       BCRYPT_ROUNDS: '4'
       CACHE_STORE: array
       DB_CONNECTION: mysql
@@ -157,7 +156,6 @@ jobs:
     env:
       APP_ENV: testing
       APP_DEBUG: 'false'
-      APP_KEY: base64:CI-dummy-key-will-be-generated
       BCRYPT_ROUNDS: '4'
       CACHE_STORE: array
       DB_CONNECTION: mysql
