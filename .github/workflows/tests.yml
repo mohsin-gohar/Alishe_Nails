@@ -109,9 +109,14 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           if [ $status -ne 0 ]; then
-            echo "=== LAST 40 LINES OF phpunit-mariadb.log ==="
-            tail -n 40 phpunit-mariadb.log
-            tail -n 40 phpunit-mariadb.log | while IFS= read -r line; do
+            echo "=== TEST SUMMARY LINES ==="
+            grep -nE "Tests:|OK \||FAILURES|ERRORS|There were" phpunit-mariadb.log | head -20
+            echo "=== EXCEPTION / SQLSTATE LINES ==="
+            grep -nE "Exception|SQLSTATE|PDOException" phpunit-mariadb.log | head -30
+            echo "=== FAILING TEST NAMES ==="
+            grep -nE "^[0-9]+\)" phpunit-mariadb.log | head -20
+            echo "=== EMITTING ALL ==="
+            { grep -nE "Tests:|Exception|SQLSTATE|PDOException|^[0-9]+\)" phpunit-mariadb.log | head -40; } | while IFS= read -r line; do
               echo "::error::$line"
             done
           fi
