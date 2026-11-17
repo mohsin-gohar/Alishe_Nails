@@ -82,7 +82,7 @@ return new class extends Migration
                 Schema::table('products', function (Blueprint $table) {
                     $table->dropColumn('tags');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -92,7 +92,7 @@ return new class extends Migration
                 Schema::table('products', function (Blueprint $table) {
                     $table->dropColumn('meta_description');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -102,7 +102,7 @@ return new class extends Migration
                 Schema::table('products', function (Blueprint $table) {
                     $table->dropColumn('meta_title');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -112,7 +112,7 @@ return new class extends Migration
                 Schema::table('products', function (Blueprint $table) {
                     $table->dropColumn('homepage_order');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -122,7 +122,7 @@ return new class extends Migration
                 Schema::table('products', function (Blueprint $table) {
                     $table->dropColumn('is_homepage');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -133,7 +133,7 @@ return new class extends Migration
                 Schema::table('categories', function (Blueprint $table) {
                     $table->dropColumn('image');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -143,7 +143,7 @@ return new class extends Migration
                 Schema::table('categories', function (Blueprint $table) {
                     $table->dropColumn('description');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -153,7 +153,7 @@ return new class extends Migration
                 Schema::table('categories', function (Blueprint $table) {
                     $table->dropColumn('sort_order');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
@@ -163,7 +163,7 @@ return new class extends Migration
                 Schema::table('categories', function (Blueprint $table) {
                     $table->dropColumn('is_active');
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Column may have been modified or removed already
             }
         }
