@@ -62,8 +62,16 @@ class ShopController extends Controller
         [$categories, $shapeCounts, $lengthCounts, $finishCounts] = Cache::remember('shop_sidebar_facets', 300, function () {
             return [
                 Category::active()
-                    ->whereHas('products', fn ($q) => $q->where('is_active', true))
-                    ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
+                    ->whereHas('products', function ($q) {
+                    if (Category::hasColumn('is_active')) {
+                        $q->where('is_active', true);
+                    }
+                })
+                    ->withCount(['products' => function ($q) {
+                    if (Category::hasColumn('is_active')) {
+                        $q->where('is_active', true);
+                    }
+                }])
                     ->ordered()
                     ->get(),
                 Product::active()->selectRaw('shape, count(*) as total')->groupBy('shape')->pluck('total', 'shape'),
