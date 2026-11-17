@@ -49,6 +49,14 @@ class ProductMediaResolutionTest extends TestCase
         }
 
         $file = $dir.'/'.$name;
+
+        // Fixtures must never overwrite a real catalogue photo: tearDown
+        // deletes everything it created, so clobbering a tracked image would
+        // silently strip the storefront of an asset.
+        if (file_exists($file)) {
+            $this->fail('Fixture '.$name.' already exists in public/images/products; use a unique name.');
+        }
+
         file_put_contents($file, $this->pngBytes());
         $this->created[] = $file;
 
@@ -82,10 +90,10 @@ class ProductMediaResolutionTest extends TestCase
 
     public function test_non_empty_invalid_media_does_not_hide_a_valid_legacy_image(): void
     {
-        $this->putPublicImage('rosy-quartz-ombre.jpg');
+        $this->putPublicImage('zz-resolution-legacy-cover.jpg');
 
         $product = $this->product([
-            'image' => 'rosy-quartz-ombre.jpg',
+            'image' => 'zz-resolution-legacy-cover.jpg',
             'media' => $this->deadMedia(),
         ]);
 
@@ -93,41 +101,41 @@ class ProductMediaResolutionTest extends TestCase
 
         $this->assertCount(1, $urls);
         $this->assertSame('image', $urls[0]['type']);
-        $this->assertStringEndsWith('/images/products/rosy-quartz-ombre.jpg', $urls[0]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-legacy-cover.jpg', $urls[0]['url']);
     }
 
     public function test_non_empty_invalid_media_falls_back_to_a_valid_legacy_gallery(): void
     {
-        $this->putPublicImage('midnight-espresso-gallery.jpg');
+        $this->putPublicImage('zz-resolution-legacy-gallery.jpg');
 
         $product = $this->product([
             'image' => null,
-            'gallery' => ['midnight-espresso-gallery.jpg'],
+            'gallery' => ['zz-resolution-legacy-gallery.jpg'],
             'media' => $this->deadMedia(),
         ]);
 
         $urls = $product->media_urls;
 
         $this->assertCount(1, $urls);
-        $this->assertStringEndsWith('/images/products/midnight-espresso-gallery.jpg', $urls[0]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-legacy-gallery.jpg', $urls[0]['url']);
     }
 
     public function test_valid_unified_media_keeps_priority_over_legacy_fields(): void
     {
-        $this->putPublicImage('unified-winner.jpg');
-        $this->putPublicImage('legacy-loser.jpg');
+        $this->putPublicImage('zz-resolution-unified.jpg');
+        $this->putPublicImage('zz-resolution-legacy-loser.jpg');
 
         $product = $this->product([
-            'image' => 'legacy-loser.jpg',
+            'image' => 'zz-resolution-legacy-loser.jpg',
             'media' => [
-                ['type' => 'image', 'path' => 'unified-winner.jpg', 'order' => 0],
+                ['type' => 'image', 'path' => 'zz-resolution-unified.jpg', 'order' => 0],
             ],
         ]);
 
         $urls = $product->media_urls;
 
         $this->assertCount(1, $urls);
-        $this->assertStringEndsWith('/images/products/unified-winner.jpg', $urls[0]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-unified.jpg', $urls[0]['url']);
     }
 
     public function test_missing_everything_produces_no_image_url(): void
@@ -149,16 +157,16 @@ class ProductMediaResolutionTest extends TestCase
             mkdir($videoDir, 0775, true);
         }
 
-        $video = $videoDir.'/resolution-clip.mp4';
+        $video = $videoDir.'/zz-resolution-clip.mp4';
         file_put_contents($video, 'dummy-bytes');
         $this->created[] = $video;
 
-        $this->putPublicImage('resolution-after-video.jpg');
+        $this->putPublicImage('zz-resolution-after-video.jpg');
 
         $product = $this->product([
-            'image' => 'resolution-after-video.jpg',
+            'image' => 'zz-resolution-after-video.jpg',
             'media' => [
-                ['type' => 'video', 'path' => 'resolution-clip.mp4', 'order' => 0],
+                ['type' => 'video', 'path' => 'zz-resolution-clip.mp4', 'order' => 0],
                 ['type' => 'image', 'path' => 'dead-image.jpg', 'order' => 1],
             ],
         ]);
@@ -167,9 +175,9 @@ class ProductMediaResolutionTest extends TestCase
 
         $this->assertCount(2, $urls);
         $this->assertSame('video', $urls[0]['type']);
-        $this->assertStringEndsWith('/videos/products/resolution-clip.mp4', $urls[0]['url']);
+        $this->assertStringEndsWith('/videos/products/zz-resolution-clip.mp4', $urls[0]['url']);
         $this->assertSame('image', $urls[1]['type']);
-        $this->assertStringEndsWith('/images/products/resolution-after-video.jpg', $urls[1]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-after-video.jpg', $urls[1]['url']);
     }
 
     /* ------------------------------------------------------------------
@@ -178,32 +186,32 @@ class ProductMediaResolutionTest extends TestCase
 
     public function test_legacy_image_record_resolves_to_its_webp_sibling(): void
     {
-        $this->putPublicImage('modern-french-matte.webp');
+        $this->putPublicImage('zz-resolution-webp-sibling.webp');
 
         $product = $this->product([
-            'image' => 'modern-french-matte.jpg',
+            'image' => 'zz-resolution-webp-sibling.jpg',
             'media' => $this->deadMedia(),
         ]);
 
         $urls = $product->media_urls;
 
         $this->assertCount(1, $urls);
-        $this->assertStringEndsWith('/images/products/modern-french-matte.webp', $urls[0]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-webp-sibling.webp', $urls[0]['url']);
     }
 
     public function test_legacy_image_with_an_encoded_filename_resolves(): void
     {
-        $this->putPublicImage('blush-aura.jpg');
+        $this->putPublicImage('zz-resolution-blush-aura.jpg');
 
         $product = $this->product([
-            'image' => 'blush%20aura.jpg',
+            'image' => 'zz-resolution-blush%20aura.jpg',
             'media' => $this->deadMedia(),
         ]);
 
         $urls = $product->media_urls;
 
         $this->assertCount(1, $urls);
-        $this->assertStringEndsWith('/images/products/blush-aura.jpg', $urls[0]['url']);
+        $this->assertStringEndsWith('/images/products/zz-resolution-blush-aura.jpg', $urls[0]['url']);
     }
 
     /* ------------------------------------------------------------------
@@ -214,14 +222,14 @@ class ProductMediaResolutionTest extends TestCase
     {
         // The only file on disk belongs to a DIFFERENT product and merely
         // shares its stem with this product's dead media record.
-        $this->putPublicImage('someone-elses-set.jpg');
+        $this->putPublicImage('zz-resolution-someone-else.jpg');
 
         $product = $this->product([
             'slug' => 'my-own-set',
             'name' => 'My Own Set',
             'image' => null,
             'media' => [
-                ['type' => 'image', 'path' => 'someone-elses-set.jpg', 'order' => 0],
+                ['type' => 'image', 'path' => 'zz-resolution-someone-else.jpg', 'order' => 0],
             ],
         ]);
 
@@ -249,42 +257,42 @@ class ProductMediaResolutionTest extends TestCase
 
     public function test_product_card_renders_the_legacy_image_url(): void
     {
-        $this->putPublicImage('classic-pearl-mauve.jpg');
+        $this->putPublicImage('zz-resolution-card.jpg');
 
         $product = $this->product([
-            'image' => 'classic-pearl-mauve.jpg',
+            'image' => 'zz-resolution-card.jpg',
             'media' => $this->deadMedia(),
         ]);
 
         $response = $this->get(route('shop.index'));
 
         $response->assertOk();
-        $response->assertSee('/images/products/classic-pearl-mauve.jpg', false);
+        $response->assertSee('/images/products/zz-resolution-card.jpg', false);
         $response->assertDontSee('Photo coming soon', false);
     }
 
     public function test_product_detail_page_renders_the_legacy_image(): void
     {
-        $this->putPublicImage('espresso-split.jpg');
+        $this->putPublicImage('zz-resolution-detail.jpg');
 
         $product = $this->product([
-            'image' => 'espresso-split.jpg',
+            'image' => 'zz-resolution-detail.jpg',
             'media' => $this->deadMedia(),
         ]);
 
         $response = $this->get(route('products.show', $product));
 
         $response->assertOk();
-        $response->assertSee('/images/products/espresso-split.jpg', false);
+        $response->assertSee('/images/products/zz-resolution-detail.jpg', false);
         $response->assertDontSee('Photo coming soon', false);
     }
 
     public function test_homepage_showcases_render_the_legacy_image(): void
     {
-        $this->putPublicImage('gilded-rose-dust.jpg');
+        $this->putPublicImage('zz-resolution-home.jpg');
 
         $product = $this->product([
-            'image' => 'gilded-rose-dust.jpg',
+            'image' => 'zz-resolution-home.jpg',
             'media' => $this->deadMedia(),
             'is_best_seller' => true,
         ]);
@@ -292,24 +300,24 @@ class ProductMediaResolutionTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('/images/products/gilded-rose-dust.jpg', false);
+        $response->assertSee('/images/products/zz-resolution-home.jpg', false);
         $response->assertDontSee('Photo coming soon', false);
     }
 
     public function test_cover_accessors_skip_dead_media_and_use_the_legacy_image(): void
     {
-        $this->putPublicImage('ivory-blossom-vine.jpg');
+        $this->putPublicImage('zz-resolution-cover.jpg');
 
         $product = $this->product([
-            'image' => 'ivory-blossom-vine.jpg',
+            'image' => 'zz-resolution-cover.jpg',
             'media' => $this->deadMedia(),
         ]);
 
         $this->assertStringEndsWith(
-            '/images/products/ivory-blossom-vine.jpg',
+            '/images/products/zz-resolution-cover.jpg',
             (string) $product->cover_image_url,
         );
-        $this->assertSame('ivory-blossom-vine.jpg', $product->cover_image_path);
+        $this->assertSame('zz-resolution-cover.jpg', $product->cover_image_path);
         $this->assertSame('image', $product->cover_media['type']);
     }
 
