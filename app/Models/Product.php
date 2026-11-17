@@ -890,6 +890,74 @@ class Product extends Model
         return $legacy;
     }
 
+    /**
+     * Ordered media items whose files ACTUALLY exist on disk — the list the
+     * storefront renders from.
+     *
+     * `media_items` above returns whatever the row *declares*, so the admin
+     * editor and the Image Doctor can still see references that point at
+     * missing files. Rendering needs the opposite guarantee: a declared
+     * `media` entry whose file is gone must never hide a valid photo stored
+     * in the legacy `image` / `gallery` columns. (The production failure:
+     * `media` held WhatsApp filenames that are not on disk while `image`
+     * held filenames that are — the card showed "Photo coming soon".)
+     *
+     * Resolution order:
+     *   1. declared `media` records that resolve (original order kept,
+     *      videos included);
+     *   2. the legacy `image` column — only while no image resolved yet;
+     *   3. legacy `gallery` entries — only while still no image resolved;
+     *   4. nothing: the caller falls back to the unambiguous slug match.
+     *
+     * Every candidate passes the real-file `resolveMediaFile()` guard, so a
+     * missing or ambiguous reference can never substitute another product's
+     * photo for this one.
+     *
+     * @return list<array{type:string,path:string,order:int}>
+     */
+    protected function resolvedMediaItems(): array
+    {
+        $declared = collect($this->media ?? [])
+            ->filter(fn ($item) => is_array($item) && ! empty($item['type']) && ! empty($item['path']))
+            ->unique(fn ($item) => $item['type'].'|'.$item['path'])
+            ->sortBy('order')
+            ->values();
+
+        $items = $declared
+            ->filter(fn (array $item) => $this->resolveMediaFile((string) $item['type'], (string) $item['path']) !== null)
+            ->values();
+
+        $hasImage = $items->contains(fn (array $item) => $item['type'] === 'image');
+
+        // 2. Legacy cover column — only while nothing resolved yet, so a
+        //    valid unified `media` record always keeps priority.
+        if (! $hasImage && ! empty($this->attributes['image'])) {
+            $path = (string) $this->attributes['image'];
+
+            if ($this->resolveMediaFile('image', $path) !== null) {
+                $items->push(['type' => 'image', 'path' => $path, 'order' => $items->count()]);
+                $hasImage = true;
+            }
+        }
+
+        // 3. Legacy gallery — only while still no image anywhere.
+        if (! $hasImage) {
+            $cover = (string) ($this->attributes['image'] ?? '');
+
+            foreach ((array) ($this->gallery ?? []) as $path) {
+                if (! is_string($path) || $path === '' || $path === $cover) {
+                    continue;
+                }
+
+                if ($this->resolveMediaFile('image', $path) !== null) {
+                    $items->push(['type' => 'image', 'path' => $path, 'order' => $items->count()]);
+                }
+            }
+        }
+
+        return $items->all();
+    }
+
     public function mediaUrl(string $type, string $path): string
     {
         $resolved = $this->resolveMediaFile($type, $path);
@@ -911,12 +979,16 @@ class Product extends Model
      * Render-ready media list: only items whose file actually exists, as
      * ['type', 'url']. Views render one slot per entry — a product with a
      * single image gets exactly one slot and never an empty placeholder.
-     * When DB media items point at missing files, falls back to any
-     * slug-named image found on disk (<slug>.webp / <slug>.jpg / …).
+     *
+     * Resolution order (see resolvedMediaItems()): valid unified `media`
+     * first, then the legacy `image` column, then `gallery`, so an invalid
+     * `media` entry can never suppress a valid legacy photo. When DB media
+     * items point at missing files, falls back to any slug-named image
+     * found on disk (<slug>.webp / <slug>.jpg / …).
      */
     public function getMediaUrlsAttribute(): array
     {
-        $urls = collect($this->media_items)
+        $urls = collect($this->resolvedMediaItems())
             ->map(function (array $item): ?array {
                 $resolved = $this->resolveMediaFile($item['type'], $item['path']);
 
@@ -939,19 +1011,21 @@ class Product extends Model
         return $urls;
     }
 
-    /** First media item in the gallery (image or video). */
+    /** First RENDERABLE media item in the gallery (image or video). */
     public function getCoverMediaAttribute(): ?array
     {
-        return $this->media_items[0] ?? null;
+        return $this->resolvedMediaItems()[0] ?? null;
     }
 
     /**
      * URL of the first IMAGE in the gallery — used for small thumbnails
      * (cart rows, admin lists) and OG tags where a video won't do.
+     * Skips declared entries whose file is missing, so a stale `media`
+     * record can never hide a valid legacy `image`.
      */
     public function getCoverImageUrlAttribute(): ?string
     {
-        foreach ($this->media_items as $item) {
+        foreach ($this->resolvedMediaItems() as $item) {
             if ($item['type'] !== 'image') {
                 continue;
             }
@@ -968,7 +1042,7 @@ class Product extends Model
     /** Filename of the first IMAGE in the gallery (stored in cart rows). */
     public function getCoverImagePathAttribute(): ?string
     {
-        foreach ($this->media_items as $item) {
+        foreach ($this->resolvedMediaItems() as $item) {
             if ($item['type'] !== 'image') {
                 continue;
             }

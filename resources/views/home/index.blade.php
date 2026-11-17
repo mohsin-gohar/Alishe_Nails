@@ -273,62 +273,7 @@
         </div>
     </section>
 
-    {{-- ---------- 5. Atelier Press-Ons vs. Salon Acrylics Comparison Matrix ---------- --}}
-    <section class="container comparison-section">
-        <div class="section-heading" style="margin-bottom:20px;">
-            <span class="eyebrow">The Smart Luxury Choice</span>
-            <h2 style="font-size:2.1rem;margin-bottom:6px;">Alishe Press-Ons vs. Salon Acrylics</h2>
-            <p style="margin:0;color:rgba(43,29,29,.7);">Why modern Karachi women are switching to couture handcrafted press-on nails.</p>
-        </div>
-
-        <div class="comparison-wrapper">
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th style="width:28%;">Feature</th>
-                        <th class="col-alishe" style="width:36%;">
-                            <i class="fa-solid fa-crown" style="color:var(--gold);margin-right:6px;"></i> Alishe Nails Atelier
-                        </th>
-                        <th style="width:36%;">Traditional Salon Acrylics</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Application Time</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> 10 Minutes at Home</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-clock"></i> 2 to 3 Hours at Salon</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Natural Nail Health</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> Zero Damage (100% Breathable)</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-circle-xmark"></i> Electric drill thinning &amp; damage</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Cost &amp; Longevity</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> PKR 1,500 – 3,500 (Reusable 5x)</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-circle-xmark"></i> PKR 8,000 – 15,000 + Bi-weekly refills</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Flexibility &amp; Convenience</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> Swap styles for any dress/event</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-circle-xmark"></i> Locked into one style for 4 weeks</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Removal Process</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> Gentle soak in warm water</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-circle-xmark"></i> Harsh pure acetone soaking &amp; scraping</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Hygiene Standards</strong></td>
-                        <td class="col-alishe"><span class="badge-check"><i class="fa-solid fa-circle-check"></i> 100% Personal &amp; Sterile in Sealed Box</span></td>
-                        <td><span class="badge-cross"><i class="fa-solid fa-triangle-exclamation"></i> Shared tools &amp; nail salon dust</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    {{-- ---------- 6. Best Sellers Carousel / Grid ---------- --}}
+    {{-- ---------- 5. Best Sellers Carousel / Grid ---------- --}}
     <section class="best-sellers">
         <div class="container best-sellers__grid">
             <div class="best-sellers__intro">
@@ -349,7 +294,7 @@
         </div>
     </section>
 
-    {{-- ---------- 7. Curated Homepage Lineup (admin-controlled) ---------- --}}
+    {{-- ---------- 6. Curated Homepage Lineup (admin-controlled) ---------- --}}
     <section class="container" style="padding-block:48px 64px;">
         <div class="section-heading">
             <span class="eyebrow">Curated By The Atelier</span>

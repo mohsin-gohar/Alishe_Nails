@@ -63,15 +63,15 @@ class ShopController extends Controller
             return [
                 Category::active()
                     ->whereHas('products', function ($q) {
-                    if (Category::hasColumn('is_active')) {
-                        $q->where('is_active', true);
-                    }
-                })
+                        if (Category::hasColumn('is_active')) {
+                            $q->where('is_active', true);
+                        }
+                    })
                     ->withCount(['products' => function ($q) {
-                    if (Category::hasColumn('is_active')) {
-                        $q->where('is_active', true);
-                    }
-                }])
+                        if (Category::hasColumn('is_active')) {
+                            $q->where('is_active', true);
+                        }
+                    }])
                     ->ordered()
                     ->get(),
                 Product::active()->selectRaw('shape, count(*) as total')->groupBy('shape')->pluck('total', 'shape'),

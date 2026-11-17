@@ -37,15 +37,16 @@ commands:
       php artisan key:generate --ansi
     fi
 
-  # Run migrations with --force.  Our codebase uses hasColumn() guards so that
-  # the migration can safely run even when some merchandising columns are absent
-  # from the production database.  If a column already exists the query is a no‑op.
-  - php artisan migrate --force
+  # Migrations are intentionally NOT run by the deployment pipeline.
+  # Production schema changes are reviewed and applied manually by the
+  # owner (phpMyAdmin / php artisan migrate) so no deploy can alter the
+  # live database without explicit approval.
 
-  # Cache configuration, routes and views so the first request is fast.
+  # Clear ALL runtime caches FIRST, so nothing stale survives the deploy
+  # and the caches built in the next steps are the ones actually used.
+  - php artisan optimize:clear
+
+  # Then cache configuration, routes and views so the first request is fast.
   - php artisan config:cache
   - php artisan route:cache
   - php artisan view:cache
-
-  # Clear runtime caches so the freshly cached config takes effect immediately.
-  - php artisan optimize:clear
