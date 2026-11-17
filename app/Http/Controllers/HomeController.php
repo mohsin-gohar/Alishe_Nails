@@ -63,9 +63,22 @@ class HomeController extends Controller
     public function index()
     {
         $data = Cache::remember('home_page_data', 300, function () {
+            // Use Category::active() which has a guard: only applies where('is_active', true)
+            // if the column exists in the database (protection for older deployments).
             $collections = Category::active()
-                ->whereHas('products', fn ($q) => $q->where('is_active', true))
-                ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
+                ->whereHas('products', function ($q) {
+                    // Guard: only filter by is_active if the column exists.
+                    if (Category::hasColumn('is_active')) {
+                        $q->where('is_active', true);
+                    }
+                })
+                ->withCount(function ($q) use ($collections) {
+                    // Guard: only count active products if the column exists.
+                    // We can check via the Category model since it checks the categories table.
+                    if (Category::hasColumn('is_active')) {
+                        $q->where('is_active', true);
+                    }
+                })
                 ->ordered()
                 ->take(4)
                 ->get();
