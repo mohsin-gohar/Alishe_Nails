@@ -15,7 +15,7 @@
                     <x-optimized-image :src="$cover['url']" :alt="$product->name" :fallback="true" />
                 @endif
             @else
-                <div class="img-placeholder">
+                <div class="img-placeholder" aria-hidden="true">
                 <span class="img-placeholder__mark">A</span>
                 <small>Photo coming soon</small>
             </div>
@@ -23,7 +23,7 @@
         </a>
 
         @if ($product->isOutOfStock())
-            <span class="product-card__badge" style="background:#8a8a8a;">Out of Stock</span>
+            <span class="product-card__badge" style="background:#595959;">Out of Stock</span>
         @elseif ($product->badge)
             <span class="product-card__badge">{{ $product->badge }}</span>
         @elseif ($product->isLowStock())
