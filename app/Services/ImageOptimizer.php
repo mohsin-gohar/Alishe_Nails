@@ -234,12 +234,18 @@ class ImageOptimizer
             return null;
         }
 
-        // Palette + transparency handling for PNG/GIF sources.
+        // Palette images must become truecolour before alpha handling,
+        // otherwise their transparency is dropped from the generated WebP.
         if (function_exists('imagepalettetotruecolor') && ! imageistruecolor($image)) {
             imagepalettetotruecolor($image);
         }
 
-        if (function_exists('imagesavealpha') && ! imageistruecolor($image)) {
+        // Preserve transparency for formats that can carry it. This runs
+        // after the palette conversion (which makes the image truecolour),
+        // so it must not be gated on imageistruecolor(); doing that skipped
+        // the alpha channel and flattened transparent PNGs to black.
+        if (in_array($info[2], [IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP], true)
+            && function_exists('imagesavealpha')) {
             imagealphablending($image, false);
             imagesavealpha($image, true);
         }

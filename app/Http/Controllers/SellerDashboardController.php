@@ -18,8 +18,15 @@ class SellerDashboardController extends Controller
         $seller->load('activeSubscription.plan');
         $products = $seller->products()->latest()->paginate(12);
         $items = $seller->orderItems()->with('order')->latest()->paginate(12, ['*'], 'orders_page');
-        $sales = (float) $seller->orderItems()->sum('line_total');
-        $earnings = (float) $seller->orderItems()->sum('line_total');
+
+        // Cancelled orders are not sales and must never inflate the seller's
+        // totals or their payout. Earnings use seller_earning (line total
+        // minus any platform commission), not the gross line total.
+        $completedItems = fn () => $seller->orderItems()
+            ->whereHas('order', fn ($query) => $query->where('status', '!=', 'cancelled'));
+
+        $sales = (float) $completedItems()->sum('line_total');
+        $earnings = (float) $completedItems()->sum('seller_earning');
         $plans = SubscriptionPlan::where('is_active', true)->orderBy('duration_days')->get();
 
         return view('seller.dashboard', compact('seller', 'products', 'items', 'sales', 'earnings', 'plans'));

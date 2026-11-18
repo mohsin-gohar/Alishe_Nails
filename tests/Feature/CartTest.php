@@ -117,6 +117,30 @@ class CartTest extends TestCase
         $response->assertDontSee('PKR 4,300');
     }
 
+    public function test_cart_rows_saved_before_shape_and_size_existed_still_merge(): void
+    {
+        $product = $this->makeProduct(['stock' => 5]);
+
+        // Session rows written by an older version of the cart have no
+        // shape/size keys at all; adding the same product must merge into
+        // that row instead of throwing an undefined-array-key error.
+        $this->withSession(['alishe_cart' => [
+            'legacy-row' => [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'image' => null,
+                'price' => 1000,
+                'qty' => 1,
+            ],
+        ]]);
+
+        $this->post(route('cart.add', $product), ['qty' => 2])->assertRedirect();
+
+        $this->assertSame(3, (int) session('alishe_cart')['legacy-row']['qty']);
+        $this->assertCount(1, session('alishe_cart'));
+    }
+
     public function test_cart_update_to_zero_removes_the_item(): void
     {
         $product = $this->makeProduct(['stock' => 5]);

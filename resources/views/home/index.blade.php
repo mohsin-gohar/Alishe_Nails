@@ -117,15 +117,17 @@
         <div class="hero-media">
             @if ($heroVideoUrl)
                 <video
+                    id="hero-video"
                     class="hero-video"
-                    autoplay
                     muted
                     loop
                     playsinline
-                    preload="metadata"
-                    @if ($heroPosterUrl) poster="{{ $heroPosterUrl }}" @endif
-                    aria-label="Alishe Nails atelier showreel">
-                    <source src="{{ $heroVideoUrl }}" type="video/mp4">
+                    preload="none"
+                    poster="{{ $heroPosterUrl }}"
+                    aria-label="Alishe Nails atelier showreel"
+                    width="1080" height="810"
+                    fetchpriority="low">
+                    <source data-src="{{ $heroVideoUrl }}" type="video/mp4">
                     Your browser does not support HTML5 video.
                 </video>
             @elseif ($heroPosterUrl)

@@ -547,8 +547,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ---------- Navbar account menu dropdown ----------
-  var accountToggle = document.querySelector('[data-account-toggle]');
+  // ---------- Hero video: only download when scrolled into view ----------
+var heroVideo = document.getElementById('hero-video');
+if (heroVideo) {
+    var source = heroVideo.querySelector('source[data-src]');
+    if (source) {
+        new IntersectionObserver(function (entries, observer) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+                source.src = source.getAttribute('data-src');
+                source.removeAttribute('data-src');
+                heroVideo.load();
+                heroVideo.play().catch(function () {});
+                observer.disconnect();
+            });
+        }, { rootMargin: '400px 0px' }).observe(heroVideo);
+    }
+}
+
+// ---------- Navbar account menu dropdown ----------
+var accountToggle = document.querySelector('[data-account-toggle]');
   var accountMenu = document.querySelector('[data-account-menu]');
   if (accountToggle && accountMenu) {
     accountToggle.addEventListener('click', function (e) {

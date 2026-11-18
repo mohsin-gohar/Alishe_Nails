@@ -96,7 +96,7 @@ class AdminCategoryController extends Controller
             unset($data['image']);
         }
 
-        if ($request->hasFile('image')) {
+        if ($request->hasFile('image') && Category::hasColumn('image')) {
             $newImage = $this->storeImage($request->file('image'));
             $this->deleteImage($category?->image);
             $data['image'] = $newImage;

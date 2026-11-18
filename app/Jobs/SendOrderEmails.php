@@ -31,7 +31,14 @@ class SendOrderEmails implements ShouldQueue
             Mail::to($email)->send(new OrderConfirmationMail($this->order));
         }
 
-        Mail::to(config('services.admin.notification_email'))->send(new AdminNewOrderMail($this->order));
+        // The admin notification address is optional configuration. Sending
+        // to null throws, which would fail the job after the customer mail
+        // already went out and cause duplicate emails on every retry.
+        $adminEmail = config('services.admin.notification_email');
+
+        if (is_string($adminEmail) && $adminEmail !== '') {
+            Mail::to($adminEmail)->send(new AdminNewOrderMail($this->order));
+        }
     }
 
     public function failed(?\Throwable $exception): void

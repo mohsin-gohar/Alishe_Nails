@@ -65,6 +65,9 @@ class Seller extends Authenticatable
 
     public function getPayoutDueAttribute(): float
     {
-        return (float) $this->orderItems()->where('payout_status', 'pending')->sum('seller_earning');
+        return (float) $this->orderItems()
+            ->where('payout_status', 'pending')
+            ->whereHas('order', fn ($query) => $query->where('status', '!=', 'cancelled'))
+            ->sum('seller_earning');
     }
 }

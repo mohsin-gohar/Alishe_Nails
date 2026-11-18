@@ -103,8 +103,6 @@ class HomeController extends Controller
                 ->with(['category', 'seller'])
                 ->withCount('approvedReviews')
                 ->withAvg('approvedReviews', 'rating')
-                ->orderBy('homepage_order')
-                ->orderBy('id')
                 ->take(self::SHOWCASE_SIZE)
                 ->get();
 

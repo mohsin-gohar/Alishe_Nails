@@ -37,7 +37,9 @@ class Cart
 
         // Merge quantity if the exact same product+shape+size already exists.
         foreach ($cart as $rowId => $row) {
-            if ($row['product_id'] === $product->id && $row['shape'] === $shape && $row['size'] === $size) {
+            if (($row['product_id'] ?? null) === $product->id
+                && ($row['shape'] ?? null) === $shape
+                && ($row['size'] ?? null) === $size) {
                 $newQty = $row['qty'] + $qty;
 
                 if ($newQty > $product->stock) {

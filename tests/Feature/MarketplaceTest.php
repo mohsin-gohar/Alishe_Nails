@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Seller;
@@ -72,6 +73,40 @@ class MarketplaceTest extends TestCase
         ];
     }
 
+    private function makeOrder(array $overrides = []): Order
+    {
+        return Order::create(array_merge([
+            'first_name' => 'Sana',
+            'last_name' => 'Malik',
+            'email' => 'sana@example.com',
+            'phone' => '03001234567',
+            'address' => '123 Blossom Lane',
+            'city' => 'Karachi',
+            'payment_method' => 'jazzcash',
+            'subtotal' => 1000,
+            'shipping' => 300,
+            'total' => 1300,
+            'status' => 'pending',
+        ], $overrides));
+    }
+
+    private function makeItem(Seller $seller, Order $order, array $overrides = []): OrderItem
+    {
+        return OrderItem::create(array_merge([
+            'order_id' => $order->id,
+            'product_id' => null,
+            'seller_id' => $seller->id,
+            'product_name' => 'Creator Chrome Set',
+            'quantity' => 1,
+            'price' => 1000,
+            'line_total' => 1000,
+            'commission_rate' => 0,
+            'commission_amount' => 0,
+            'seller_earning' => 1000,
+            'payout_status' => 'pending',
+        ], $overrides));
+    }
+
     public function test_influencer_can_apply_and_is_not_logged_in_before_approval(): void
     {
         $response = $this->post(route('seller.apply.store'), [
@@ -112,6 +147,54 @@ class MarketplaceTest extends TestCase
         $this->assertSame(0.0, (float) $item->commission_rate);
         $this->assertSame(0.0, (float) $item->commission_amount);
         $this->assertSame(4000.0, (float) $item->seller_earning);
+    }
+
+    public function test_seller_dashboard_excludes_cancelled_orders_and_uses_net_earnings(): void
+    {
+        $seller = $this->makeSeller();
+        $this->activateSubscription($seller);
+
+        $liveOrder = $this->makeOrder(['status' => 'processing', 'subtotal' => 4000, 'total' => 4300]);
+        $this->makeItem($seller, $liveOrder, [
+            'quantity' => 2, 'price' => 2000, 'line_total' => 4000,
+            'commission_rate' => 10, 'commission_amount' => 400, 'seller_earning' => 3600,
+        ]);
+
+        $cancelledOrder = $this->makeOrder(['status' => 'cancelled', 'subtotal' => 5000, 'total' => 5300]);
+        $this->makeItem($seller, $cancelledOrder, [
+            'quantity' => 1, 'price' => 5000, 'line_total' => 5000,
+            'commission_rate' => 10, 'commission_amount' => 500, 'seller_earning' => 4500,
+        ]);
+
+        $this->actingAs($seller, 'seller')
+            ->get(route('seller.dashboard'))
+            ->assertOk()
+            ->assertSee('PKR 4,000')       // gross sales, cancelled order excluded
+            ->assertSee('PKR 3,600')       // net earnings after commission
+            ->assertDontSee('PKR 9,000')   // the cancelled sale must not be counted
+            ->assertDontSee('PKR 8,100');  // nor its earning
+
+        $this->assertSame(3600.0, (float) $seller->fresh()->payout_due);
+    }
+
+    public function test_mark_paid_skips_items_from_cancelled_orders(): void
+    {
+        $seller = $this->makeSeller();
+        $admin = Admin::create(['name' => 'Admin', 'email' => 'mark-paid@example.com', 'password' => Hash::make('AdminPass123')]);
+
+        $liveOrder = $this->makeOrder(['status' => 'processing']);
+        $liveItem = $this->makeItem($seller, $liveOrder, ['seller_earning' => 900]);
+
+        $cancelledOrder = $this->makeOrder(['status' => 'cancelled']);
+        $cancelledItem = $this->makeItem($seller, $cancelledOrder, ['seller_earning' => 500]);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.marketplace.sellers.markPaid', $seller))
+            ->assertRedirect();
+
+        $this->assertSame('paid', $liveItem->fresh()->payout_status);
+        $this->assertSame('pending', $cancelledItem->fresh()->payout_status);
+        $this->assertSame(0.0, (float) $seller->fresh()->payout_due);
     }
 
     public function test_seller_cannot_edit_another_sellers_product(): void

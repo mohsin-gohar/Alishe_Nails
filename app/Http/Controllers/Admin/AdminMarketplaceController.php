@@ -44,7 +44,12 @@ class AdminMarketplaceController extends Controller
     public function markPaid(Seller $seller)
     {
         DB::transaction(function () use ($seller) {
-            $seller->orderItems()->where('payout_status', 'pending')->update(['payout_status' => 'paid']);
+            // Cancelled orders never earn a payout, so their items stay out
+            // of the batch even if the status changed after the sale.
+            $seller->orderItems()
+                ->where('payout_status', 'pending')
+                ->whereHas('order', fn ($query) => $query->where('status', '!=', 'cancelled'))
+                ->update(['payout_status' => 'paid']);
         });
 
         return back()->with('success', 'Pending payout marked as paid for '.$seller->name.'.');

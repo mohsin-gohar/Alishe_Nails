@@ -173,14 +173,30 @@ class AdminProductController extends Controller
         // Homepage curation. A newly selected product is appended to the end
         // of the lineup; the dedicated Homepage Studio handles explicit
         // ordering. Unchecking clears the product from the lineup entirely.
-        $validated['is_homepage'] = $request->boolean('is_homepage');
-
-        if ($validated['is_homepage']) {
-            $validated['homepage_order'] = $product?->is_homepage && $product?->homepage_order
-                ? $product->homepage_order
-                : (int) Product::where('is_homepage', true)->max('homepage_order') + 1;
+        // Guarded so saving works on a database that has not yet run the
+        // merchandising migration instead of throwing an unknown-column error.
+        if (Product::hasColumn('is_homepage')) {
+            $validated['is_homepage'] = $request->boolean('is_homepage');
         } else {
-            $validated['homepage_order'] = null;
+            unset($validated['is_homepage']);
+        }
+
+        if (Product::hasColumn('homepage_order')) {
+            if (! empty($validated['is_homepage'])) {
+                $validated['homepage_order'] = $product?->is_homepage && $product?->homepage_order
+                    ? $product->homepage_order
+                    : (int) Product::where('is_homepage', true)->max('homepage_order') + 1;
+            } else {
+                $validated['homepage_order'] = null;
+            }
+        } else {
+            unset($validated['homepage_order']);
+        }
+
+        foreach (['meta_title', 'meta_description', 'tags'] as $seoColumn) {
+            if (! Product::hasColumn($seoColumn)) {
+                unset($validated[$seoColumn]);
+            }
         }
 
         // Persist the ordered mixed media gallery (see buildOrderedMedia).

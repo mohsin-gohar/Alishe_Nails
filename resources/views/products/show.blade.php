@@ -13,6 +13,28 @@
         ['name' => 'Shop All', 'url' => route('shop.index')],
         ['name' => $product->name, 'url' => route('products.show', $product)],
     ]" />
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => $product->name,
+        'description' => \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->description ?: ''), 300),
+        'image' => array_values(array_filter(array_map(fn ($m) => $m['url'], $product->media_urls ?? []), fn ($u) => $u !== null)),
+        'brand' => ['@type' => 'Brand', 'name' => 'Alishe Nails'],
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => route('products.show', $product),
+            'priceCurrency' => 'PKR',
+            'price' => number_format($product->price, 2, '.', ''),
+            'availability' => $product->isOutOfStock() ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+        ],
+        'aggregateRating' => $product->reviews_count > 0 ? [
+            '@type' => 'AggregateRating',
+            'ratingValue' => number_format($product->average_rating, 1),
+            'reviewCount' => $product->reviews_count,
+        ] : null,
+    ], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+    </script>
 @endpush
 
 @section('content')
